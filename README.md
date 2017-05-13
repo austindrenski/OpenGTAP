@@ -6,7 +6,7 @@ The GTAP model provides a popular framework for conducting global economic analy
 
 The goal of GTAP.NET is not to replace the GEMPACK implementation of the GTAP model, but rather to provide a modern, object-oriented implementation that may encourage new developments from the open-source community.
 
-## Areas of potential improvement
+## Potential areas for modernization
 Working with C# 7 and the .NET Standard Framework version 1.6, GTAP.NET seeks to simplify the program design of the standard model. 
 
 The GTAP.NET team suspects that the following areas may see a performance benefit from modern abstractions: 
