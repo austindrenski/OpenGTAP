@@ -9,8 +9,8 @@ namespace HeaderArrayConsole
     {
         public static void Main()
         {
-            //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
-            const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
+            const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
+            //const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
 
             byte[] headerToTypeSeparator = new byte[]
             {
@@ -37,15 +37,6 @@ namespace HeaderArrayConsole
 
             using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
             {
-                byte[] buffer;
-                while ((buffer = reader.ReadBytes(16)) != null)
-                {
-                    if (buffer.Skip(4).SequenceEqual(headerToTypeSeparator))
-                    {
-                        Console.WriteLine(BitConverter.ToString(buffer.Take(4).ToArray()));
-                    }
-                }
-
                 Console.WriteLine("Read four bytes of padding:");
                 Console.WriteLine(BitConverter.ToString(reader.ReadBytes(4)));
 
