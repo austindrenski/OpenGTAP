@@ -48,7 +48,7 @@ namespace HeaderArrayConverter
         /// Represents one entry from a Header Array (HAR) file.
         /// </summary>
         /// <param name="header">
-        /// 
+        /// The four character identifier for this <see cref="HeaderArray"/>.
         /// </param>
         /// <param name="info">
         /// Represents metadata on the <see cref="HeaderArray"/> located after the identifier and before the array contents.
@@ -94,8 +94,7 @@ namespace HeaderArrayConverter
         {
             return $"{nameof(Header)}: {Header}\r\n" +
                     $"Dimensions: [{X0}][{X1}][{X2}]\r\n" +
-                    $"{Info}\r\n" +
-                    $"{nameof(Header)}: {Header}";
+                    $"{Info}";
         }
     }
 }
