@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using HeaderArrayConverter;
 
 namespace HeaderArrayConsole
 {
@@ -11,8 +9,8 @@ namespace HeaderArrayConsole
     {
         public static void Main()
         {
-            //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
-            const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
+            const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
+            //const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
 
             byte[] bytes = File.ReadAllBytes(file);
 
@@ -21,118 +19,123 @@ namespace HeaderArrayConsole
             Console.WriteLine("END");
             Console.WriteLine();
 
-            //using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
-            //{
-            //    while (reader.BaseStream.Position != reader.BaseStream.Length)
-            //    {
-            //        (string Header, byte[] Content) v = HeaderArrayHelper.GetHeader(reader);
-            //        (int Count, int Length, byte[] Content) t = HeaderArrayHelper.GetDescriptionFromContent(v.Content);
-            //        Console.WriteLine(v.Header);
-            //        Console.WriteLine(t.Count);
-            //        Console.WriteLine(t.Length);
-            //        Console.WriteLine(Encoding.ASCII.GetString(t.Content));
-            //    }
-            //}
-
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
+            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read), Encoding.ASCII))
             {
                 while (reader.BaseStream.Position != reader.BaseStream.Length)
                 {
                     Console.WriteLine("-----------------------------------------------");
 
-                    // Skip header length
-                    reader.ReadBytes(4);
+                    // Read length of the header
+                    int length = reader.ReadInt32();
 
                     // Read header
-                    char[] header = reader.ReadChars(4);
-
-                    // Skip header terminating length
-                    reader.ReadBytes(4);
-
-                    if (new string(header) == "DVER")
+                    string header = Encoding.ASCII.GetString(reader.ReadBytes(length));
+                    
+                    // Verify the length of the header
+                    if (length != reader.ReadInt32())
                     {
-                        Queue<byte> buffer = new Queue<byte>(4);
-                        while (!buffer.SequenceEqual(new byte[] { 04, 00, 00, 00 }))
-                        {
-                            if (buffer.Count == 4)
-                            {
-                                buffer.Dequeue();
-                            }
-                            buffer.Enqueue(reader.ReadByte());
-                        }
-                        reader.BaseStream.Seek(-4, SeekOrigin.Current);
-                        continue;
+                        throw new InvalidDataException("Initiating and terminating lengths do not match.");
                     }
-                    // Skip separator or length => '5C 00 00 00'
-                    reader.ReadBytes(4);
 
-                    // Skip 4 spaces => '20 20 20 20'
-                    reader.ReadBytes(4);
+                    // Read the length of the description
+                    int descriptionLength = reader.ReadInt32();
+
+                    byte[] description = reader.ReadBytes(descriptionLength);
+
+
+                    // Verify length of the description
+                    if (reader.ReadInt32() != descriptionLength)
+                    {
+                        throw new InvalidDataException("Initiating and terminating lengths do not match.");
+                    }
+
+                    // Skip 4 spaces
+                    if (BitConverter.ToInt32(description, 0) != 0x20_20_20_20)
+                    {
+                        throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+                    }
 
                     // Read type => '1C', 'RE', etc
-                    char[] type = reader.ReadChars(2);
+                    string type = Encoding.ASCII.GetString(description, 4, 2);
 
                     // Read length type => 'FULL'
-                    char[] lengthType = reader.ReadChars(4);
-
+                    string lengthType = Encoding.ASCII.GetString(description, 6, 4);
+                    
                     // Read longer name description with limit of 70 characters
-                    char[] name = reader.ReadChars(70);
-
-                    // Skip terminating marker '02 00 00 00'
-                    reader.ReadBytes(4);
+                    string name = Encoding.ASCII.GetString(description, 10, 74);
 
                     // Read how many items are in the array
-                    int count = reader.ReadInt32();
+                    int count = BitConverter.ToInt32(description, 84);
 
                     // Read how long each element is
-                    int size = reader.ReadInt32();
-
-                    // Skip separator => '5C 00 00 00'
-                    reader.ReadBytes(4);
-
-                    // Read how long each record is => '17 00 00 00'
-                    int recordLength = reader.ReadInt32();
-
-                    // Skip padding => '20 20 20 20'
-                    reader.ReadBytes(4);
-
-                    // Read item dimensions
-                    int dimension0 = reader.ReadInt32();
-                    int dimension1 = reader.ReadInt32();
-                    int dimension2 = reader.ReadInt32();
-
-                    // Read record
-                    byte[][] record = new byte[count][];
-                    for (int i = 0; i < count; i++)
-                    {
-                        record[i] = reader.ReadBytes(size);
-                    }
-                        
-                        
-
-
+                    int size = BitConverter.ToInt32(description, 88);
                     
-                    // Skip terminating value length => equal to 'lengthValue'
-                    reader.ReadInt32();
+                    byte[][] record = GetArray(reader, type == "RE");
+                    
+                    while (reader.PeekChar() != 4 && reader.BaseStream.Position != reader.BaseStream.Length)
+                    {
+                        record = record.Concat(GetArray(reader, type == "RE")).ToArray();
+                    }
 
-                    Console.WriteLine($"Header = '{new string(header)}'");
-                    Console.WriteLine($"Name = '{new string(name).Trim()}'");
-                    Console.WriteLine($"Type = '{new string(type)}'");
-                    Console.WriteLine($"LengthType = '{new string(lengthType)}':");
-                    Console.WriteLine($"LengthValue = '{recordLength}'");
-                    Console.WriteLine($"ItemCount: '{count}'");
-                    Console.WriteLine($"ItemSize: '{size}'");
-                    Console.WriteLine($"ArrayDimensions: '[{dimension0}][{dimension1}][{dimension2}]'");
+                    Console.WriteLine($"Header = '{header}'");
+                    Console.WriteLine($"Description = '{name.Trim('\u0000', '\u0002', '\u0020')}'");
+                    Console.WriteLine($"Type = '{type}'");
+                    Console.WriteLine($"Fill = '{lengthType}':");
+                    Console.WriteLine($"Elements: '{count}'");
+                    Console.WriteLine($"Size (bytes): '{size}'");
 
-                    for (int i = 0; i < count; i++)
+                    for (int i = 0; i < record.Length; i++)
                     {
                         Console.Write($"[{i}]: ");
-                        Console.WriteLine(Encoding.ASCII.GetString(record[i]));
+                        if (type == "1C")
+                        {
+                            Console.WriteLine(Encoding.ASCII.GetString(record[i]));
+                            continue;
+                        }
+                        Console.WriteLine(BitConverter.ToSingle(record[i], 0));
                     }
                 }
             }
 
             Console.ReadLine();
+        }
+
+        private static byte[][] GetArray(BinaryReader reader, bool real)
+        {
+            // Read the number of bytes stored in each sub-array
+            int arrayLengthInBytes = reader.ReadInt32();
+
+            // Buffer data
+            byte[] data = reader.ReadBytes(arrayLengthInBytes);
+
+            // Verify section length
+            if (reader.ReadInt32() != arrayLengthInBytes)
+            {
+                throw new InvalidDataException("Initiating and terminating lengths do not match.");
+            }
+
+            // Skip 4 spaces
+            if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
+            {
+                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+            }
+
+            // Read item dimensions
+            int dimension0 = BitConverter.ToInt32(data, 4);
+            int dimension1 = BitConverter.ToInt32(data, 8);
+            int dimension2 = data.Length > 12 ? BitConverter.ToInt32(data, 12) : 1; 
+            
+            int chunkSize = (arrayLengthInBytes - (real ? 8 : 16)) / (dimension2 > 0 ? dimension2 : 1);
+
+            byte[][] record = new byte[dimension2][];
+
+            // Read records
+            for (int i = 0; i < dimension2; i++)
+            {
+                record[i] = data.Skip((real ? 8 : 16)).Skip(i * chunkSize).Take(chunkSize).ToArray();
+            }
+            
+            return record;
         }
     }
 }
