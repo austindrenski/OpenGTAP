@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using HeaderArrayConverter;
 
 namespace HeaderArrayConsole
 {
@@ -25,74 +26,23 @@ namespace HeaderArrayConsole
                 {
                     Console.WriteLine("-----------------------------------------------");
 
-                    // Read length of the header
-                    int length = reader.ReadInt32();
+                    string header = GetHeader(reader);
 
-                    // Read header
-                    string header = Encoding.ASCII.GetString(reader.ReadBytes(length));
+                    HeaderArrayInfo info = GetDescription(reader);
 
-                    // Verify the length of the header
-                    if (length != reader.ReadInt32())
-                    {
-                        throw new InvalidDataException("Initiating and terminating lengths do not match.");
-                    }
+                    HeaderArray headerArray = GetArray(reader, info, header);
 
-                    // Read the length of the description
-                    int descriptionLength = reader.ReadInt32();
-
-                    byte[] description = reader.ReadBytes(descriptionLength);
-
-
-                    // Verify length of the description
-                    if (reader.ReadInt32() != descriptionLength)
-                    {
-                        throw new InvalidDataException("Initiating and terminating lengths do not match.");
-                    }
-
-                    // Skip 4 spaces
-                    if (BitConverter.ToInt32(description, 0) != 0x20_20_20_20)
-                    {
-                        throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-                    }
-
-                    // Read type => '1C', 'RE', etc
-                    string type = Encoding.ASCII.GetString(description, 4, 2);
-
-                    // Read length type => 'FULL'
-                    string lengthType = Encoding.ASCII.GetString(description, 6, 4);
-
-                    // Read longer name description with limit of 70 characters
-                    string name = Encoding.ASCII.GetString(description, 10, 74);
-
-                    // Read how many items are in the array
-                    int count = BitConverter.ToInt32(description, 84);
-
-                    // Read how long each element is
-                    int size = BitConverter.ToInt32(description, 88);
-
-                    byte[][] record = GetArray(reader, type == "RE");
-
-                    while (reader.PeekChar() != 4 && reader.BaseStream.Position != reader.BaseStream.Length)
-                    {
-                        record = record.Concat(GetArray(reader, type == "RE")).ToArray();
-                    }
-
-                    Console.WriteLine($"Header = '{header}'");
-                    Console.WriteLine($"Description = '{name.Trim('\u0000', '\u0002', '\u0020')}'");
-                    Console.WriteLine($"Type = '{type}'");
-                    Console.WriteLine($"Fill = '{lengthType}':");
-                    Console.WriteLine($"Elements: '{count}'");
-                    Console.WriteLine($"Size (bytes): '{size}'");
-
-                    for (int i = 0; i < record.Length; i++)
+                    Console.WriteLine(headerArray);
+                    
+                    for (int i = 0; i < headerArray.Array.Length; i++)
                     {
                         Console.Write($"[{i}]: ");
-                        if (type == "1C")
+                        if (info.Type == "1C")
                         {
-                            Console.WriteLine(Encoding.ASCII.GetString(record[i]));
+                            Console.WriteLine(Encoding.ASCII.GetString(headerArray.Array[i].ToArray()));
                             continue;
                         }
-                        Console.WriteLine(BitConverter.ToSingle(record[i], 0));
+                        Console.WriteLine(BitConverter.ToSingle(headerArray.Array[i].ToArray(), 0));
                     }
                 }
             }
@@ -100,7 +50,61 @@ namespace HeaderArrayConsole
             Console.ReadLine();
         }
 
-        private static byte[][] GetArray(BinaryReader reader, bool real)
+        private static string GetHeader(BinaryReader reader)
+        {
+            // Read length of the header
+            int length = reader.ReadInt32();
+
+            // Read header
+            string header = Encoding.ASCII.GetString(reader.ReadBytes(length));
+
+            // Verify the length of the header
+            if (length != reader.ReadInt32())
+            {
+                throw new InvalidDataException("Initiating and terminating lengths do not match.");
+            }
+
+            return header;
+        }
+
+        private static HeaderArrayInfo GetDescription(BinaryReader reader)
+        {
+            // Read the length of the description
+            int descriptionLength = reader.ReadInt32();
+
+            byte[] descriptionBuffer = reader.ReadBytes(descriptionLength);
+
+            // Verify length of the description
+            if (reader.ReadInt32() != descriptionLength)
+            {
+                throw new InvalidDataException("Initiating and terminating lengths do not match.");
+            }
+
+            // Skip 4 spaces
+            if (BitConverter.ToInt32(descriptionBuffer, 0) != 0x20_20_20_20)
+            {
+                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+            }
+
+            // Read type => '1C', 'RE', etc
+            string type = Encoding.ASCII.GetString(descriptionBuffer, 4, 2);
+
+            // Read length type => 'FULL'
+            bool sparse = Encoding.ASCII.GetString(descriptionBuffer, 6, 4) != "FULL";
+
+            // Read longer name description with limit of 70 characters
+            string description = Encoding.ASCII.GetString(descriptionBuffer, 10, 74);
+
+            // Read how many items are in the array
+            int count = BitConverter.ToInt32(descriptionBuffer, 84);
+
+            // Read how long each element is
+            int size = BitConverter.ToInt32(descriptionBuffer, 88);
+
+            return new HeaderArrayInfo(count, description, size, sparse, type);
+        }
+
+        private static (byte[][] Array, int X0, int X1, int X2) GetArray(BinaryReader reader, bool real)
         {
             // Read the number of bytes stored in each sub-array
             int arrayLengthInBytes = reader.ReadInt32();
@@ -121,21 +125,33 @@ namespace HeaderArrayConsole
             }
 
             // Read item dimensions
-            int dimension0 = BitConverter.ToInt32(data, 4);
-            int dimension1 = BitConverter.ToInt32(data, 8);
-            int dimension2 = data.Length > 12 ? BitConverter.ToInt32(data, 12) : 1;
+            int x0 = BitConverter.ToInt32(data, 4);
+            int x1 = BitConverter.ToInt32(data, 8);
+            int x2 = data.Length > 12 ? BitConverter.ToInt32(data, 12) : 1;
 
-            int chunkSize = (arrayLengthInBytes - (real ? 8 : 16)) / (dimension2 > 0 ? dimension2 : 1);
+            int chunkSize = (arrayLengthInBytes - (real ? 8 : 16)) / (x2 > 0 ? x2 : 1);
 
-            byte[][] record = new byte[dimension2][];
+            byte[][] record = new byte[x2][];
 
             // Read records
-            for (int i = 0; i < dimension2; i++)
+            for (int i = 0; i < x2; i++)
             {
-                record[i] = data.Skip((real ? 8 : 16)).Skip(i * chunkSize).Take(chunkSize).ToArray();
+                record[i] = data.Skip(real ? 8 : 16).Skip(i * chunkSize).Take(chunkSize).ToArray();
             }
 
-            return record;
+            return (record, x0, x1, x2);
+        }
+
+        private static HeaderArray GetArray(BinaryReader reader, HeaderArrayInfo info, string header)
+        {
+            (byte[][] array, int x0, int x1, int x2) = GetArray(reader, info.Type == "RE");
+
+            while (reader.PeekChar() != 4 && reader.BaseStream.Position != reader.BaseStream.Length)
+            {
+                array = array.Concat(GetArray(reader, info.Type == "RE").Array).ToArray();
+            }
+
+            return new HeaderArray(header, info, x0, x1, x2, array);
         }
     }
 }
