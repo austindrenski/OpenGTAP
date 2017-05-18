@@ -122,11 +122,11 @@ namespace HeaderArrayConverter
             }
             if (count != x1)
             {
-                Console.Out.WriteLineAsync($"Warning => Dimension mismatch: {nameof(count)} is not equal to {nameof(x1)}.");
+                Console.Error.WriteLineAsync($"Warning => Dimension mismatch: {nameof(count)} is not equal to {nameof(x1)}.");
             }
             if (x0 * x2 < count)
             {
-                Console.Out.WriteLineAsync($"Warning => Dimension mismatch: {nameof(count)} is greater than the product of {nameof(x0)} and {nameof(x2)}.");
+                Console.Error.WriteLineAsync($"Warning => Dimension mismatch: {nameof(count)} is greater than the product of {nameof(x0)} and {nameof(x2)}.");
             }
 
             Header = header;
@@ -167,7 +167,6 @@ namespace HeaderArrayConverter
 
             while (reader.PeekChar() != 4 && reader.BaseStream.Position != reader.BaseStream.Length)
             {
-
                 array = array.Concat(GetArray(reader, type == "RE").Array).ToArray();
             }
 
@@ -221,13 +220,13 @@ namespace HeaderArrayConverter
             bool sparse = Encoding.ASCII.GetString(descriptionBuffer, 6, 4) != "FULL";
 
             // Read longer name description with limit of 70 characters
-            string description = Encoding.ASCII.GetString(descriptionBuffer, 10, 74);
+            string description = Encoding.ASCII.GetString(descriptionBuffer, 10, descriptionLength - 10 - 4 - 4);
 
             // Read how many items are in the array
-            int count = BitConverter.ToInt32(descriptionBuffer, 84);
+            int count = BitConverter.ToInt32(descriptionBuffer, descriptionLength - 4 - 4);
 
             // Read how long each element is
-            int size = BitConverter.ToInt32(descriptionBuffer, 88);
+            int size = BitConverter.ToInt32(descriptionBuffer, descriptionLength - 4);
 
             return (count, description, header, size, sparse, type);
         }
@@ -256,6 +255,24 @@ namespace HeaderArrayConverter
             int x0 = BitConverter.ToInt32(data, 4);
             int x1 = BitConverter.ToInt32(data, 8);
             int x2 = data.Length > 12 ? BitConverter.ToInt32(data, 12) : 1;
+
+            if (x1 == -1)
+            {
+                // Then I'm looking at a matrix header where x0 == columns and x2 == rows
+                // So read 4 more bytes to take the header
+                string header = Encoding.ASCII.GetString(data, 16, 4);
+                // Skip 4 bytes of padding
+                if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
+                {
+                    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+                }
+                // Skip 4 bytes of padding
+                if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
+                {
+                    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+                }
+
+            }
 
             // Find the 
             int elementSize = (arrayLengthInBytes - (real ? 8 : 16)) / (x2 > 0 ? x2 : 1);
