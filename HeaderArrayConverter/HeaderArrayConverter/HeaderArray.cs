@@ -254,24 +254,32 @@ namespace HeaderArrayConverter
             // Read item dimensions => [x0][x1][x2]
             int x0 = BitConverter.ToInt32(data, 4);
             int x1 = BitConverter.ToInt32(data, 8);
-            int x2 = data.Length > 12 ? BitConverter.ToInt32(data, 12) : 1;
+            int x2 = !real ? BitConverter.ToInt32(data, 12) : 1;
 
             if (x1 == -1)
             {
                 // Then I'm looking at a matrix header where x0 == columns and x2 == rows
                 // So read 4 more bytes to take the header
-                string header = Encoding.ASCII.GetString(data, 16, 4);
-                // Skip 4 bytes of padding
-                if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
-                {
-                    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-                }
-                // Skip 4 bytes of padding
-                if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
-                {
-                    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-                }
+                //string header = Encoding.ASCII.GetString(data, 16, 4);
+                //// Skip 4 bytes of padding
+                //if (BitConverter.ToInt32(data, 20) != 0x20_20_20_20)
+                //{
+                //    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+                //}
+                //// Skip 4 bytes of padding
+                //if (BitConverter.ToInt32(data, 24) != 0x20_20_20_20)
+                //{
+                //    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+                //}
+                //// Skip 4 bytes of 0xFF_FF_FF_FF
+                //if (BitConverter.ToInt32(data, 28) != -1)
+                //{
+                //    throw new InvalidDataException("Failed to find expected padding of '0xFF_FF_FF_FF'");
+                //}
+                string labels = Encoding.ASCII.GetString(data, 16, arrayLengthInBytes - 16);
 
+
+                Console.WriteLine(labels);
             }
 
             // Find the 
