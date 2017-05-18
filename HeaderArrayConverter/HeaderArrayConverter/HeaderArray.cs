@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -151,7 +152,7 @@ namespace HeaderArrayConverter
                 $"{nameof(Count)}: {Count}\r\n" +
                 $"{nameof(Size)}: {Size}\r\n" +
                 $"{nameof(Sparse)}: {Sparse}\r\n" +
-                $"Dimensions: [{X0}][{X1}][{X2}]\r\n";
+                $"Array: [{X0}][{X1}][{X2}]";
         }
 
         /// <summary>
@@ -171,6 +172,15 @@ namespace HeaderArrayConverter
             }
 
             return new HeaderArray(header, description, type, count, size, sparse, x0, x1, x2, array);
+        }
+
+        /// <summary>
+        /// Asynchronously reads one entry from a Header Array (HAR) file.
+        /// </summary>
+        [NotNull]
+        public static async Task<HeaderArray> ReadAsync(BinaryReader reader)
+        {
+            return await Task.FromResult(Read(reader));
         }
 
         private static (int Count, string Description, string Header, int Size, bool Sparse, string Type) GetDescription(BinaryReader reader)
