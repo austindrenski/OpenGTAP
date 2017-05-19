@@ -38,15 +38,7 @@ namespace HeaderArrayConsole
                         for (int i = 0; i < headerArray.Array.Length; i++)
                         {
                             Console.Write($"[{i}]: ");
-                            if (headerArray.Type == "1C")
-                            {
-                                Console.WriteLine(Encoding.ASCII.GetString(headerArray.Array[i].ToArray()));
-                                continue;
-                            }
-                            if (new string[] { "RE", "RL" }.Contains(headerArray.Type))
-                            {
-                                Console.WriteLine(string.Join(", ", headerArray.Floats[i]));
-                            }
+                            Console.WriteLine(Encoding.ASCII.GetString(headerArray.Array[i].ToArray()));
                         }
                     }
                     else
