@@ -10,8 +10,9 @@ namespace HeaderArrayConsole
     {
         public static void Main()
         {
-            const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\US_3x3_BaseData.har";
+            //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\US_3x3_BaseData.har";
             //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
+            const string file = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
             //const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
 
             byte[] bytes = File.ReadAllBytes(file);
@@ -21,31 +22,45 @@ namespace HeaderArrayConsole
             Console.WriteLine("END");
             Console.WriteLine();
 
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read), Encoding.ASCII))
+            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
             {
                 while (reader.BaseStream.Position != reader.BaseStream.Length)
                 {
                     Console.WriteLine("-----------------------------------------------");
 
-                    HeaderArray headerArray = 
+                    HeaderArray headerArray =
                         HeaderArray.Read(reader);
 
                     Console.WriteLine(headerArray);
-                    
-                    for (int i = 0; i < headerArray.Array.Length; i++)
+
+                    if (headerArray.Type == "1C")
                     {
-                        Console.Write($"[{i}]: ");
-                        if (headerArray.Type == "1C")
+                        for (int i = 0; i < headerArray.Array.Length; i++)
                         {
-                            Console.WriteLine(Encoding.ASCII.GetString(headerArray.Array[i].ToArray()));
-                            continue;
+                            Console.Write($"[{i}]: ");
+                            if (headerArray.Type == "1C")
+                            {
+                                Console.WriteLine(Encoding.ASCII.GetString(headerArray.Array[i].ToArray()));
+                                continue;
+                            }
+                            if (new string[] { "RE", "RL" }.Contains(headerArray.Type))
+                            {
+                                Console.WriteLine(string.Join(", ", headerArray.Floats[i]));
+                            }
                         }
-                        Console.WriteLine(BitConverter.ToSingle(headerArray.Array[i].ToArray(), 0));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < headerArray.Floats.Length; i++)
+                        {
+                            Console.Write($"[{i}]: ");
+                            Console.WriteLine(string.Join(", ", headerArray.Floats[i]));
+                        }
                     }
                 }
-            }
 
-            Console.ReadLine();
+                Console.ReadLine();
+            }
         }
     }
 }

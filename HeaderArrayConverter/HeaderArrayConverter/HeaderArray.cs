@@ -69,6 +69,11 @@ namespace HeaderArrayConverter
         /// The immutable byte array for each record in the logical array.
         /// </summary>
         public ImmutableArray<ImmutableArray<byte>> Array { get; }
+
+        /// <summary>
+        /// The decoded form of <see cref="Array"/>
+        /// </summary>
+        public ImmutableArray<ImmutableArray<float>> Floats { get; }
         
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -139,7 +144,13 @@ namespace HeaderArrayConverter
             X2 = x2;
             Array = array.Select(x => x.ToImmutableArray()).ToImmutableArray();
         }
-        
+
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, bool sparse, int x0, int x1, int x2, [ItemNotNull, NotNull] byte[][] array, float[][] floats) : this(header, description, type, count, size, sparse, x0, x1, x2, array)
+        {
+            Floats = floats.Select(x => x.ToImmutableArray()).ToImmutableArray();
+        }
+
+
         /// <summary>
         /// Returns a string representation of the contents of this <see cref="HeaderArray"/>.
         /// </summary>
@@ -163,14 +174,22 @@ namespace HeaderArrayConverter
         {
             (int count, string description, string header, int size, bool sparse, string type) = GetDescription(reader);
 
-            (int x0, int x1, int x2, byte[][] array) = GetArray(reader, type == "RE");
+            int x0;
+            int x1;
+            int x2;
+            byte[][] array;
+            float[][] floats = new float[0][];
 
-            while (reader.PeekChar() != 4 && reader.BaseStream.Position != reader.BaseStream.Length)
+            if (type == "1C")
             {
-                array = array.Concat(GetArray(reader, type == "RE").Array).ToArray();
+                (x0, x1, x2, array) = GetStringArray(reader);
+            }
+            else
+            {
+                (x0, x1, x2, array, floats) = GetReArray(reader);
             }
 
-            return new HeaderArray(header, description, type, count, size, sparse, x0, x1, x2, array);
+            return new HeaderArray(header, description, type, count, size, sparse, x0, x1, x2, array, floats);
         }
 
         /// <summary>
@@ -220,7 +239,7 @@ namespace HeaderArrayConverter
             bool sparse = Encoding.ASCII.GetString(descriptionBuffer, 6, 4) != "FULL";
 
             // Read longer name description with limit of 70 characters
-            string description = Encoding.ASCII.GetString(descriptionBuffer, 10, descriptionLength - 10 - 4 - 4);
+            string description = Encoding.ASCII.GetString(descriptionBuffer, 10, 70);
 
             // Read how many items are in the array
             int count = BitConverter.ToInt32(descriptionBuffer, descriptionLength - 4 - 4);
@@ -231,7 +250,65 @@ namespace HeaderArrayConverter
             return (count, description, header, size, sparse, type);
         }
 
-        private static (int X0, int X1, int X2, byte[][] Array) GetArray(BinaryReader reader, bool real)
+        private static (int X0, int X1, int X2, byte[][] Array, float[][]) GetReArray(BinaryReader reader)
+        {
+            // read dimension array
+            byte[] dimensions = InitializeArray(reader);
+
+            byte[] labels = InitializeArray(reader);
+
+            int columns = BitConverter.ToInt32(labels, 4);
+            int rows = BitConverter.ToInt32(labels, 8);
+            int intsToRead = BitConverter.ToInt32(labels, 12);
+
+            byte[] meta = InitializeArray(reader);
+
+            byte[] data = InitializeArray(reader);
+
+            int x0 = BitConverter.ToInt32(data, 4);
+
+            byte[][] record = new byte[3][];
+
+            record[0] = dimensions;
+            record[1] = labels;
+            record[2] = data.Skip(8).ToArray();
+
+            float[][] floats = new float[x0][];
+
+            // Read records
+            for (int i = 0; i < x0; i++)
+            {
+                floats[i] = new float[floats.Length];
+                for (int j = 0; j < floats.Length; j++)
+                {
+                    floats[i][j] = BitConverter.ToSingle(record[2], i * 4);
+                }
+            }
+
+            return (x0, 0, 0, record, floats);
+        }
+
+        private static byte[] InitializeArray(BinaryReader reader)
+        {
+            int length = reader.ReadInt32();
+
+            byte[] data = reader.ReadBytes(length);
+
+            // Verify section length
+            if (reader.ReadInt32() != length)
+            {
+                throw new InvalidDataException("Initiating and terminating lengths do not match.");
+            }
+
+            if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
+            {
+                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+            }
+
+            return data;
+        }
+
+        private static (int X0, int X1, int X2, byte[][] Array) GetStringArray(BinaryReader reader)
         {
             // Read the number of bytes stored in each sub-array
             int arrayLengthInBytes = reader.ReadInt32();
@@ -254,7 +331,7 @@ namespace HeaderArrayConverter
             // Read item dimensions => [x0][x1][x2]
             int x0 = BitConverter.ToInt32(data, 4);
             int x1 = BitConverter.ToInt32(data, 8);
-            int x2 = !real ? BitConverter.ToInt32(data, 12) : 1;
+            int x2 = BitConverter.ToInt32(data, 12);
 
             if (x1 == -1)
             {
@@ -283,14 +360,14 @@ namespace HeaderArrayConverter
             }
 
             // Find the 
-            int elementSize = (arrayLengthInBytes - (real ? 8 : 16)) / (x2 > 0 ? x2 : 1);
+            int elementSize = (arrayLengthInBytes - 16) / (x2 > 0 ? x2 : 1);
 
             byte[][] record = new byte[x2][];
 
             // Read records
             for (int i = 0; i < x2; i++)
             {
-                record[i] = data.Skip(real ? 8 : 16).Skip(i * elementSize).Take(elementSize).ToArray();
+                record[i] = data.Skip(16).Skip(i * elementSize).Take(elementSize).ToArray();
             }
 
             return (x0, x1, x2, record);
