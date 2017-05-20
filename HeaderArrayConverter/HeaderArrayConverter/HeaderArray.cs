@@ -400,8 +400,7 @@ namespace HeaderArrayConverter
 
             return (0, 0, 0, record, floats);
         }
-
-
+        
         private static (int X0, int X1, int X2, byte[][] Array, float[][]) GetRlArray(BinaryReader reader)
         {
             // read dimension array
@@ -469,39 +468,59 @@ namespace HeaderArrayConverter
 
         private static (int X0, int X1, int X2, byte[][] Array) GetStringArray(BinaryReader reader)
         {
-            // Read the number of bytes stored in each sub-array
-            int arrayLengthInBytes = reader.ReadInt32();
+            //// Read the number of bytes stored in each sub-array
+            //int arrayLengthInBytes = reader.ReadInt32();
 
-            // Buffer data
-            byte[] data = reader.ReadBytes(arrayLengthInBytes);
+            //// Buffer data
+            //byte[] data = reader.ReadBytes(arrayLengthInBytes);
 
-            // Verify section length
-            if (reader.ReadInt32() != arrayLengthInBytes)
-            {
-                throw new InvalidDataException("Initiating and terminating lengths do not match.");
-            }
+            //// Verify section length
+            //if (reader.ReadInt32() != arrayLengthInBytes)
+            //{
+            //    throw new InvalidDataException("Initiating and terminating lengths do not match.");
+            //}
 
-            // Skip 4 spaces
-            if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
-            {
-                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-            }
+            //// Skip 4 spaces
+            //if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
+            //{
+            //    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+            //}
+
+            byte[] data = InitializeArray(reader);
 
             // Read item dimensions => [x0][x1][x2]
-            int x0 = BitConverter.ToInt32(data, 4);
-            int x1 = BitConverter.ToInt32(data, 8);
-            int x2 = BitConverter.ToInt32(data, 12);
+            int x0 = BitConverter.ToInt32(data, 0);
+            int x1 = BitConverter.ToInt32(data, 4);
+            int x2 = BitConverter.ToInt32(data, 8);
 
             // Find the 
-            int elementSize = (arrayLengthInBytes - 16) / (x2 > 0 ? x2 : 1);
+            //int elementSize = (arrayLengthInBytes - 16) / (x2 > 0 ? x2 : 1);
+            int elementSize = (data.Length - 12) / (x2 > 0 ? x2 : 1);
 
-            byte[][] record = new byte[x2][];
+            byte[][] record = new byte[x1][];
 
-            // Read records
-            for (int i = 0; i < x2; i++)
+            for (int i = 0; i < x0; i++)
             {
-                record[i] = data.Skip(16).Skip(i * elementSize).Take(elementSize).ToArray();
+                if (i > 0)
+                {
+                    data = InitializeArray(reader);
+                }
+                for (int j = 0; j < x2; j++)
+                {
+                    int item = i * x2 + j;
+                    if (item >= x1)
+                    {
+                        break;
+                    }
+                    record[item] = data.Skip(12).Skip(j * elementSize).Take(elementSize).ToArray();
+                }
             }
+            
+            //// Read records
+            //for (int i = 0; i < x1; i++)
+            //{
+            //    record[i] = data.Skip(16).Skip(i * elementSize).Take(elementSize).ToArray();
+            //}
 
             return (x0, x1, x2, record);
         }
