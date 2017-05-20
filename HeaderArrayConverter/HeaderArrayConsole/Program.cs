@@ -26,30 +26,8 @@ namespace HeaderArrayConsole
                 while (reader.BaseStream.Position != reader.BaseStream.Length)
                 {
                     Console.WriteLine("-----------------------------------------------");
-
-                    HeaderArray headerArray =
-                        HeaderArray.Read(reader);
-
-                    Console.WriteLine(headerArray);
-
-                    if (headerArray is HeaderArray1C stringHeaderArray)
-                    {
-                        for (int i = 0; i < stringHeaderArray.Strings.Length; i++)
-                        {
-                            Console.Write($"[{i}]: ");
-                            Console.WriteLine(stringHeaderArray.Strings[i]);
-                        }
-                    }
-                    else if (headerArray is HeaderArrayRE realHeaderArray)
-                    {
-                        for (int i = 0; i < realHeaderArray.Floats.Length; i++)
-                        {
-                            Console.Write($"[{i}]: ");
-                            Console.WriteLine(string.Join(", ", realHeaderArray.Floats[i]));
-                        }
-                    }
+                    Console.WriteLine(HeaderArray.Read(reader));
                 }
-
                 Console.ReadLine();
             }
         }

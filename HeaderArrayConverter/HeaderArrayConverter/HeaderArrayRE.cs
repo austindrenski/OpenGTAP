@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Text;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -15,6 +16,17 @@ namespace HeaderArrayConverter
             : base(header, description, type, count, size, sparse, x0, x1, x2)
         {
             Floats = floats.ToImmutableArray();
+        }
+
+        public override string ToString()
+        {
+            StringBuilder stringBuilder = new StringBuilder(base.ToString());
+
+            for (int i = 0; i < Floats.Length; i++)
+            {
+                stringBuilder.AppendLine($"[{i}]: {Floats[i]}");
+            }
+            return stringBuilder.ToString();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -162,10 +161,14 @@ namespace HeaderArrayConverter
                     (int x0, int x1, int x2, float[] floats) = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
                     return new HeaderArrayRE(header, description, type, count, size, sparse, x0, x1, x2, floats);
                 }
-                default:
+                case "RL":
                 {
                     (int x0, int x1, int x2, float[] floats) = GetRlArray(reader);
                     return new HeaderArrayRE(header, description, type, count, size, sparse, x0, x1, x2, floats);
+                }
+                default:
+                {
+                    throw new InvalidDataException($"Unknown array type encountered: {type}");
                 }
             }
         }
@@ -226,37 +229,22 @@ namespace HeaderArrayConverter
                 throw new InvalidDataException("Initiating and terminating lengths do not match.");
             }
 
-            // Read the length of the description
-            int descriptionLength = reader.ReadInt32();
-
-            byte[] descriptionBuffer = reader.ReadBytes(descriptionLength);
-
-            // Verify length of the description
-            if (reader.ReadInt32() != descriptionLength)
-            {
-                throw new InvalidDataException("Initiating and terminating lengths do not match.");
-            }
-
-            // Skip 4 spaces
-            if (BitConverter.ToInt32(descriptionBuffer, 0) != 0x20_20_20_20)
-            {
-                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-            }
+            byte[] descriptionBuffer = InitializeArray(reader);
 
             // Read type => '1C', 'RE', etc
-            string type = Encoding.ASCII.GetString(descriptionBuffer, 4, 2);
+            string type = Encoding.ASCII.GetString(descriptionBuffer, 0, 2);
 
             // Read length type => 'FULL'
-            bool sparse = Encoding.ASCII.GetString(descriptionBuffer, 6, 4) != "FULL";
+            bool sparse = Encoding.ASCII.GetString(descriptionBuffer, 2, 4) != "FULL";
 
             // Read longer name description with limit of 70 characters
-            string description = Encoding.ASCII.GetString(descriptionBuffer, 10, 70);
+            string description = Encoding.ASCII.GetString(descriptionBuffer, 6, 70);
 
             // Read how many items are in the array
-            int count = BitConverter.ToInt32(descriptionBuffer, descriptionLength - 4 - 4);
+            int count = BitConverter.ToInt32(descriptionBuffer, description.Length - 4 - 4);
 
             // Read how long each element is
-            int size = BitConverter.ToInt32(descriptionBuffer, descriptionLength - 4);
+            int size = BitConverter.ToInt32(descriptionBuffer, description.Length - 4);
 
             return (count, description, header, size, sparse, type);
         }
