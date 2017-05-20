@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using HeaderArrayConverter;
 
@@ -33,20 +32,20 @@ namespace HeaderArrayConsole
 
                     Console.WriteLine(headerArray);
 
-                    if (headerArray.Type == "1C")
+                    if (headerArray is HeaderArray1C stringHeaderArray)
                     {
-                        for (int i = 0; i < headerArray.Array.Length; i++)
+                        for (int i = 0; i < stringHeaderArray.Strings.Length; i++)
                         {
                             Console.Write($"[{i}]: ");
-                            Console.WriteLine(Encoding.ASCII.GetString(headerArray.Array[i].ToArray()));
+                            Console.WriteLine(stringHeaderArray.Strings[i]);
                         }
                     }
-                    else
+                    else if (headerArray is HeaderArrayRE realHeaderArray)
                     {
-                        for (int i = 0; i < headerArray.Floats.Length; i++)
+                        for (int i = 0; i < realHeaderArray.Floats.Length; i++)
                         {
                             Console.Write($"[{i}]: ");
-                            Console.WriteLine(string.Join(", ", headerArray.Floats[i]));
+                            Console.WriteLine(string.Join(", ", realHeaderArray.Floats[i]));
                         }
                     }
                 }

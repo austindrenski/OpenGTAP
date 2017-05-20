@@ -64,16 +64,6 @@ namespace HeaderArrayConverter
         /// This represents the maximum number of elements in any of the arrays used to store this <see cref="HeaderArray"/> by Fortran.
         /// </summary>
         public int X2 { get; }
-
-        /// <summary>
-        /// The immutable byte array for each record in the logical array.
-        /// </summary>
-        public ImmutableArray<ImmutableArray<byte>> Array { get; }
-
-        /// <summary>
-        /// The decoded form of <see cref="Array"/>
-        /// </summary>
-        public ImmutableArray<ImmutableArray<float>> Floats { get; }
         
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -108,10 +98,7 @@ namespace HeaderArrayConverter
         /// The third dimension of the <see cref="HeaderArray"/>.
         /// This represents the maximum number of elements in any of the arrays used to store this <see cref="HeaderArray"/> by Fortran.
         /// </param>
-        /// <param name="array">
-        /// The immutable byte array for each record in the logical array.
-        /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, bool sparse, int x0, int x1, int x2, [NotNull][ItemNotNull] byte[][] array)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, bool sparse, int x0, int x1, int x2)
         {
             if (header is null)
             {
@@ -120,10 +107,6 @@ namespace HeaderArrayConverter
             if (type is null)
             {
                 throw new ArgumentNullException(nameof(type));
-            }
-            if (array is null)
-            {
-                throw new ArgumentNullException(nameof(array));
             }
             if (count != x1)
             {
@@ -142,12 +125,6 @@ namespace HeaderArrayConverter
             X0 = x0;
             X1 = x1;
             X2 = x2;
-            Array = array.Select(x => x.ToImmutableArray()).ToImmutableArray();
-        }
-
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, bool sparse, int x0, int x1, int x2, [ItemNotNull, NotNull] byte[][] array, float[][] floats) : this(header, description, type, count, size, sparse, x0, x1, x2, array)
-        {
-            Floats = floats.Select(x => x.ToImmutableArray()).ToImmutableArray();
         }
         
         /// <summary>
@@ -173,26 +150,24 @@ namespace HeaderArrayConverter
         {
             (int count, string description, string header, int size, bool sparse, string type) = GetDescription(reader);
 
-            int x0;
-            int x1;
-            int x2;
-            byte[][] array;
-            float[][] floats = new float[0][];
-
-            if (type == "1C")
+            switch (type)
             {
-                (x0, x1, x2, array) = GetStringArray(reader);
+                case "1C":
+                {
+                    (int x0, int x1, int x2, string[] strings) = GetStringArray(reader);
+                    return new HeaderArray1C(header, description, type, count, size, sparse, x0, x1, x2, strings);
+                }
+                case "RE":
+                {
+                    (int x0, int x1, int x2, float[] floats) = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
+                    return new HeaderArrayRE(header, description, type, count, size, sparse, x0, x1, x2, floats);
+                }
+                default:
+                {
+                    (int x0, int x1, int x2, float[] floats) = GetRlArray(reader);
+                    return new HeaderArrayRE(header, description, type, count, size, sparse, x0, x1, x2, floats);
+                }
             }
-            else if (type == "RE")
-            {
-                (x0, x1, x2, array, floats) = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
-            }
-            else
-            {
-                (x0, x1, x2, array, floats) = GetRlArray(reader);
-            }
-
-            return new HeaderArray(header, description, type, count, size, sparse, x0, x1, x2, array, floats);
         }
 
         /// <summary>
@@ -202,6 +177,39 @@ namespace HeaderArrayConverter
         public static async Task<HeaderArray> ReadAsync(BinaryReader reader)
         {
             return await Task.FromResult(Read(reader));
+        }
+
+        /// <summary>
+        /// Reads the next array from the <see cref="BinaryReader"/>.
+        /// </summary>
+        /// <param name="reader">
+        /// The <see cref="BinaryReader"/> from which the array is read.
+        /// </param>
+        /// <returns>
+        /// The next array from the <see cref="BinaryReader"/> starting after the initial padding (e.g. 0x20_20_20_20).
+        /// </returns>
+        private static byte[] InitializeArray(BinaryReader reader)
+        {
+            // Read array length
+            int length = reader.ReadInt32();
+
+            // Read array
+            byte[] data = reader.ReadBytes(length);
+
+            // Verify array length
+            if (reader.ReadInt32() != length)
+            {
+                throw new InvalidDataException("Initiating and terminating lengths do not match.");
+            }
+
+            // Verify the padding
+            if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
+            {
+                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+            }
+
+            // Skip padding and return
+            return data.Skip(4).ToArray();
         }
 
         private static (int Count, string Description, string Header, int Size, bool Sparse, string Type) GetDescription(BinaryReader reader)
@@ -253,7 +261,7 @@ namespace HeaderArrayConverter
             return (count, description, header, size, sparse, type);
         }
 
-        private static (int X0, int X1, int X2, byte[][] Array, float[][]) GetReFullArray(BinaryReader reader)
+        private static (int X0, int X1, int X2, float[]) GetReFullArray(BinaryReader reader)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -323,19 +331,18 @@ namespace HeaderArrayConverter
             record[1] = labels.SelectMany(x => x.Select(y => y)).ToArray();
             record[2] = data.Skip(4).ToArray();
 
-            float[][] floats = new float[dataDim][];
+            float[] floats = new float[count];
 
             // Read records
-            floats[0] = new float[count];
             for (int i = 0; i < count; i++)
             {
-                floats[0][i] = BitConverter.ToSingle(record[2], i * 4);
+                floats[i] = BitConverter.ToSingle(record[2], i * 4);
             }
 
-            return (0, 0, 0, record, floats);
+            return (0, 0, 0, floats);
         }
 
-        private static (int X0, int X1, int X2, byte[][] Array, float[][]) GetReSparseArray(BinaryReader reader)
+        private static (int X0, int X1, int X2, float[]) GetReSparseArray(BinaryReader reader)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -389,19 +396,18 @@ namespace HeaderArrayConverter
             record[1] = labels.SelectMany(x => x.Select(y => y)).ToArray();
             record[2] = data.Skip(12 + countOfIndices * 4).ToArray();
 
-            float[][] floats = new float[dataDim][];
+            float[] floats = new float[a * a * c];
 
             // Read records
-            floats[0] = new float[a * a * c];
             for (int i = 0; i < countOfIndices; i++)
             {
-                floats[0][indices[i]] = BitConverter.ToSingle(record[2], i * 4);
+                floats[indices[i]] = BitConverter.ToSingle(record[2], i * 4);
             }
 
-            return (0, 0, 0, record, floats);
+            return (0, 0, 0, floats);
         }
         
-        private static (int X0, int X1, int X2, byte[][] Array, float[][]) GetRlArray(BinaryReader reader)
+        private static (int X0, int X1, int X2, float[]) GetRlArray(BinaryReader reader)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -416,7 +422,7 @@ namespace HeaderArrayConverter
             int d6 = BitConverter.ToInt32(dimensions, 32);
 
             byte[] dimDefinitons = InitializeArray(reader);
-            int x0 = d0 * d1 * d2 * d3 * d4 * d5 * d6; // BitConverter.ToInt32(dimDefinitons, 0);
+            int x0 = d0 * d1 * d2 * d3 * d4 * d5 * d6; 
             int[][] dimDescriptions = new int[x0][];
             for (int i = 0; i < x0; i++)
             {
@@ -434,70 +440,29 @@ namespace HeaderArrayConverter
             record[0] = dimensions;
             record[1] = data.Skip(4).ToArray();
 
-            float[][] floats = new float[dataDim][];
+            float[] floats = new float[x0];
 
             // Read records
-            floats[0] = new float[x0];
             for (int i = 0; i < x0; i++)
             {
-                floats[0][i] = BitConverter.ToSingle(record[1], i * 4);
+                floats[i] = BitConverter.ToSingle(record[1], i * 4);
             }
 
-            return (x0, 0, 0, record, floats);
+            return (x0, 0, 0, floats);
         }
-        
-        private static byte[] InitializeArray(BinaryReader reader)
+  
+        private static (int X0, int X1, int X2, string[] Strings) GetStringArray(BinaryReader reader)
         {
-            int length = reader.ReadInt32();
-
-            byte[] data = reader.ReadBytes(length);
-
-            // Verify section length
-            if (reader.ReadInt32() != length)
-            {
-                throw new InvalidDataException("Initiating and terminating lengths do not match.");
-            }
-
-            if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
-            {
-                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-            }
-
-            return data.Skip(4).ToArray();
-        }
-
-        private static (int X0, int X1, int X2, byte[][] Array) GetStringArray(BinaryReader reader)
-        {
-            //// Read the number of bytes stored in each sub-array
-            //int arrayLengthInBytes = reader.ReadInt32();
-
-            //// Buffer data
-            //byte[] data = reader.ReadBytes(arrayLengthInBytes);
-
-            //// Verify section length
-            //if (reader.ReadInt32() != arrayLengthInBytes)
-            //{
-            //    throw new InvalidDataException("Initiating and terminating lengths do not match.");
-            //}
-
-            //// Skip 4 spaces
-            //if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
-            //{
-            //    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-            //}
-
             byte[] data = InitializeArray(reader);
 
-            // Read item dimensions => [x0][x1][x2]
             int x0 = BitConverter.ToInt32(data, 0);
             int x1 = BitConverter.ToInt32(data, 4);
             int x2 = BitConverter.ToInt32(data, 8);
 
-            // Find the 
-            //int elementSize = (arrayLengthInBytes - 16) / (x2 > 0 ? x2 : 1);
-            int elementSize = (data.Length - 12) / (x2 > 0 ? x2 : 1);
+            int elementSize = (data.Length - 12) / x2;
 
             byte[][] record = new byte[x1][];
+            string[] strings = new string[x1];
 
             for (int i = 0; i < x0; i++)
             {
@@ -513,16 +478,11 @@ namespace HeaderArrayConverter
                         break;
                     }
                     record[item] = data.Skip(12).Skip(j * elementSize).Take(elementSize).ToArray();
+                    strings[item] = Encoding.ASCII.GetString(record[item]);
                 }
             }
-            
-            //// Read records
-            //for (int i = 0; i < x1; i++)
-            //{
-            //    record[i] = data.Skip(16).Skip(i * elementSize).Take(elementSize).ToArray();
-            //}
 
-            return (x0, x1, x2, record);
+            return (x0, x1, x2, strings);
         }
     }
 }
