@@ -149,8 +149,7 @@ namespace HeaderArrayConverter
         {
             Floats = floats.Select(x => x.ToImmutableArray()).ToImmutableArray();
         }
-
-
+        
         /// <summary>
         /// Returns a string representation of the contents of this <see cref="HeaderArray"/>.
         /// </summary>
@@ -265,12 +264,12 @@ namespace HeaderArrayConverter
             // number of labels...again?
             int c = BitConverter.ToInt32(dimensions, 8);
             // this looks like the header for this array
-            string setHeader = Encoding.ASCII.GetString(dimensions, 12, 4);
+            string setHeader = Encoding.ASCII.GetString(dimensions, 12, 8);
             // this looks like the set name used for this array
-            string setName = Encoding.ASCII.GetString(dimensions, 28, 8);
+            string setName = Encoding.ASCII.GetString(dimensions, 24, dimensions.Length - 24);
 
-            byte[][] labels = new byte[c][];
-            string[][] labelStrings = new string[c][];
+            byte[][] labels = new byte[Math.Max(a, c) > 1 ? 2 : 1][];
+            string[][] labelStrings = new string[labels.Length][];
             for (int h = 0; h < labels.Length; h++)
             {
                 labels[h] = InitializeArray(reader);
@@ -279,7 +278,7 @@ namespace HeaderArrayConverter
                 int labelX1 = BitConverter.ToInt32(labels[h], 4);
                 int labelX2 = BitConverter.ToInt32(labels[h], 8);
                 labelStrings[h] = new string[labelX1];
-                for (int i = 0; i < labelX1; i++)
+                for (int i = 0; i < labelX2; i++)
                 {
                     labelStrings[h][i] = Encoding.ASCII.GetString(labels[h], i * 12 + 12, 12);
                 }
@@ -297,22 +296,25 @@ namespace HeaderArrayConverter
             int d6 = BitConverter.ToInt32(meta, 32);
 
             int count = d0 * d1 * d2 * d3 * d4 * d5 * d6;
-            
-            byte[] dimDefinitons = InitializeArray(reader);
-            int x0 = BitConverter.ToInt32(dimDefinitons, 0);
-            int[][] dimDescriptions = new int[x0][];
-            for (int i = 0; i < x0; i++)
+
+            if (labels.Length > 1 && count > 0)
             {
-                dimDescriptions[i] = new int[7];
-                dimDescriptions[i][0] = BitConverter.ToInt32(dimDefinitons, 4);
-                dimDescriptions[i][1] = BitConverter.ToInt32(dimDefinitons, 8);
-                dimDescriptions[i][2] = BitConverter.ToInt32(dimDefinitons, 12);
-                dimDescriptions[i][3] = BitConverter.ToInt32(dimDefinitons, 16);
-                dimDescriptions[i][4] = BitConverter.ToInt32(dimDefinitons, 20);
-                dimDescriptions[i][5] = BitConverter.ToInt32(dimDefinitons, 24);
-                dimDescriptions[i][6] = BitConverter.ToInt32(dimDefinitons, 28);
+                byte[] dimDefinitons = InitializeArray(reader);
+                int x0 = BitConverter.ToInt32(dimDefinitons, 0);
+                int[][] dimDescriptions = new int[x0][];
+                for (int i = 0; i < x0; i++)
+                {
+                    dimDescriptions[i] = new int[7];
+                    dimDescriptions[i][0] = BitConverter.ToInt32(dimDefinitons, 4);
+                    dimDescriptions[i][1] = BitConverter.ToInt32(dimDefinitons, 8);
+                    dimDescriptions[i][2] = BitConverter.ToInt32(dimDefinitons, 12);
+                    dimDescriptions[i][3] = BitConverter.ToInt32(dimDefinitons, 16);
+                    dimDescriptions[i][4] = BitConverter.ToInt32(dimDefinitons, 20);
+                    dimDescriptions[i][5] = BitConverter.ToInt32(dimDefinitons, 24);
+                    dimDescriptions[i][6] = BitConverter.ToInt32(dimDefinitons, 28);
+                }
             }
-            
+
             byte[] data = InitializeArray(reader);
             int dataDim = BitConverter.ToInt32(data, 0);
             byte[][] record = new byte[3][];
@@ -330,7 +332,7 @@ namespace HeaderArrayConverter
                 floats[0][i] = BitConverter.ToSingle(record[2], i * 4);
             }
 
-            return (x0, 0, 0, record, floats);
+            return (0, 0, 0, record, floats);
         }
 
         private static (int X0, int X1, int X2, byte[][] Array, float[][]) GetRlArray(BinaryReader reader)
@@ -377,8 +379,7 @@ namespace HeaderArrayConverter
 
             return (x0, 0, 0, record, floats);
         }
-
-
+        
         private static byte[] InitializeArray(BinaryReader reader)
         {
             int length = reader.ReadInt32();
@@ -423,32 +424,6 @@ namespace HeaderArrayConverter
             int x0 = BitConverter.ToInt32(data, 4);
             int x1 = BitConverter.ToInt32(data, 8);
             int x2 = BitConverter.ToInt32(data, 12);
-
-            if (x1 == -1)
-            {
-                // Then I'm looking at a matrix header where x0 == columns and x2 == rows
-                // So read 4 more bytes to take the header
-                //string header = Encoding.ASCII.GetString(data, 16, 4);
-                //// Skip 4 bytes of padding
-                //if (BitConverter.ToInt32(data, 20) != 0x20_20_20_20)
-                //{
-                //    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-                //}
-                //// Skip 4 bytes of padding
-                //if (BitConverter.ToInt32(data, 24) != 0x20_20_20_20)
-                //{
-                //    throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
-                //}
-                //// Skip 4 bytes of 0xFF_FF_FF_FF
-                //if (BitConverter.ToInt32(data, 28) != -1)
-                //{
-                //    throw new InvalidDataException("Failed to find expected padding of '0xFF_FF_FF_FF'");
-                //}
-                string labels = Encoding.ASCII.GetString(data, 16, arrayLengthInBytes - 16);
-
-
-                Console.WriteLine(labels);
-            }
 
             // Find the 
             int elementSize = (arrayLengthInBytes - 16) / (x2 > 0 ? x2 : 1);
