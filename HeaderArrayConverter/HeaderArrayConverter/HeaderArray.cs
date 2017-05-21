@@ -11,7 +11,7 @@ namespace HeaderArrayConverter
     /// Represents one entry from a Header Array (HAR) file.
     /// </summary>
     [PublicAPI]
-    public class HeaderArray
+    public abstract class HeaderArray
     {
         /// <summary>
         /// The four character identifier for this <see cref="HeaderArray"/>.
@@ -34,11 +34,6 @@ namespace HeaderArrayConverter
         /// The size in bytes of each element in the array.
         /// </summary>
         public int Size { get; }
-
-        /// <summary>
-        /// True if the array is sparsely populated; otherwise false.
-        /// </summary>
-        public bool Sparse { get; }
 
         /// <summary>
         /// The type of element stored in the array.
@@ -82,9 +77,6 @@ namespace HeaderArrayConverter
         /// <param name="size">
         /// The size in bytes of each element in the array.
         /// </param>
-        /// <param name="sparse">
-        /// True if the array is sparsely populated; otherwise false.
-        /// </param>
         /// <param name="x0">
         /// The first dimension of the <see cref="HeaderArray"/>.
         /// This represents the number of arrays used to store this <see cref="HeaderArray"/> by Fortran.
@@ -97,7 +89,7 @@ namespace HeaderArrayConverter
         /// The third dimension of the <see cref="HeaderArray"/>.
         /// This represents the maximum number of elements in any of the arrays used to store this <see cref="HeaderArray"/> by Fortran.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, bool sparse, int x0, int x1, int x2)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, int x0, int x1, int x2)
         {
             if (header is null)
             {
@@ -119,7 +111,6 @@ namespace HeaderArrayConverter
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
             Size = size;
-            Sparse = sparse;
             Type = type;
             X0 = x0;
             X1 = x1;
@@ -137,7 +128,6 @@ namespace HeaderArrayConverter
                 $"{nameof(Type)}: {Type}\r\n" +
                 $"{nameof(Count)}: {Count}\r\n" +
                 $"{nameof(Size)}: {Size}\r\n" +
-                $"{nameof(Sparse)}: {Sparse}\r\n" +
                 $"Array: [{X0}][{X1}][{X2}]";
         }
 
@@ -154,17 +144,17 @@ namespace HeaderArrayConverter
                 case "1C":
                 {
                     (int x0, int x1, int x2, string[] strings) = GetStringArray(reader);
-                    return new HeaderArray1C(header, description, type, count, size, sparse, x0, x1, x2, strings);
+                    return new HeaderArray<string>(header, description, type, count, size, x0, x1, x2, strings);
                 }
                 case "RE":
                 {
                     (int x0, int x1, int x2, float[] floats) = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
-                    return new HeaderArrayRE(header, description, type, count, size, sparse, x0, x1, x2, floats);
+                    return new HeaderArray<float>(header, description, type, count, size, x0, x1, x2, floats);
                 }
                 case "RL":
                 {
                     (int x0, int x1, int x2, float[] floats) = GetRlArray(reader);
-                    return new HeaderArrayRE(header, description, type, count, size, sparse, x0, x1, x2, floats);
+                    return new HeaderArray<float>(header, description, type, count, size, x0, x1, x2, floats);
                 }
                 default:
                 {
