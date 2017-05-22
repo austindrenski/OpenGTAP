@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,22 +25,17 @@ namespace HeaderArrayConverter
         /// </summary>
         [CanBeNull]
         public string Description { get; }
-        
-        /// <summary>
-        /// The total count of elements in the array.
-        /// </summary>
-        public int Count { get; }
-        
-        /// <summary>
-        /// The size in bytes of each element in the array.
-        /// </summary>
-        public int Size { get; }
-
+       
         /// <summary>
         /// The type of element stored in the array.
         /// </summary>
         [NotNull]
         public string Type { get; }
+
+        /// <summary>
+        /// The dimensions of the array.
+        /// </summary>
+        public ImmutableArray<int> Dimensions { get; }
 
         /// <summary>
         /// The first dimension of the <see cref="HeaderArray"/>.
@@ -58,7 +54,7 @@ namespace HeaderArrayConverter
         /// This represents the maximum number of elements in any of the arrays used to store this <see cref="HeaderArray"/> by Fortran.
         /// </summary>
         public int X2 { get; }
-        
+
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
         /// </summary>
@@ -71,11 +67,8 @@ namespace HeaderArrayConverter
         /// <param name="type">
         /// The type of element stored in the array.
         /// </param>
-        /// <param name="count">
-        /// The total count of elements in the array.
-        /// </param>
-        /// <param name="size">
-        /// The size in bytes of each element in the array.
+        /// <param name="dimensions">
+        /// The dimensions of the array.
         /// </param>
         /// <param name="x0">
         /// The first dimension of the <see cref="HeaderArray"/>.
@@ -89,7 +82,7 @@ namespace HeaderArrayConverter
         /// The third dimension of the <see cref="HeaderArray"/>.
         /// This represents the maximum number of elements in any of the arrays used to store this <see cref="HeaderArray"/> by Fortran.
         /// </param>
-        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, int x0, int x1, int x2)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, int x0, int x1, int x2)
         {
             if (header is null)
             {
@@ -99,18 +92,15 @@ namespace HeaderArrayConverter
             {
                 throw new ArgumentNullException(nameof(type));
             }
-            if (count != x1)
+            if (dimensions is null)
             {
-                Console.Error.WriteLineAsync($"Warning => Dimension mismatch: {nameof(count)} is not equal to {nameof(x1)}.");
+                throw new ArgumentNullException(nameof(type));
             }
-            if (x0 * x2 < count)
-            {
-                Console.Error.WriteLineAsync($"Warning => Dimension mismatch: {nameof(count)} is greater than the product of {nameof(x0)} and {nameof(x2)}.");
-            }
+
 
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
-            Size = size;
+            Dimensions = dimensions.ToImmutableArray();
             Type = type;
             X0 = x0;
             X1 = x1;
@@ -122,13 +112,19 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
-            return 
-                $"{nameof(Header)}: {Header}\r\n" +
-                $"{nameof(Description)}: {Description}\r\n" +
-                $"{nameof(Type)}: {Type}\r\n" +
-                $"{nameof(Count)}: {Count}\r\n" +
-                $"{nameof(Size)}: {Size}\r\n" +
-                $"Array: [{X0}][{X1}][{X2}]";
+            StringBuilder stringBuilder = new StringBuilder();
+
+            stringBuilder.AppendLine($"{nameof(Header)}: {Header}");
+            stringBuilder.AppendLine($"{nameof(Description)}: {Description}");
+            stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
+            stringBuilder.Append("Array: ");
+
+            for (int i = 0; i < Dimensions.Length; i++)
+            {
+                stringBuilder.Append($"[{Dimensions[i]}]");
+            }
+
+            return stringBuilder.ToString();
         }
 
         /// <summary>
@@ -137,24 +133,24 @@ namespace HeaderArrayConverter
         [NotNull]
         public static HeaderArray Read(BinaryReader reader)
         {
-            (int count, string description, string header, int size, bool sparse, string type) = GetDescription(reader);
+            (string description, string header, bool sparse, string type, int[] dimensions) = GetDescription(reader);
 
             switch (type)
             {
                 case "1C":
                 {
                     (int x0, int x1, int x2, string[] strings) = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, count, size, x0, x1, x2, strings);
+                    return new HeaderArray<string>(header, description, type, dimensions, x0, x1, x2, strings);
                 }
                 case "RE":
                 {
-                    (int x0, int x1, int x2, float[] floats) = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
-                    return new HeaderArray<float>(header, description, type, count, size, x0, x1, x2, floats);
+                    (int x0, int x1, int x2, float[] floats) = GetReArray(reader, sparse);
+                    return new HeaderArray<float>(header, description, type, dimensions, x0, x1, x2, floats);
                 }
                 case "RL":
                 {
                     (int x0, int x1, int x2, float[] floats) = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, count, size, x0, x1, x2, floats);
+                    return new HeaderArray<float>(header, description, type, dimensions, x0, x1, x2, floats);
                 }
                 default:
                 {
@@ -205,7 +201,7 @@ namespace HeaderArrayConverter
             return data.Skip(4).ToArray();
         }
 
-        private static (int Count, string Description, string Header, int Size, bool Sparse, string Type) GetDescription(BinaryReader reader)
+        private static (string Description, string Header, bool Sparse, string Type, int[] Dimensions) GetDescription(BinaryReader reader)
         {
             // Read length of the header
             int length = reader.ReadInt32();
@@ -230,16 +226,23 @@ namespace HeaderArrayConverter
             // Read longer name description with limit of 70 characters
             string description = Encoding.ASCII.GetString(descriptionBuffer, 6, 70);
 
-            // Read how many items are in the array
-            int count = BitConverter.ToInt32(descriptionBuffer, description.Length - 4 - 4);
+            int[] dimensions = new int[BitConverter.ToInt32(descriptionBuffer, 76)];
 
-            // Read how long each element is
-            int size = BitConverter.ToInt32(descriptionBuffer, description.Length - 4);
+            for (int i = 0; i < dimensions.Length; i++)
+            {
+                dimensions[i] = BitConverter.ToInt32(descriptionBuffer, 80 + 4 * i);
+            }
+            
+            //// Read how many items are in the array
+            //int count = BitConverter.ToInt32(descriptionBuffer, description.Length - 4 - 4);
 
-            return (count, description, header, size, sparse, type);
+            //// Read how long each element is
+            //int size = BitConverter.ToInt32(descriptionBuffer, description.Length - 4);
+
+            return (description, header, sparse, type, dimensions);
         }
 
-        private static (int X0, int X1, int X2, float[]) GetReFullArray(BinaryReader reader)
+        private static (int X0, int X1, int X2, float[]) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -269,7 +272,14 @@ namespace HeaderArrayConverter
                     labelStrings[h][i] = Encoding.ASCII.GetString(labels[h], i * 12 + 12, 12);
                 }
             }
+            
+            float[] data = sparse ? GetReSparseArray(reader, a, c) : GetReFullArray(reader, a, labels);
 
+            return (0, 0, 0, data);
+        }
+
+        private static float[] GetReFullArray(BinaryReader reader, int a, byte[][] labels)
+        {
             byte[] meta = InitializeArray(reader);
             int recordsFromEndOfThisHeaderArray = BitConverter.ToInt32(meta, 0);
             int dimensionLimit = BitConverter.ToInt32(meta, 4);
@@ -303,54 +313,20 @@ namespace HeaderArrayConverter
 
             byte[] data = InitializeArray(reader);
             int dataDim = BitConverter.ToInt32(data, 0);
-            byte[][] record = new byte[3][];
-
-            record[0] = dimensions;
-            record[1] = labels.SelectMany(x => x.Select(y => y)).ToArray();
-            record[2] = data.Skip(4).ToArray();
 
             float[] floats = new float[count];
 
             // Read records
             for (int i = 0; i < count; i++)
             {
-                floats[i] = BitConverter.ToSingle(record[2], i * 4);
+                floats[i] = BitConverter.ToSingle(data, 4 + i * 4);
             }
 
-            return (0, 0, 0, floats);
+            return floats;
         }
 
-        private static (int X0, int X1, int X2, float[]) GetReSparseArray(BinaryReader reader)
+        private static float[] GetReSparseArray(BinaryReader reader, int a, int c)
         {
-            // read dimension array
-            byte[] dimensions = InitializeArray(reader);
-            // number of labels?
-            int a = BitConverter.ToInt32(dimensions, 0);
-            // 0xFF_FF_FF_FF == -1
-            int b = BitConverter.ToInt32(dimensions, 4);
-            // number of labels...again?
-            int c = BitConverter.ToInt32(dimensions, 8);
-            // this looks like the header for this array
-            string setHeader = Encoding.ASCII.GetString(dimensions, 12, 8);
-            // this looks like the set name used for this array
-            string setName = Encoding.ASCII.GetString(dimensions, 24, dimensions.Length - 24);
-
-            byte[][] labels = new byte[Math.Max(a, 1)][];
-            string[][] labelStrings = new string[labels.Length][];
-            for (int h = 0; h < labels.Length; h++)
-            {
-                labels[h] = InitializeArray(reader);
-                // get label dimensions
-                int labelX0 = BitConverter.ToInt32(labels[h], 0);
-                int labelX1 = BitConverter.ToInt32(labels[h], 4);
-                int labelX2 = BitConverter.ToInt32(labels[h], 8);
-                labelStrings[h] = new string[labelX1];
-                for (int i = 0; i < labelX2; i++)
-                {
-                    labelStrings[h][i] = Encoding.ASCII.GetString(labels[h], i * 12 + 12, 12);
-                }
-            }
-
             byte[] meta = InitializeArray(reader);
 
             int valueCount = BitConverter.ToInt32(meta, 0);
@@ -368,21 +344,17 @@ namespace HeaderArrayConverter
                 indices[i] = BitConverter.ToInt32(data, 12 + i * 4) - 1;
             }
 
-            byte[][] record = new byte[3][];
-            
-            record[0] = dimensions;
-            record[1] = labels.SelectMany(x => x.Select(y => y)).ToArray();
-            record[2] = data.Skip(12 + countOfIndices * 4).ToArray();
+            byte[] record = data.Skip(12 + countOfIndices * 4).ToArray();
 
             float[] floats = new float[a * a * c];
 
             // Read records
             for (int i = 0; i < countOfIndices; i++)
             {
-                floats[indices[i]] = BitConverter.ToSingle(record[2], i * 4);
+                floats[indices[i]] = BitConverter.ToSingle(record, i * 4);
             }
 
-            return (0, 0, 0, floats);
+            return floats;
         }
         
         private static (int X0, int X1, int X2, float[]) GetRlArray(BinaryReader reader)

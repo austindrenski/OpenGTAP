@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 
@@ -12,7 +13,7 @@ namespace HeaderArrayConverter
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
-    public class HeaderArray<T>: HeaderArray
+    public class HeaderArray<T> : HeaderArray
     {
         /// <summary>
         /// The decoded form of <see cref="Array"/>
@@ -31,11 +32,8 @@ namespace HeaderArrayConverter
         /// <param name="type">
         /// The type of element stored in the array.
         /// </param>
-        /// <param name="count">
-        /// The total count of elements in the array.
-        /// </param>
-        /// <param name="size">
-        /// The size in bytes of each element in the array.
+        /// <param name="dimensions">
+        /// The dimensions of the array.
         /// </param>
         /// <param name="x0">
         /// The first dimension of the <see cref="HeaderArray"/>.
@@ -52,8 +50,8 @@ namespace HeaderArrayConverter
         /// <param name="records">
         /// The data in the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int count, int size, int x0, int x1, int x2, [NotNull] T[] records)
-            : base(header, description, type, count, size, x0, x1, x2)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, int x0, int x1, int x2, [NotNull] T[] records)
+            : base(header, description, type, dimensions, x0, x1, x2)
         {
             Records = records.ToImmutableArray();
         }
@@ -63,14 +61,52 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
-            StringBuilder stringBuilder = new StringBuilder(base.ToString());
+            StringBuilder stringBuilder = new StringBuilder();
+
+            stringBuilder.AppendLine(base.ToString());
 
             for (int i = 0; i < Records.Length; i++)
             {
-                stringBuilder.AppendLine($"[{i}]: {Records[i]}");
+                int[] position = Indexer(i);
+
+                for (int j = 0; j < position.Length; j++)
+                {
+                    stringBuilder.Append($"[{position[j]}]");
+                }
+
+                stringBuilder.AppendLine($": {Records[i]}");
             }
 
             return stringBuilder.ToString();
+        }
+
+        private int[] Indexer(int index)
+        {
+            int[] position = new int[Dimensions.Length];
+
+            if (index == 0)
+            {
+                return position;
+            }
+            if (index == Records.Length)
+            {
+                return Dimensions.ToArray();
+            }
+            int count = 0;
+            for (int i = 0; i < Dimensions.Length; i++)
+            {
+                if (count > 1 && i > 1)
+                {
+                    position[i] = index / count;
+                }
+                else
+                {
+                    position[i] = index / Dimensions[i];
+                }
+                count += Dimensions[i];
+            }
+
+            return position;
         }
     }
 }
