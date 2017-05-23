@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -41,7 +40,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        public ImmutableDictionary<string, ImmutableArray<string>> Sets { get; }
+        public (string, string[])[] Sets { get; }
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -61,7 +60,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] Dictionary<string, string[]> sets)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] (string, string[])[] sets)
         {
             if (header is null)
             {
@@ -83,7 +82,7 @@ namespace HeaderArrayConverter
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
             Dimensions = dimensions.ToImmutableArray();
-            Sets = sets.ToImmutableDictionary(x => x.Key, x => x.Value.ToImmutableArray());
+            Sets = sets;
             Type = type;
         }
         
@@ -97,7 +96,7 @@ namespace HeaderArrayConverter
             stringBuilder.AppendLine($"{nameof(Header)}: {Header}");
             stringBuilder.AppendLine($"{nameof(Description)}: {Description}");
             stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
-            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Select(x => $"{{ {string.Join(", ", x.Value)} }}"))}");
+            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Select(x => $"{{ {string.Join(", ", x.Item2)} }}"))}");
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             return stringBuilder.ToString();
         }
@@ -115,17 +114,17 @@ namespace HeaderArrayConverter
                 case "1C":
                 {
                     string[] strings = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, dimensions, strings, new Dictionary<string, string[]>());
-                }
+                    return new HeaderArray<string>(header, description, type, dimensions, strings, new(string, string[])[0]);
+                    }
                 case "RE":
                 {
-                    (float[] floats, Dictionary<string, string[]> sets) = GetReArray(reader, sparse);
+                    (float[] floats, (string, string[])[] sets) = GetReArray(reader, sparse);
                     return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
                 {
                     float[] floats = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, dimensions, floats, new Dictionary<string, string[]>());
+                    return new HeaderArray<float>(header, description, type, dimensions, floats, new (string, string[])[0]);
                 }
                 default:
                 {
@@ -217,7 +216,7 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, Dictionary<string, string[]> Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, (string, string[])[] Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -263,11 +262,11 @@ namespace HeaderArrayConverter
                 }
             }
 
-            Dictionary<string, string[]> sets = new Dictionary<string, string[]>();
+            (string, string[])[] sets = new (string, string[])[setNames.Length];
 
             for (int i = 0; i < setNames.Length; i++)
             {
-                sets.Add(setNames[i], labelStrings[i]);
+                sets[i] = (setNames[i], labelStrings[i]);
             }
 
             float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);

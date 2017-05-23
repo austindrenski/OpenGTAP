@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using JetBrains.Annotations;
@@ -41,7 +40,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, Dictionary<string, string[]> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, (string, string[])[] sets)
             : base(header, description, type, dimensions, sets)
         {
             Records = records.ToImmutableArray();
