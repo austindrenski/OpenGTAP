@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -38,22 +39,9 @@ namespace HeaderArrayConverter
         public ImmutableArray<int> Dimensions { get; }
 
         /// <summary>
-        /// The first dimension of the <see cref="HeaderArray"/>.
-        /// This represents the number of arrays used to store this <see cref="HeaderArray"/> by Fortran.
+        /// The sets defined on the array.
         /// </summary>
-        public int X0 { get; }
-
-        /// <summary>
-        /// The second dimension of the <see cref="HeaderArray"/>.
-        /// This represents the total number of elements in the logical array.
-        /// </summary>
-        public int X1 { get; }
-
-        /// <summary>
-        /// The third dimension of the <see cref="HeaderArray"/>.
-        /// This represents the maximum number of elements in any of the arrays used to store this <see cref="HeaderArray"/> by Fortran.
-        /// </summary>
-        public int X2 { get; }
+        public ImmutableDictionary<string, ImmutableArray<string>> Sets { get; }
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -70,19 +58,10 @@ namespace HeaderArrayConverter
         /// <param name="dimensions">
         /// The dimensions of the array.
         /// </param>
-        /// <param name="x0">
-        /// The first dimension of the <see cref="HeaderArray"/>.
-        /// This represents the number of arrays used to store this <see cref="HeaderArray"/> by Fortran.
+        /// <param name="sets">
+        /// The sets defined on the array.
         /// </param>
-        /// <param name="x1">
-        /// The second dimension of the <see cref="HeaderArray"/>.
-        /// This represents the total number of elements in the logical array.
-        /// </param>
-        /// <param name="x2">
-        /// The third dimension of the <see cref="HeaderArray"/>.
-        /// This represents the maximum number of elements in any of the arrays used to store this <see cref="HeaderArray"/> by Fortran.
-        /// </param>
-        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, int x0, int x1, int x2)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] Dictionary<string, string[]> sets)
         {
             if (header is null)
             {
@@ -96,15 +75,16 @@ namespace HeaderArrayConverter
             {
                 throw new ArgumentNullException(nameof(type));
             }
-
+            if (sets is null)
+            {
+                throw new ArgumentNullException(nameof(sets));
+            }
 
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
             Dimensions = dimensions.ToImmutableArray();
+            Sets = sets.ToImmutableDictionary(x => x.Key, x => x.Value.ToImmutableArray());
             Type = type;
-            X0 = x0;
-            X1 = x1;
-            X2 = x2;
         }
         
         /// <summary>
@@ -117,13 +97,8 @@ namespace HeaderArrayConverter
             stringBuilder.AppendLine($"{nameof(Header)}: {Header}");
             stringBuilder.AppendLine($"{nameof(Description)}: {Description}");
             stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
-            stringBuilder.Append("Array: ");
-
-            for (int i = 0; i < Dimensions.Length; i++)
-            {
-                stringBuilder.Append($"[{Dimensions[i]}]");
-            }
-
+            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Select(x => $"{{ {string.Join(", ", x.Value)} }}"))}");
+            //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             return stringBuilder.ToString();
         }
 
@@ -139,18 +114,18 @@ namespace HeaderArrayConverter
             {
                 case "1C":
                 {
-                    (int x0, int x1, int x2, string[] strings) = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, dimensions, x0, x1, x2, strings);
+                    string[] strings = GetStringArray(reader);
+                    return new HeaderArray<string>(header, description, type, dimensions, strings, new Dictionary<string, string[]>());
                 }
                 case "RE":
                 {
-                    (int x0, int x1, int x2, float[] floats) = GetReArray(reader, sparse);
-                    return new HeaderArray<float>(header, description, type, dimensions, x0, x1, x2, floats);
+                    (float[] floats, Dictionary<string, string[]> sets) = GetReArray(reader, sparse);
+                    return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
                 {
-                    (int x0, int x1, int x2, float[] floats) = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, dimensions, x0, x1, x2, floats);
+                    float[] floats = GetRlArray(reader);
+                    return new HeaderArray<float>(header, description, type, dimensions, floats, new Dictionary<string, string[]>());
                 }
                 default:
                 {
@@ -242,43 +217,65 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (int X0, int X1, int X2, float[]) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, Dictionary<string, string[]> Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
+
             // number of labels?
             int a = BitConverter.ToInt32(dimensions, 0);
-            // 0xFF_FF_FF_FF == -1
-            int b = BitConverter.ToInt32(dimensions, 4);
+
+            if (BitConverter.ToInt32(dimensions, 4) != -1)
+            {
+                throw new InvalidDataException("Expected 0xFF_FF_FF_FF .");
+            }
+
             // number of labels...again?
             int c = BitConverter.ToInt32(dimensions, 8);
-            // this looks like the header for this array
-            string setHeader = Encoding.ASCII.GetString(dimensions, 12, 8);
-            // this looks like the set name used for this array
-            string setName = Encoding.ASCII.GetString(dimensions, 24, dimensions.Length - 24);
 
-            byte[][] labels = new byte[Math.Max(a, 1)][];
-            string[][] labelStrings = new string[labels.Length][];
-            for (int h = 0; h < labels.Length; h++)
+            // Read coefficient
+            string coefficient = Encoding.ASCII.GetString(dimensions, 12, 12);
+
+            if (BitConverter.ToInt32(dimensions, 24) != -1)
             {
-                labels[h] = InitializeArray(reader);
+                throw new InvalidDataException("Expected 0xFF_FF_FF_FF .");
+            }
+
+            // Read set names
+            string[] setNames = new string[a];
+            for (int i = 0; i < a; i++)
+            {
+                setNames[i] = Encoding.ASCII.GetString(dimensions, 28 + i * 12, 12).Trim();
+            }
+            
+            string[][] labelStrings = new string[setNames.Length][];
+            for (int h = 0; h < setNames.Length; h++)
+            {
+                byte[] labels = InitializeArray(reader);
                 // get label dimensions
-                int labelX0 = BitConverter.ToInt32(labels[h], 0);
-                int labelX1 = BitConverter.ToInt32(labels[h], 4);
-                int labelX2 = BitConverter.ToInt32(labels[h], 8);
+                int labelX0 = BitConverter.ToInt32(labels, 0);
+                int labelX1 = BitConverter.ToInt32(labels, 4);
+                int labelX2 = BitConverter.ToInt32(labels, 8);
                 labelStrings[h] = new string[labelX1];
                 for (int i = 0; i < labelX2; i++)
                 {
-                    labelStrings[h][i] = Encoding.ASCII.GetString(labels[h], i * 12 + 12, 12);
+                    labelStrings[h][i] = Encoding.ASCII.GetString(labels, 12 + i * 12, 12).Trim();
                 }
             }
-            
-            float[] data = sparse ? GetReSparseArray(reader, a, c) : GetReFullArray(reader, a, labels);
 
-            return (0, 0, 0, data);
+            Dictionary<string, string[]> sets = new Dictionary<string, string[]>();
+
+            for (int i = 0; i < setNames.Length; i++)
+            {
+                sets.Add(setNames[i], labelStrings[i]);
+            }
+
+            float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
+
+            return (data, sets);
         }
 
-        private static float[] GetReFullArray(BinaryReader reader, int a, byte[][] labels)
+        private static float[] GetReFullArray(BinaryReader reader)
         {
             byte[] meta = InitializeArray(reader);
             int recordsFromEndOfThisHeaderArray = BitConverter.ToInt32(meta, 0);
@@ -293,7 +290,7 @@ namespace HeaderArrayConverter
 
             int count = d0 * d1 * d2 * d3 * d4 * d5 * d6;
 
-            if (a > 0 && labels.Length > 0 && count > 0)
+            if (count > 0)
             {
                 byte[] dimDefinitons = InitializeArray(reader);
                 int x0 = BitConverter.ToInt32(dimDefinitons, 0);
@@ -325,7 +322,7 @@ namespace HeaderArrayConverter
             return floats;
         }
 
-        private static float[] GetReSparseArray(BinaryReader reader, int a, int c)
+        private static float[] GetReSparseArray(BinaryReader reader)
         {
             byte[] meta = InitializeArray(reader);
 
@@ -334,22 +331,22 @@ namespace HeaderArrayConverter
             int idk1 = BitConverter.ToInt32(meta, 8);
             
             byte[] data = InitializeArray(reader);
-            int dataDim = BitConverter.ToInt32(data, 0);
-            int idk3 = BitConverter.ToInt32(data, 4);
-            int countOfIndices = BitConverter.ToInt32(data, 8);
+            int numberOfVectors = BitConverter.ToInt32(data, 0);
+            int totalCountOfEntries = BitConverter.ToInt32(data, 4);
+            int maxEntriesPerVector= BitConverter.ToInt32(data, 8);
 
-            int[] indices = new int[countOfIndices];
-            for (int i = 0; i < countOfIndices; i++)
+            int[] indices = new int[totalCountOfEntries];
+            for (int i = 0; i < totalCountOfEntries; i++)
             {
                 indices[i] = BitConverter.ToInt32(data, 12 + i * 4) - 1;
             }
 
-            byte[] record = data.Skip(12 + countOfIndices * 4).ToArray();
+            byte[] record = data.Skip(12 + totalCountOfEntries * 4).ToArray();
 
-            float[] floats = new float[a * a * c];
+            float[] floats = new float[valueCount * valueCount + idk0 + idk1];
 
             // Read records
-            for (int i = 0; i < countOfIndices; i++)
+            for (int i = 0; i < totalCountOfEntries; i++)
             {
                 floats[indices[i]] = BitConverter.ToSingle(record, i * 4);
             }
@@ -357,7 +354,7 @@ namespace HeaderArrayConverter
             return floats;
         }
         
-        private static (int X0, int X1, int X2, float[]) GetRlArray(BinaryReader reader)
+        private static float[] GetRlArray(BinaryReader reader)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -398,10 +395,10 @@ namespace HeaderArrayConverter
                 floats[i] = BitConverter.ToSingle(record[1], i * 4);
             }
 
-            return (x0, 0, 0, floats);
+            return floats;
         }
   
-        private static (int X0, int X1, int X2, string[] Strings) GetStringArray(BinaryReader reader)
+        private static string[] GetStringArray(BinaryReader reader)
         {
             byte[] data = InitializeArray(reader);
 
@@ -432,7 +429,7 @@ namespace HeaderArrayConverter
                 }
             }
 
-            return (x0, x1, x2, strings);
+            return strings;
         }
     }
 }
