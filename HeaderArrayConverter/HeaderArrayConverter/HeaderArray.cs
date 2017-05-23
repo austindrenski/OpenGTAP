@@ -96,7 +96,7 @@ namespace HeaderArrayConverter
             stringBuilder.AppendLine($"{nameof(Header)}: {Header}");
             stringBuilder.AppendLine($"{nameof(Description)}: {Description}");
             stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
-            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Select(x => $"{{ {string.Join(", ", x.Item2)} }}"))}");
+            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Where(x => x.Item1 != null).Select(x => $"{{ {string.Join(", ", x.Item2)} }}"))}");
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             return stringBuilder.ToString();
         }
@@ -262,13 +262,19 @@ namespace HeaderArrayConverter
                 }
             }
 
+            if (c - a == 1)
+            {
+                setNames = setNames.Append(setNames.LastOrDefault()).ToArray();
+                labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
+            }
+
             (string, string[])[] sets = new (string, string[])[setNames.Length];
 
             for (int i = 0; i < setNames.Length; i++)
             {
                 sets[i] = (setNames[i], labelStrings[i]);
             }
-
+            
             float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
 
             return (data, sets);
