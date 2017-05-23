@@ -67,46 +67,10 @@ namespace HeaderArrayConverter
 
             for (int i = 0; i < Records.Length; i++)
             {
-                int[] position = Indexer(i);
-
-                for (int j = 0; j < position.Length; j++)
-                {
-                    stringBuilder.Append($"[{position[j]}]");
-                }
-
-                stringBuilder.AppendLine($": {Records[i]}");
+                stringBuilder.AppendLine($"[{i}]: {Records[i]}");
             }
 
             return stringBuilder.ToString();
-        }
-
-        private int[] Indexer(int index)
-        {
-            int[] position = new int[Dimensions.Length];
-
-            if (index == 0)
-            {
-                return position;
-            }
-            if (index == Records.Length)
-            {
-                return Dimensions.ToArray();
-            }
-            int count = 0;
-            for (int i = 0; i < Dimensions.Length; i++)
-            {
-                if (count > 1 && i > 1)
-                {
-                    position[i] = index / count;
-                }
-                else
-                {
-                    position[i] = index / Dimensions[i];
-                }
-                count += Dimensions[i];
-            }
-
-            return position;
         }
     }
 }

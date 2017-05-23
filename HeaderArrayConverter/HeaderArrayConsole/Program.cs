@@ -9,9 +9,9 @@ namespace HeaderArrayConsole
     {
         public static void Main()
         {
-            //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\US_3x3_BaseData.har";
+            const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\US_3x3_BaseData.har";
             //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
-            const string file = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
+            //const string file = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
             //const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
 
             byte[] bytes = File.ReadAllBytes(file);
