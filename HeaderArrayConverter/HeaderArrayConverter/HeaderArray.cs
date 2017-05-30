@@ -36,7 +36,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The dimensions of the array.
         /// </summary>
-        public ImmutableArray<int> Dimensions { get; }
+        public IEnumerable<int> Dimensions { get; }
 
         /// <summary>
         /// The sets defined on the array.
@@ -104,6 +104,7 @@ namespace HeaderArrayConverter
             stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
             stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Where(x => x.Items != null).Select(x => $"{{ {string.Join(", ", x.Items)} }}"))}");
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
+            stringBuilder.AppendLine($"{nameof(Dimensions)}: {Sets.Select(x => x.Items.Count()).Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             return stringBuilder.ToString();
         }
 

@@ -9,36 +9,7 @@ namespace HeaderArrayConverter
     /// 
     /// </summary>
     [PublicAPI]
-    public struct HarSet
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public IEnumerable<string> Items { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="items"></param>
-        public HarSet(string name, IEnumerable<string> items)
-        {
-            Name = name;
-            Items = items;
-        }
-    }
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    [PublicAPI]
-    public static class HarSetEnumerator
+    public static class HeaderArraySetExtensions
     {
         /// <summary>
         /// 
