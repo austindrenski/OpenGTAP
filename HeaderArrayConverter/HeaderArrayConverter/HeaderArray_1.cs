@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 
@@ -18,6 +20,11 @@ namespace HeaderArrayConverter
         /// The decoded form of <see cref="Array"/>
         /// </summary>
         public ImmutableArray<T> Records { get; }
+
+        /// <summary>
+        /// An enumerable collection of the records in the array with set labels.
+        /// </summary>
+        public IEnumerable<(string Label, T Record)> SetRecords => Records.Zip(SetRecordLabels, (x, y) => (y, x));
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -40,7 +47,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, (string, string[])[] sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, [NotNull] IEnumerable<HarSet> sets)
             : base(header, description, type, dimensions, sets)
         {
             Records = records.ToImmutableArray();
@@ -51,14 +58,15 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
-            StringBuilder stringBuilder = new StringBuilder(base.ToString());
+            int length = SetRecordLabels.DefaultIfEmpty().Max(x => x?.Length ?? 0);
 
-            for (int i = 0; i < Records.Length; i++)
-            {
-                stringBuilder.AppendLine($"[{i}]: {Records[i]}");
-            }
-
-            return stringBuilder.ToString();
+            return
+                SetRecords.Aggregate(
+                    new StringBuilder(base.ToString()),
+                    (current, next) =>
+                        current.AppendLine($"[{next.Label.PadRight(length)}]: {next.Record}"),
+                    x =>
+                        x.ToString());
         }
     }
 }

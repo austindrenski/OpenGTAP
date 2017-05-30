@@ -41,7 +41,12 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        public (string Labels, string[] Names)[] Sets { get; }
+        public IEnumerable<HarSet> Sets { get; }
+
+        /// <summary>
+        /// The sets defined on the array expanded as record labels.
+        /// </summary>
+        public IEnumerable<string> SetRecordLabels => Sets.AsEnumerable();
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -61,7 +66,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] (string, string[])[] sets)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<HarSet> sets)
         {
             if (header is null)
             {
@@ -97,93 +102,10 @@ namespace HeaderArrayConverter
             stringBuilder.AppendLine($"{nameof(Header)}: {Header}");
             stringBuilder.AppendLine($"{nameof(Description)}: {Description}");
             stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
-            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Where(x => x.Item1 != null).Select(x => $"{{ {string.Join(", ", x.Item2)} }}"))}");
-
-            Console.WriteLine(string.Join("; ", OuterCrossJoin(Sets)));
-
+            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Where(x => x.Items != null).Select(x => $"{{ {string.Join(", ", x.Items)} }}"))}");
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             return stringBuilder.ToString();
         }
-
-        private static IEnumerable<string> OuterCrossJoin(IEnumerable<(string Labels, string[] Names)> source)
-        {
-            if (source is null)
-            {
-                throw new ArgumentNullException(nameof(source));
-            }
-
-            source = source as (string Labels, string[] Names)[] ?? source.ToArray();
-
-            if (!source.Any())
-            {
-                yield break;
-            }
-
-            if (source.Count() == 2)
-            {
-                foreach (string item1 in source.Skip(1).First().Names)
-                {
-                    foreach (string item0 in source.First().Names)
-                    {
-                        yield return $"{item0} * {item1}";
-                    }
-                }
-            }
-
-            if (source.Count() == 3)
-            {
-                foreach (string item2 in source.Skip(2).First().Names)
-                {
-                    foreach (string item1 in source.Skip(1).First().Names)
-                    {
-                        foreach (string item0 in source.First().Names)
-                        {
-                            yield return $"{item0} * {item1} * {item2}";
-                        }
-                    }
-                }
-            }
-
-            if (source.Count() == 4)
-            {
-                foreach (string item3 in source.Skip(2).First().Names)
-                {
-                    foreach (string item2 in source.Skip(2).First().Names)
-                    {
-                        foreach (string item1 in source.Skip(1).First().Names)
-                        {
-                            foreach (string item0 in source.First().Names)
-                            {
-                                yield return $"{item0} * {item1} * {item2} * {item3}";
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private static IEnumerable<string> OuterCrossJoinHelper(IEnumerable<(string Labels, string[] Names)> source)
-        {
-            if (source is null)
-            {
-                throw new ArgumentNullException(nameof(source));
-            }
-            if (source.Count() > 1)
-            {
-                foreach (string item in OuterCrossJoinHelper(source.Skip(1)))
-                {
-                    yield return item;
-                }
-            }
-            else
-            {
-                foreach (string item in source.Skip(1).FirstOrDefault().Names ?? Enumerable.Empty<string>())
-                {
-                    yield return item;
-                }
-            }
-        }
-
 
         /// <summary>
         /// Reads one entry from a Header Array (HAR) file.
@@ -198,17 +120,17 @@ namespace HeaderArrayConverter
                 case "1C":
                 {
                     string[] strings = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, dimensions, strings, new(string, string[])[0]);
+                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<HarSet>());
                     }
                 case "RE":
                 {
-                    (float[] floats, (string Labels, string[] Names)[] sets) = GetReArray(reader, sparse);
+                    (float[] floats, IEnumerable<HarSet> sets) = GetReArray(reader, sparse);
                     return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
                 {
                     float[] floats = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, dimensions, floats, new (string, string[])[0]);
+                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<HarSet>());
                 }
                 default:
                 {
@@ -300,7 +222,7 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, (string Label, string[] Names)[] Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, HarSet[] Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -352,11 +274,11 @@ namespace HeaderArrayConverter
                 labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
             }
 
-            (string, string[])[] sets = new (string, string[])[setNames.Length];
+            HarSet[] sets = new HarSet[setNames.Length];
 
             for (int i = 0; i < setNames.Length; i++)
             {
-                sets[i] = (setNames[i], labelStrings[i]);
+                sets[i] = new HarSet(setNames[i], labelStrings[i]);
             }
             
             float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
