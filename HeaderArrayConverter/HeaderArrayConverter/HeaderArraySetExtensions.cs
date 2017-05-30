@@ -50,7 +50,9 @@ namespace HeaderArrayConverter
                                 .Items
                                 .Select(
                                     y =>
-                                        string.Join(" * ", new string[] { y, x }.Where(z => z != null))));
+                                        x is null
+                                            ? y
+                                            : string.Join(" * ", y, x)));
         }
     }
 }
