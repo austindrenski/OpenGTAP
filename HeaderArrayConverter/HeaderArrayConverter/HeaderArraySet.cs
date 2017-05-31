@@ -7,7 +7,7 @@ namespace HeaderArrayConverter
     /// 
     /// </summary>
     [PublicAPI]
-    public struct HarSet
+    public struct HeaderArraySet
     {
         /// <summary>
         /// 
@@ -24,7 +24,7 @@ namespace HeaderArrayConverter
         /// </summary>
         /// <param name="name"></param>
         /// <param name="items"></param>
-        public HarSet(string name, IEnumerable<string> items)
+        public HeaderArraySet(string name, params string[] items)
         {
             Name = name;
             Items = items;

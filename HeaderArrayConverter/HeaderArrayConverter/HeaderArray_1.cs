@@ -47,7 +47,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, [NotNull] IEnumerable<HarSet> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, [NotNull] IEnumerable<HeaderArraySet> sets)
             : base(header, description, type, dimensions, sets)
         {
             Records = records.ToImmutableArray();
@@ -59,6 +59,17 @@ namespace HeaderArrayConverter
         public override string ToString()
         {
             int length = SetRecordLabels.DefaultIfEmpty().Max(x => x?.Length ?? 0);
+
+            if (typeof(T) == typeof(string))
+            {
+                return
+                    Records.Aggregate(
+                        new StringBuilder(base.ToString()),
+                        (current, next) =>
+                            current.AppendLine($"[{next}]"),
+                        x =>
+                            x.ToString());
+            }
 
             return
                 SetRecords.Aggregate(

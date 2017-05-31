@@ -41,7 +41,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        public IEnumerable<HarSet> Sets { get; }
+        public IEnumerable<HeaderArraySet> Sets { get; }
 
         /// <summary>
         /// The sets defined on the array expanded as record labels.
@@ -66,7 +66,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<HarSet> sets)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<HeaderArraySet> sets)
         {
             if (header is null)
             {
@@ -121,17 +121,17 @@ namespace HeaderArrayConverter
                 case "1C":
                 {
                     string[] strings = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<HarSet>());
+                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<HeaderArraySet>());
                     }
                 case "RE":
                 {
-                    (float[] floats, IEnumerable<HarSet> sets) = GetReArray(reader, sparse);
+                    (float[] floats, IEnumerable<HeaderArraySet> sets) = GetReArray(reader, sparse);
                     return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
                 {
                     float[] floats = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<HarSet>());
+                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<HeaderArraySet>());
                 }
                 default:
                 {
@@ -223,7 +223,7 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, HarSet[] Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, HeaderArraySet[] Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -233,20 +233,26 @@ namespace HeaderArrayConverter
 
             if (BitConverter.ToInt32(dimensions, 4) != -1)
             {
-                throw new InvalidDataException("Expected 0xFF_FF_FF_FF .");
+                if (a != 0 && BitConverter.ToInt32(dimensions, 4) != 1)
+                {
+                    throw new InvalidDataException("Expected 0xFF_FF_FF_FF.");
+                }
             }
 
             // number of labels...again?
             int c = BitConverter.ToInt32(dimensions, 8);
 
             // Read coefficient
-            string coefficient = Encoding.ASCII.GetString(dimensions, 12, 12);
+            string coefficient = Encoding.ASCII.GetString(dimensions, 12, 12).Trim();
 
             if (BitConverter.ToInt32(dimensions, 24) != -1)
             {
-                throw new InvalidDataException("Expected 0xFF_FF_FF_FF .");
+                if (a != 0 && BitConverter.ToInt32(dimensions, 4) != 1)
+                {
+                    throw new InvalidDataException("Expected 0xFF_FF_FF_FF.");
+                }
             }
-
+            
             // Read set names
             string[] setNames = new string[a];
             for (int i = 0; i < a; i++)
@@ -275,14 +281,19 @@ namespace HeaderArrayConverter
                 labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
             }
 
-            HarSet[] sets = new HarSet[setNames.Length];
+            HeaderArraySet[] sets = new HeaderArraySet[setNames.Length];
 
             for (int i = 0; i < setNames.Length; i++)
             {
-                sets[i] = new HarSet(setNames[i], labelStrings[i]);
+                sets[i] = new HeaderArraySet(setNames[i], labelStrings[i]);
             }
             
             float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
+
+            if (!sets.Any())
+            {
+                sets = new HeaderArraySet[] { new HeaderArraySet(coefficient, coefficient) };
+            }
 
             return (data, sets);
         }
@@ -437,7 +448,7 @@ namespace HeaderArrayConverter
                         break;
                     }
                     record[item] = data.Skip(12).Skip(j * elementSize).Take(elementSize).ToArray();
-                    strings[item] = Encoding.ASCII.GetString(record[item]);
+                    strings[item] = Encoding.ASCII.GetString(record[item]).Trim();
                 }
             }
 

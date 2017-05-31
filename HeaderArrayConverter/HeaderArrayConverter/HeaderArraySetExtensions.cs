@@ -16,7 +16,7 @@ namespace HeaderArrayConverter
         /// </summary>
         /// <param name="source"></param>
         /// <returns></returns>
-        public static IEnumerable<string> AsEnumerable(this IEnumerable<HarSet> source)
+        public static IEnumerable<string> AsEnumerable(this IEnumerable<HeaderArraySet> source)
         {
             if (source is null)
             {
@@ -26,14 +26,14 @@ namespace HeaderArrayConverter
             return source.OuterCrossJoin();
         }
 
-        private static IEnumerable<string> OuterCrossJoin(this IEnumerable<HarSet> source)
+        private static IEnumerable<string> OuterCrossJoin(this IEnumerable<HeaderArraySet> source)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            IEnumerable<HarSet> sets = source as HarSet[] ?? source.ToArray();
+            IEnumerable<HeaderArraySet> sets = source as HeaderArraySet[] ?? source.ToArray();
 
             if (!sets.Any())
             {
@@ -45,14 +45,14 @@ namespace HeaderArrayConverter
                     .OuterCrossJoin()
                     .DefaultIfEmpty()
                     .SelectMany(
-                        x =>
+                        outer =>
                             sets.FirstOrDefault()
                                 .Items
                                 .Select(
-                                    y =>
-                                        x is null
-                                            ? y
-                                            : string.Join(" * ", y, x)));
+                                    inner =>
+                                        outer is null
+                                            ? inner
+                                            : $"{inner} * {outer}"));
         }
     }
 }
