@@ -13,15 +13,29 @@ namespace HeaderArrayConverter
     /// <typeparam name="T">
     /// The element type of the set.
     /// </typeparam>
+    /// <remarks>
+    /// This collection maintains an <see cref="IImmutableList{T}"/> of distinct items for enumeration 
+    /// and an <see cref="IImmutableSet{T}"/> for set comparisons. As a result, the memory footprint
+    /// will be larger than an alternative set implementation, such as <see cref="ImmutableHashSet{T}"/>.
+    /// </remarks>
     [PublicAPI]
     public class ImmutableOrderedSet<T> : IImmutableSet<T>
     {
+        /// <summary>
+        /// The distinct items of the initial collection stored in the initial order.
+        /// </summary>
         [NotNull]
         private readonly IImmutableList<T> _enumerable;
 
+        /// <summary>
+        /// The collection stored as an unordered set.
+        /// </summary>
         [NotNull]
         private readonly IImmutableSet<T> _set;
 
+        /// <summary>
+        /// The equality comparer provided at construction; otherwise the default comparer for T.
+        /// </summary>
         [NotNull]
         private readonly IEqualityComparer<T> _equalityComparer;
 
@@ -33,12 +47,6 @@ namespace HeaderArrayConverter
         /// </returns>
         public int Count => _set.Count;
         
-        /// <summary>
-        /// An empty immutable ordered set with the default comparer for <typeparamref name="T"/>.
-        /// </summary>
-        [NotNull]
-        public static readonly ImmutableOrderedSet<T> Empty = new ImmutableOrderedSet<T>(Enumerable.Empty<T>(), EqualityComparer<T>.Default);
-
         /// <summary>
         /// Constructs an <see cref="ImmutableOrderedSet{T}"/> from the <see cref="IEnumerable{T}"/> and <see cref="IEqualityComparer{T}"/>.
         /// </summary>
@@ -127,10 +135,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public IImmutableSet<T> Add(T value)
         {
-            return
-                _set.Contains(value)
-                    ? this
-                    : Create(_enumerable.Append(value), _equalityComparer);
+            return _set.Contains(value) ? this : Create(_enumerable.Append(value), _equalityComparer);
         }
 
         /// <summary>
@@ -140,10 +145,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public IImmutableSet<T> Clear()
         {
-            return
-                _set.Any()
-                    ? Empty
-                    : this;
+            return _set.Any() ? Create(Enumerable.Empty<T>(), _equalityComparer) : this;
         }
 
         /// <summary>
@@ -166,24 +168,46 @@ namespace HeaderArrayConverter
 
             other = other as T[] ?? other.ToArray();
 
-            return
-                _set.Overlaps(other)
-                    ? Create(_enumerable.Except(other, _equalityComparer), _equalityComparer)
-                    : this;
+            return _set.Overlaps(other) ? Create(_enumerable.Except(other, _equalityComparer), _equalityComparer) : this;
         }
 
+        /// <summary>
+        /// Produces a set that contains elements that exist in both this set and the specified set.
+        /// </summary>
+        /// <param name="other">
+        /// The set to intersect with this one.
+        /// </param>
+        /// <returns>
+        /// A new set that contains any elements that exist in both sets.
+        /// </returns>
         [Pure]
         [NotNull]
         public IImmutableSet<T> Intersect(IEnumerable<T> other)
         {
-            return _set.Intersect(other);
+            if (other is null)
+            {
+                return this;
+            }
+
+            other = other as T[] ?? other.ToArray();
+
+            return _set.Overlaps(other) ? Create(_enumerable.Intersect(other, _equalityComparer), _equalityComparer) : this;
         }
 
+        /// <summary>
+        /// Removes the specified value from this set.
+        /// </summary>
+        /// <param name="value">
+        /// The value to remove.
+        /// </param>
+        /// <returns>
+        /// A new set with the element removed, or this set if the element is not in this set.
+        /// </returns>
         [Pure]
         [NotNull]
         public IImmutableSet<T> Remove(T value)
         {
-            return _set.Remove(value);
+            return _set.Contains(value) ? Create(_enumerable.Where(x => !_equalityComparer.Equals(x, value)), _equalityComparer) : this;
         }
 
         [Pure]

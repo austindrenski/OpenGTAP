@@ -17,14 +17,10 @@ namespace HeaderArrayConverter
     public class HeaderArray<T> : HeaderArray
     {
         /// <summary>
-        /// The decoded form of <see cref="Array"/>
+        /// An immutable dictionary of the records with set labels.
         /// </summary>
-        public ImmutableArray<T> Records { get; }
-
-        /// <summary>
-        /// An enumerable collection of the records in the array with set labels.
-        /// </summary>
-        public IEnumerable<(string Label, T Record)> SetRecords => Records.Zip(SetRecordLabels, (x, y) => (y, x));
+        [NotNull]
+        public IImmutableDictionary<string, T> Records { get; }
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -50,7 +46,18 @@ namespace HeaderArrayConverter
         public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, [NotNull] IEnumerable<HeaderArraySet<string>> sets)
             : base(header, description, type, dimensions, sets)
         {
-            Records = records.ToImmutableArray();
+            if (records is null)
+            {
+                throw new ArgumentNullException(nameof(records));
+            }
+
+            Records =
+                SetRecordLabels.FullOuterZip(
+                                   records,
+                                   x => x.ToString())
+                               .ToImmutableOrderedDictionary(
+                                   x => x.Left,
+                                   x => x.Right);
         }
 
         /// <summary>
@@ -60,22 +67,22 @@ namespace HeaderArrayConverter
         {
             int length = SetRecordLabels.DefaultIfEmpty().Max(x => x?.Length ?? 0);
 
-            if (typeof(T) == typeof(string))
-            {
-                return
-                    Records.Aggregate(
-                        new StringBuilder(base.ToString()),
-                        (current, next) =>
-                            current.AppendLine($"[{next}]"),
-                        x =>
-                            x.ToString());
-            }
+            //if (typeof(T) == typeof(string))
+            //{
+            //    return
+            //        Records.Aggregate(
+            //            new StringBuilder(base.ToString()),
+            //            (current, next) =>
+            //                current.AppendLine($"[{next}]"),
+            //            x =>
+            //                x.ToString());
+            //}
 
             return
-                SetRecords.Aggregate(
+                Records.Aggregate(
                     new StringBuilder(base.ToString()),
                     (current, next) =>
-                        current.AppendLine($"[{next.Label.PadRight(length)}]: {next.Record}"),
+                        current.AppendLine($"[{next.Key.PadRight(length)}]: {next.Value}"),
                     x =>
                         x.ToString());
         }

@@ -275,7 +275,7 @@ namespace HeaderArrayConverter
                 }
             }
 
-            if (c - a == 1)
+            if (a > 0 && c > 0 && c - a == 1)
             {
                 setNames = setNames.Append(setNames.LastOrDefault()).ToArray();
                 labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
