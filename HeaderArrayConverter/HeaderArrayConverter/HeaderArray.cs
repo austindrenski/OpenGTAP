@@ -41,7 +41,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        public IEnumerable<HeaderArraySet> Sets { get; }
+        public IEnumerable<HeaderArraySet<string>> Sets { get; }
 
         /// <summary>
         /// The sets defined on the array expanded as record labels.
@@ -66,7 +66,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<HeaderArraySet> sets)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<HeaderArraySet<string>> sets)
         {
             if (header is null)
             {
@@ -102,9 +102,9 @@ namespace HeaderArrayConverter
             stringBuilder.AppendLine($"{nameof(Header)}: {Header}");
             stringBuilder.AppendLine($"{nameof(Description)}: {Description}");
             stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
-            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Where(x => x.Items != null).Select(x => $"{{ {string.Join(", ", x.Items)} }}"))}");
+            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Select(x => $"{{ {string.Join(", ", x)} }}"))}");
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
-            stringBuilder.AppendLine($"{nameof(Dimensions)}: {Sets.Select(x => x.Items.Count()).Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
+            stringBuilder.AppendLine($"{nameof(Dimensions)}: {Sets.Select(x => x.Count).Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             return stringBuilder.ToString();
         }
 
@@ -121,17 +121,17 @@ namespace HeaderArrayConverter
                 case "1C":
                 {
                     string[] strings = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<HeaderArraySet>());
+                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<HeaderArraySet<string>>());
                     }
                 case "RE":
                 {
-                    (float[] floats, IEnumerable<HeaderArraySet> sets) = GetReArray(reader, sparse);
+                    (float[] floats, IEnumerable<HeaderArraySet<string>> sets) = GetReArray(reader, sparse);
                     return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
                 {
                     float[] floats = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<HeaderArraySet>());
+                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<HeaderArraySet<string>>());
                 }
                 default:
                 {
@@ -223,7 +223,7 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, HeaderArraySet[] Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, HeaderArraySet<string>[] Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -281,18 +281,18 @@ namespace HeaderArrayConverter
                 labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
             }
 
-            HeaderArraySet[] sets = new HeaderArraySet[setNames.Length];
+            HeaderArraySet<string>[] sets = new HeaderArraySet<string>[setNames.Length];
 
             for (int i = 0; i < setNames.Length; i++)
             {
-                sets[i] = new HeaderArraySet(setNames[i], labelStrings[i]);
+                sets[i] = new HeaderArraySet<string>(setNames[i], labelStrings[i]);
             }
             
             float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
 
             if (!sets.Any())
             {
-                sets = new HeaderArraySet[] { new HeaderArraySet(coefficient, coefficient) };
+                sets = new HeaderArraySet<string>[] { new HeaderArraySet<string>(coefficient, coefficient) };
             }
 
             return (data, sets);

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -7,27 +9,49 @@ namespace HeaderArrayConverter
     /// 
     /// </summary>
     [PublicAPI]
-    public struct HeaderArraySet
+    public static class HeaderArraySet
     {
         /// <summary>
         /// 
         /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public IEnumerable<string> Items { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="items"></param>
-        public HeaderArraySet(string name, params string[] items)
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public static IEnumerable<string> AsEnumerable<T>(this IEnumerable<HeaderArraySet<T>> source)
         {
-            Name = name;
-            Items = items;
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            return source.OuterCrossJoin();
+        }
+
+        private static IEnumerable<string> OuterCrossJoin<T>(this IEnumerable<HeaderArraySet<T>> source)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            IEnumerable<HeaderArraySet<T>> sets = source as HeaderArraySet<T>[] ?? source.ToArray();
+
+            if (!sets.Any())
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            return
+                sets.Skip(1)
+                    .OuterCrossJoin()
+                    .DefaultIfEmpty()
+                    .SelectMany(
+                        outer =>
+                            sets.FirstOrDefault()
+                                .Select(
+                                    inner =>
+                                        outer is null
+                                            ? $"{inner}"
+                                            : $"{inner} * {outer}"));
         }
     }
 }
