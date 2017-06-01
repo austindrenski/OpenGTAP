@@ -19,9 +19,15 @@ namespace HeaderArrayConverter
     [PublicAPI]
     public class ImmutableOrderedDictionary<TKey, TValue> : IImmutableDictionary<TKey, TValue>
     {
+        /// <summary>
+        /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
+        /// </summary>
         [NotNull]
         private readonly IImmutableDictionary<TKey, TValue> _dictionary;
 
+        /// <summary>
+        /// The collection stored as an <see cref="IImmutableList{T}"/> where T is <see cref="KeyValuePair{TKey, TValue}"/>.
+        /// </summary>
         [NotNull]
         private readonly IImmutableList<KeyValuePair<TKey, TValue>> _items;
 
@@ -59,7 +65,7 @@ namespace HeaderArrayConverter
             }
 
             _items = source.ToImmutableArray();
-            _dictionary = _items.ToImmutableDictionary(x => x.Key, x => x.Value);
+            _dictionary = _items.ToImmutableDictionary();
         }
 
         /// <summary>
