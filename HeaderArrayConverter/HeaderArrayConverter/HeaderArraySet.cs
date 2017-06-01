@@ -30,17 +30,18 @@ namespace HeaderArrayConverter
 
             return
                 source.Aggregate(
-                          Enumerable.Empty<string>(),
-                          (current, next) =>
-                              next.SelectMany(
-                                  outer =>
-                                      current.DefaultIfEmpty()
-                                             .Select(
-                                                 inner =>
-                                                     inner is null
-                                                         ? $"{outer}"
-                                                         : $"{inner}*{outer}")))
-                      .ToImmutableOrderedSet();
+                    Enumerable.Empty<string>(),
+                    (current, next) =>
+                        next.SelectMany(
+                            outer =>
+                                current.DefaultIfEmpty()
+                                       .Select(
+                                           inner =>
+                                               inner is null
+                                                   ? $"{outer}"
+                                                   : $"{inner}*{outer}")),
+                    result =>
+                        result.ToImmutableOrderedSet());
         }
     }
 }
