@@ -78,6 +78,13 @@ namespace HeaderArrayConverter
             //                x.ToString());
             //}
 
+            //foreach (IImmutableSet<string> item in ((ImmutableOrderedDictionary<string, T>)Records).Sets)
+            //{
+            //    Console.WriteLine("---Printing sets---");
+            //    Console.WriteLine(string.Join(Environment.NewLine, item));
+            //    Console.WriteLine("-------------------");
+            //}
+
             return
                 Records.Aggregate(
                     new StringBuilder(base.ToString()),

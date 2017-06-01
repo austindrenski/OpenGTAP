@@ -41,15 +41,30 @@ namespace HeaderArrayConverter
         /// </summary>
         public TValue this[TKey key] => _dictionary[key];
 
+        // TODO: allow for comma delimited set names => a["first", "second"] == a["first*second"].
+        ///// <summary>
+        ///// Gets the element that has the specified key in the read-only dictionary.
+        ///// </summary>
+        //public TValue this[params TKey[] keyComponents] => _dictionary[keyComponents];
+
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
         /// </summary>
+        [NotNull]
         public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <summary>
         /// Gets an enumerable collection that contains the values in the read-only dictionary.
         /// </summary>
+        [NotNull]
         public IEnumerable<TValue> Values => _dictionary.Values;
+
+        /// <summary>
+        /// Gets an immutable collection of the immutable sets defined on the header array.
+        /// </summary>
+        [NotNull]
+        [ItemNotNull]
+        public IImmutableList<IImmutableSet<TKey>> Sets { get; }
 
         /// <summary>
         /// Constructs an <see cref="ImmutableOrderedDictionary{TKey, TValue}"/> in which the insertion order is preserved.
@@ -66,6 +81,41 @@ namespace HeaderArrayConverter
 
             _items = source.ToImmutableArray();
             _dictionary = _items.ToImmutableDictionary();
+
+            TKey[] keys = _dictionary.Keys.ToArray();
+
+            if (typeof(TKey) == typeof(string))
+            {
+                IEnumerable<string[]> splits =
+                    keys.OfType<string>()
+                        .Select(x => x.Split('*'))
+                        .ToArray();
+
+                int length =
+                    splits.Max(x => x.Length);
+
+                HashSet<string>[] sets =
+                    new HashSet<string>[length];
+
+                foreach (string[] item in splits)
+                {
+                    for (int i = 0; i < item.Length; i++)
+                    {
+                        if (sets[i] is null)
+                        {
+                            sets[i] = new HashSet<string>();
+                        }
+
+                        sets[i].Add(item[i]);
+                    }
+                }
+
+                Sets = sets.Select(x => (IImmutableSet<TKey>) x.OfType<TKey>().ToImmutableHashSet()).ToImmutableArray();
+            }
+            else
+            {
+                Sets = Enumerable.Empty<IImmutableSet<TKey>>().ToImmutableArray();
+            }
         }
 
         /// <summary>
@@ -95,6 +145,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An enumerator that can be used to iterate through the collection.
         /// </returns>
+        [Pure]
+        [NotNull]
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             return _items.GetEnumerator();
@@ -106,6 +158,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An enumerator that can be used to iterate through the collection.
         /// </returns>
+        [Pure]
+        [NotNull]
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _items.GetEnumerator();
@@ -120,6 +174,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// True if the read-only dictionary contains an element that has the specified key; otherwise, false.
         /// </returns> 
+        [Pure]
         public bool ContainsKey(TKey key)
         {
             return _dictionary.ContainsKey(key);
@@ -137,6 +192,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// True if the object that implements the <see cref="System.Collections.Generic.IReadOnlyDictionary{TKey, TValue}"/> interface contains an element that has the specified key; otherwise, false.
         /// </returns>
+        [Pure]
         public bool TryGetValue(TKey key, out TValue value)
         {
             return _dictionary.TryGetValue(key, out value);
@@ -145,6 +201,8 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets an empty dictionary with equivalent ordering and key/value comparison rules.
         /// </summary>
+        [Pure]
+        [NotNull]
         public IImmutableDictionary<TKey, TValue> Clear()
         {
             return _dictionary.Any() ? Create(Enumerable.Empty<KeyValuePair<TKey, TValue>>()) : this;
@@ -162,6 +220,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// A value indicating whether the search was successful.
         /// </returns>
+        [Pure]
         public bool TryGetKey(TKey equalKey, out TKey actualKey)
         {
             return _dictionary.TryGetKey(equalKey, out actualKey);
@@ -179,6 +238,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The new dictionary containing the additional key-value pair.
         /// </returns>
+        [Pure]
+        [NotNull]
         public IImmutableDictionary<TKey, TValue> Add(TKey key, TValue value)
         {
             return _dictionary.Add(key, value);
@@ -193,6 +254,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The new dictionary containing the additional key-value pairs.
         /// </returns>
+        [Pure]
+        [NotNull]
         public IImmutableDictionary<TKey, TValue> AddRange(IEnumerable<KeyValuePair<TKey, TValue>> pairs)
         {
             return _dictionary.AddRange(pairs);
@@ -210,6 +273,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The new dictionary containing the additional key-value pair.
         /// </returns>
+        [Pure]
+        [NotNull]
         public IImmutableDictionary<TKey, TValue> SetItem(TKey key, TValue value)
         {
             return _dictionary.SetItem(key, value);
@@ -224,6 +289,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An immutable dictionary.
         /// </returns>
+        [Pure]
+        [NotNull]
         public IImmutableDictionary<TKey, TValue> SetItems(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             return _dictionary.SetItems(items);
@@ -238,6 +305,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// A new dictionary with those keys removed; or this instance if those keys are not in the dictionary.
         /// </returns>
+        [Pure]
+        [NotNull]
         public IImmutableDictionary<TKey, TValue> RemoveRange(IEnumerable<TKey> keys)
         {
             return _dictionary.RemoveRange(keys);
@@ -252,6 +321,8 @@ namespace HeaderArrayConverter
         /// <returns>
         /// A new dictionary with the matching entry removed; or this instance if the key is not in the dictionary.
         /// </returns>
+        [Pure]
+        [NotNull]
         public IImmutableDictionary<TKey, TValue> Remove(TKey key)
         {
             return _dictionary.Remove(key);
@@ -266,6 +337,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// True if this dictionary contains the key-value pair; otherwise, false.
         /// </returns>
+        [Pure]
         public bool Contains(KeyValuePair<TKey, TValue> pair)
         {
             return _dictionary.Contains(pair);

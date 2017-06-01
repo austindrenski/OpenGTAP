@@ -51,7 +51,7 @@ namespace HeaderArrayConverter
                                     inner =>
                                         outer is null
                                             ? $"{inner}"
-                                            : $"{inner} * {outer}"));
+                                            : $"{inner}*{outer}"));
         }
     }
 }
