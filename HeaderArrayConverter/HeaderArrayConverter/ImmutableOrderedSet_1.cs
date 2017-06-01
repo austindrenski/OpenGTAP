@@ -40,13 +40,19 @@ namespace HeaderArrayConverter
         private readonly IEqualityComparer<T> _equalityComparer;
 
         /// <summary>
+        /// Gets the name of this set.
+        /// </summary>
+        [CanBeNull]
+        public string Name { get; }
+
+        /// <summary>
         /// Gets the number of elements in the collection.
         /// </summary>
         /// <returns>
         /// The number of elements in the collection.
         /// </returns>
         public int Count => _set.Count;
-        
+
         /// <summary>
         /// Constructs an <see cref="ImmutableOrderedSet{T}"/> from the <see cref="IEnumerable{T}"/> and <see cref="IEqualityComparer{T}"/>.
         /// </summary>
@@ -56,7 +62,10 @@ namespace HeaderArrayConverter
         /// <param name="equalityComparer">
         /// The equality comparer to determine uniqueness for the source collection. 
         /// </param>
-        protected ImmutableOrderedSet([NotNull] IEnumerable<T> source, [NotNull] IEqualityComparer<T> equalityComparer)
+        /// <param name="name">
+        /// An optional name for this set.
+        /// </param>
+        protected ImmutableOrderedSet([NotNull] IEnumerable<T> source, [NotNull] IEqualityComparer<T> equalityComparer, [CanBeNull] string name)
         {
             if (source is null)
             {
@@ -70,7 +79,23 @@ namespace HeaderArrayConverter
             _enumerable = source.Distinct(equalityComparer).ToImmutableArray();
             _set = _enumerable.ToImmutableHashSet(equalityComparer);
             _equalityComparer = equalityComparer;
+            Name = name;
         }
+
+        /// <summary>
+        /// Constructs an <see cref="ImmutableOrderedSet{T}"/> from the <see cref="IEnumerable{T}"/> and <see cref="IEqualityComparer{T}"/>.
+        /// </summary>
+        /// <param name="name">
+        /// An optional name for this set.
+        /// </param>
+        /// <param name="equalityComparer">
+        /// The equality comparer to determine uniqueness for the source collection. 
+        /// </param>
+        /// <param name="items">
+        /// The source collection.
+        /// </param>
+        protected ImmutableOrderedSet([CanBeNull] string name, [NotNull] IEqualityComparer<T> equalityComparer, params T[] items) 
+            : this(items, equalityComparer, name) { }
 
         /// <summary>
         /// Creates an <see cref="ImmutableOrderedSet{T}"/> from the <see cref="IEnumerable{T}"/> and optional <see cref="IEqualityComparer{T}"/>.
@@ -81,19 +106,45 @@ namespace HeaderArrayConverter
         /// <param name="equalityComparer">
         /// An optional equality comparer for the source collection. 
         /// </param>
+        /// <param name="name">
+        /// An optional name for this set.
+        /// </param>
         /// <returns>
         /// A new <see cref="ImmutableOrderedSet{T}"/> containing the distinct items of the source collection.
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableOrderedSet<T> Create([NotNull] IEnumerable<T> source, [CanBeNull] IEqualityComparer<T> equalityComparer = null)
+        public static ImmutableOrderedSet<T> Create([NotNull] IEnumerable<T> source, [CanBeNull] IEqualityComparer<T> equalityComparer = null, [CanBeNull] string name = null)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            return new ImmutableOrderedSet<T>(source, equalityComparer ?? EqualityComparer<T>.Default);
+            return new ImmutableOrderedSet<T>(source, equalityComparer ?? EqualityComparer<T>.Default, name);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="ImmutableOrderedSet{T}"/> from the <see cref="IEnumerable{T}"/> and optional <see cref="IEqualityComparer{T}"/>.
+        /// </summary>
+
+        /// <param name="equalityComparer">
+        /// An optional equality comparer for the source collection. 
+        /// </param>
+        /// <param name="name">
+        /// An optional name for this set.
+        /// </param>
+        /// <param name="items">
+        /// The source collection.
+        /// </param>
+        /// <returns>
+        /// A new <see cref="ImmutableOrderedSet{T}"/> containing the distinct items of the source collection.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        public static ImmutableOrderedSet<T> Create([CanBeNull] string name, IEqualityComparer<T> equalityComparer = null, params T[] items)
+        {
+            return Create(items, equalityComparer, name);
         }
 
         /// <summary>

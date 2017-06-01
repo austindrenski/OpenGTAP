@@ -19,17 +19,20 @@ namespace HeaderArrayConverter
         /// <param name="source">
         /// The collection from which to create the <see cref="ImmutableOrderedSet{T}"/>.
         /// </param>
+        /// <param name="name">
+        /// An optional name for this set.
+        /// </param>
         /// <returns>
         /// An <see cref="ImmutableOrderedSet{T}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableOrderedSet<T> ToImmutableOrderedSet<T>([NotNull] this IEnumerable<T> source)
+        public static ImmutableOrderedSet<T> ToImmutableOrderedSet<T>([NotNull] this IEnumerable<T> source, [CanBeNull] string name = null)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            return source.ToImmutableOrderedSet(EqualityComparer<T>.Default);
+            return source.ToImmutableOrderedSet(EqualityComparer<T>.Default, name);
         }
 
         /// <summary>
@@ -44,10 +47,13 @@ namespace HeaderArrayConverter
         /// <param name="equalityComparer">
         /// 
         /// </param>
+        /// <param name="name">
+        /// An optional name for this set.
+        /// </param>
         /// <returns>
         /// An <see cref="ImmutableOrderedSet{T}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableOrderedSet<T> ToImmutableOrderedSet<T>([NotNull] this IEnumerable<T> source, [NotNull] IEqualityComparer<T> equalityComparer)
+        public static ImmutableOrderedSet<T> ToImmutableOrderedSet<T>([NotNull] this IEnumerable<T> source, [NotNull] IEqualityComparer<T> equalityComparer, [CanBeNull] string name = null)
         {
             if (source is null)
             {
@@ -58,7 +64,7 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(equalityComparer));
             }
 
-            return ImmutableOrderedSet<T>.Create(source, equalityComparer);
+            return ImmutableOrderedSet<T>.Create(source, equalityComparer, name);
         }
     }
 }

@@ -43,7 +43,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, [NotNull] IEnumerable<HeaderArraySet<string>> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] T[] records, [NotNull] IEnumerable<ImmutableOrderedSet<string>> sets)
             : base(header, description, type, dimensions, sets)
         {
             if (records is null)

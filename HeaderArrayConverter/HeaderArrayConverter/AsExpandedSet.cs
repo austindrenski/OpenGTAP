@@ -7,13 +7,13 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter
 {
     /// <summary>
-    /// Extension methods for operating on sequences of <see cref="HeaderArraySet{T}"/> objects.
+    /// Extension methods for operating on sequences of <see cref="ImmutableOrderedSet{T}"/> objects.
     /// </summary>
     [PublicAPI]
-    public static class HeaderArraySet
+    public static class AsExpandedSetExtensions
     {
         /// <summary>
-        /// Expands a <see cref="HeaderArraySet{T}"/> collection ordered with standard HAR semantics. 
+        /// Expands a <see cref="ImmutableOrderedSet{T}"/> collection ordered with standard HAR semantics. 
         /// </summary>
         /// <param name="source">
         /// The source collection.
@@ -21,7 +21,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// A set of asterisk-delimited strings ordered with standard HAR semantics. 
         /// </returns>
-        public static IImmutableSet<string> AsExpandedSet<T>(this IEnumerable<HeaderArraySet<T>> source)
+        public static IImmutableSet<string> AsExpandedSet<T>(this IEnumerable<ImmutableOrderedSet<T>> source)
         {
             if (source is null)
             {

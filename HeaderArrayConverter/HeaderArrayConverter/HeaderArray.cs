@@ -41,7 +41,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        public IEnumerable<HeaderArraySet<string>> Sets { get; }
+        public IEnumerable<ImmutableOrderedSet<string>> Sets { get; }
 
         /// <summary>
         /// The sets defined on the array expanded as record labels.
@@ -66,7 +66,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<HeaderArraySet<string>> sets)
+        protected HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<ImmutableOrderedSet<string>> sets)
         {
             if (header is null)
             {
@@ -121,17 +121,17 @@ namespace HeaderArrayConverter
                 case "1C":
                 {
                     string[] strings = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<HeaderArraySet<string>>());
+                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<ImmutableOrderedSet<string>>());
                     }
                 case "RE":
                 {
-                    (float[] floats, IEnumerable<HeaderArraySet<string>> sets) = GetReArray(reader, sparse);
+                    (float[] floats, IEnumerable<ImmutableOrderedSet<string>> sets) = GetReArray(reader, sparse);
                     return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
                 {
                     float[] floats = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<HeaderArraySet<string>>());
+                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<ImmutableOrderedSet<string>>());
                 }
                 default:
                 {
@@ -223,7 +223,7 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, HeaderArraySet<string>[] Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, ImmutableOrderedSet<string>[] Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -281,18 +281,21 @@ namespace HeaderArrayConverter
                 labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
             }
 
-            HeaderArraySet<string>[] sets = new HeaderArraySet<string>[setNames.Length];
+            ImmutableOrderedSet<string>[] sets = new ImmutableOrderedSet<string>[setNames.Length];
 
             for (int i = 0; i < setNames.Length; i++)
             {
-                sets[i] = new HeaderArraySet<string>(setNames[i], labelStrings[i]);
+                sets[i] = ImmutableOrderedSet<string>.Create(setNames[i], null, labelStrings[i]);
             }
             
             float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
 
             if (!sets.Any())
             {
-                sets = new HeaderArraySet<string>[] { new HeaderArraySet<string>(coefficient, coefficient) };
+                sets = new ImmutableOrderedSet<string>[]
+                {
+                    ImmutableOrderedSet<string>.Create(coefficient, null, coefficient)
+                };
             }
 
             return (data, sets);
