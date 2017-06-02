@@ -7,8 +7,14 @@ using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
 {
+    /// <summary>
+    /// Represents a sequence of zero or more keys. This type is suitable for use in a <see cref="IDictionary{TKey, TValue}"/>.
+    /// </summary>
+    /// <typeparam name="T">
+    /// The type of key in the sequence.
+    /// </typeparam>
     [PublicAPI]
-    public struct KeySequence<T> : IEnumerable<T>, IEquatable<KeySequence<T>>
+    public struct KeySequence<T> : IEnumerable<T>, IEquatable<KeySequence<T>>, IStructuralEquatable
     {
         public static KeySequence<T> Empty { get; } = new KeySequence<T>(new T[0]);
 
@@ -24,11 +30,6 @@ namespace HeaderArrayConverter
         public static implicit operator KeySequence<T>(T value)
         {
             return new KeySequence<T>(value);
-        }
-
-        public static explicit operator T(KeySequence<T> values)
-        {
-            return values.Count == 1 ? values.First() : throw new InvalidCastException($"{nameof(KeySequence<T>)} contains more than one {nameof(T)}.");
         }
 
         public override string ToString()
@@ -49,6 +50,11 @@ namespace HeaderArrayConverter
         public bool Equals(KeySequence<T> other)
         {
             return _values.SequenceEqual(other);
+        }
+
+        public bool Equals(object other, IEqualityComparer comparer)
+        {
+            return comparer.Equals(this, other);
         }
 
         public override bool Equals(object obj)
@@ -77,6 +83,11 @@ namespace HeaderArrayConverter
         public override int GetHashCode()
         {
             return _values.Aggregate(0, (current, next) => unchecked(391 * current + (next?.GetHashCode() ?? 0)));
+        }
+
+        public int GetHashCode(IEqualityComparer comparer)
+        {
+            return comparer.GetHashCode(this);
         }
     }
 }
