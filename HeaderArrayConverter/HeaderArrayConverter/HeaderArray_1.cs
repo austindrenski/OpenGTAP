@@ -20,7 +20,7 @@ namespace HeaderArrayConverter
         /// An immutable dictionary of the records with set labels.
         /// </summary>
         [NotNull]
-        public IImmutableDictionary<string, T> Records { get; }
+        public IImmutableDictionary<KeySequence<string>, T> Records { get; }
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -65,31 +65,20 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
-            int length = SetRecordLabels.DefaultIfEmpty().Max(x => x?.Length ?? 0);
-
-            //if (typeof(T) == typeof(string))
-            //{
-            //    return
-            //        Records.Aggregate(
-            //            new StringBuilder(base.ToString()),
-            //            (current, next) =>
-            //                current.AppendLine($"[{next}]"),
-            //            x =>
-            //                x.ToString());
-            //}
-
             //foreach (IImmutableSet<string> item in ((ImmutableOrderedDictionary<string, T>)Records).Sets)
             //{
             //    Console.WriteLine("---Printing sets---");
             //    Console.WriteLine(string.Join(Environment.NewLine, item));
             //    Console.WriteLine("-------------------");
             //}
+            
+            int length = Records.Keys.Max(x => x.ToString().Length);
 
             return
                 Records.Aggregate(
                     new StringBuilder(base.ToString()),
                     (current, next) =>
-                        current.AppendLine($"[{next.Key.PadRight(length)}]: {next.Value}"),
+                        current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
                     x =>
                         x.ToString());
         }

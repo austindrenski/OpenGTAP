@@ -46,7 +46,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array expanded as record labels.
         /// </summary>
-        public IEnumerable<string> SetRecordLabels => Sets.AsExpandedSet();
+        public IEnumerable<KeySequence<string>> SetRecordLabels => Sets.AsExpandedSet().Select(x => new KeySequence<string>(x.Split('*')));
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
