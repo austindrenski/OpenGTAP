@@ -52,12 +52,14 @@ namespace HeaderArrayConverter
             }
 
             Records =
-                SetRecordLabels.FullOuterZip(
-                                   records,
-                                   x => x.ToString())
-                               .ToImmutableOrderedDictionary(
-                                   x => x.Left,
-                                   x => x.Right);
+                Sets.AsExpandedSet()
+                    .Select(x => new KeySequence<string>(x.Split('*')))
+                    .FullOuterZip(
+                        records,
+                        x => x.ToString())
+                    .ToImmutableOrderedDictionary(
+                        x => x.Left,
+                        x => x.Right);
         }
 
         /// <summary>

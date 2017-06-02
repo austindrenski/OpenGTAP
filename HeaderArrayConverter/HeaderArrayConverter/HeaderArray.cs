@@ -36,17 +36,12 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The dimensions of the array.
         /// </summary>
-        public IEnumerable<int> Dimensions { get; }
+        public IImmutableList<int> Dimensions { get; }
 
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        public IEnumerable<ImmutableOrderedSet<string>> Sets { get; }
-
-        /// <summary>
-        /// The sets defined on the array expanded as record labels.
-        /// </summary>
-        public IEnumerable<KeySequence<string>> SetRecordLabels => Sets.AsExpandedSet().Select(x => new KeySequence<string>(x.Split('*')));
+        public IImmutableList<ImmutableOrderedSet<string>> Sets { get; }
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -88,7 +83,7 @@ namespace HeaderArrayConverter
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
             Dimensions = dimensions.ToImmutableArray();
-            Sets = sets;
+            Sets = sets.ToImmutableArray();
             Type = type;
         }
         
