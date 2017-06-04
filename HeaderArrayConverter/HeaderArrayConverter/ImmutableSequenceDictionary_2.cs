@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter
 {
     /// <summary>
-    /// Represents an immutable dictionary in which the insertion order is preserved.
+    /// Represents an immutable dictionary using sequence keys and in which the insertion order is preserved.
     /// </summary>
     /// <typeparam name="TKey">
     /// The key type.
@@ -17,7 +17,7 @@ namespace HeaderArrayConverter
     /// The item type.
     /// </typeparam>
     [PublicAPI]
-    public class ImmutableOrderedDictionary<TKey, TValue> : IImmutableDictionary<KeySequence<TKey>, TValue>
+    public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableDictionary<KeySequence<TKey>, TValue>
     {
         /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
@@ -35,19 +35,19 @@ namespace HeaderArrayConverter
         /// Gets the number of elements in the collection.
         /// </summary>
         public int Count => _dictionary.Count;
-        
+
         /// <summary>
         /// Gets the element that has the specified key in the read-only dictionary.
         /// </summary>
-        public KeyValueSequence<TKey, TValue> this[KeySequence<TKey> keyComponents]
+        public ValueSequence<TKey, TValue> this[params TKey[] keys]
         {
             get
             {
-                KeySequence<TKey> key = new KeySequence<TKey>(keyComponents);
+                KeySequence<TKey> key = new KeySequence<TKey>(keys);
                 return
                     _dictionary.ContainsKey(key)
-                    ? new KeyValueSequence<TKey, TValue>(key, _dictionary[key])
-                    : new KeyValueSequence<TKey, TValue>(key, _dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
+                        ? new ValueSequence<TKey, TValue>(key, _dictionary[key])
+                        : new ValueSequence<TKey, TValue>(_dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
             }
         }
 
@@ -73,12 +73,12 @@ namespace HeaderArrayConverter
         public IImmutableList<IImmutableSet<TKey>> Sets { get; }
         
         /// <summary>
-        /// Constructs an <see cref="ImmutableOrderedDictionary{TKey, TValue}"/> in which the insertion order is preserved.
+        /// Constructs an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> in which the insertion order is preserved.
         /// </summary>
         /// <param name="source">
         /// The collection from which to create the 
         /// </param>
-        public ImmutableOrderedDictionary([NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        public ImmutableSequenceDictionary([NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
@@ -91,24 +91,24 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// Creates an <see cref="ImmutableOrderedDictionary{TKey, TValue}"/> from the collection.
+        /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
         /// </summary>
         /// <param name="source">
         /// The source collection.
         /// </param>
         /// <returns>
-        /// An <see cref="ImmutableOrderedDictionary{TKey, TValue}"/> created from the collection.
+        /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> created from the collection.
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableOrderedDictionary<TKey, TValue> Create(IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        public static ImmutableSequenceDictionary<TKey, TValue> Create(IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            return new ImmutableOrderedDictionary<TKey, TValue>(source);
+            return new ImmutableSequenceDictionary<TKey, TValue>(source);
         }
 
         /// <summary>

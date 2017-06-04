@@ -14,7 +14,7 @@ namespace HeaderArrayConverter
     /// The type of key in the sequence.
     /// </typeparam>
     [PublicAPI]
-    public struct KeySequence<T> : IEnumerable<T>, IEquatable<KeySequence<T>>, IStructuralEquatable
+    public struct KeySequence<T> : IEnumerable<T>, IEquatable<T>, IEquatable<KeySequence<T>>, IStructuralEquatable
     {
         /// <summary>
         /// The sequence values.
@@ -66,6 +66,11 @@ namespace HeaderArrayConverter
         public static implicit operator KeySequence<T>(KeySequence<object> value)
         {
             return new KeySequence<T>((IEnumerable<T>) value._values);
+        }
+
+        public static implicit operator string(KeySequence<T> value)
+        {
+            return value.ToString();
         }
 
         public static implicit operator KeySequence<T>(T value)
@@ -146,6 +151,20 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
+        /// Indicates whether the current object is equal to another object of the same type.
+        /// </summary>
+        /// <param name="other">
+        /// An object to compare with this object.
+        /// </param>
+        /// <returns>
+        /// True if the current object is equal to the <paramref name="other"/> parameter; otherwise, false.
+        /// </returns>
+        public bool Equals(T other)
+        {
+            return _values.SequenceEqual(Enumerable.Empty<T>().Append(other));
+        }
+
+        /// <summary>
         /// Determines whether an object is structurally equal to the current instance.
         /// </summary>
         /// <param name="other">
@@ -187,7 +206,7 @@ namespace HeaderArrayConverter
 
         public override int GetHashCode()
         {
-            return _values.Aggregate(0, (current, next) => unchecked(391 * current + (next?.GetHashCode() ?? 0)));
+            return _values.GetHashCode();
         }
 
         public int GetHashCode(IEqualityComparer comparer)

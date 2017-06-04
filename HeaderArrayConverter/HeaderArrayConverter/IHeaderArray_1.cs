@@ -3,7 +3,5 @@
 namespace HeaderArrayConverter
 {
     [PublicAPI]
-    public interface IHeaderArray<T> : IHeaderArray, IIndexerProvider<string, T>
-    {
-    }
+    public interface IHeaderArray<T> : ISequenceIndexer<string, T>, IHeaderArray { }
 }

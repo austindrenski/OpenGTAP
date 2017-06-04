@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -50,20 +51,20 @@ namespace HeaderArrayConverter
         /// An immutable dictionary of the records with set labels.
         /// </summary>
         [NotNull]
-        private ImmutableOrderedDictionary<string, T> Records { get; }
+        private ImmutableSequenceDictionary<string, T> Records { get; }
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
-        /// <param name="key">
+        /// <param name="keys">
         /// The components that define the key whose value is returned.
         /// </param>
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        public KeyValueSequence<string, T> this[KeySequence<string> key] => new KeyValueSequence<string, T>(key, Records[key]);
+        public IEnumerable<KeyValuePair<KeySequence<string>, T>> this[params string[] keys] => Records[keys];
 
-        KeyValueSequence IIndexerProvider.this[KeySequence<object> key] => this[new KeySequence<string>(key.Cast<string>())];
+        IEnumerable ISequenceIndexer<string>.this[params string[] keys] => this[keys];
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
@@ -125,6 +126,11 @@ namespace HeaderArrayConverter
                         x => x.Right);
         }
 
+        IHeaderArray<TResult> IHeaderArray.As<TResult>()
+        {
+            return (IHeaderArray<TResult>)this;
+        }
+
         /// <summary>
         /// Returns a string representation of the contents of this <see cref="HeaderArray"/>.
         /// </summary>
@@ -148,6 +154,16 @@ namespace HeaderArrayConverter
                         current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
                     x =>
                         x.ToString());
+        }
+
+        public IEnumerator<KeyValuePair<KeySequence<string>, T>> GetEnumerator()
+        {
+            return Records.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

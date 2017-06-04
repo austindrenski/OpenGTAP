@@ -11,11 +11,11 @@ namespace HeaderArrayConverter
     [PublicAPI]
     public class HeaderArrayFile : IEnumerable<IHeaderArray>
     {
-        private ImmutableOrderedDictionary<string, IHeaderArray> Arrays { get; }
+        private ImmutableSequenceDictionary<string, IHeaderArray> Arrays { get; }
 
         public int Count => Arrays.Count;
 
-        public IHeaderArray this[KeySequence<string> key] => Arrays[key].Single().Value;
+        public IHeaderArray this[string key] => Arrays[key].Single().Value;
 
         public HeaderArrayFile(IEnumerable<IHeaderArray> arrays)
         {

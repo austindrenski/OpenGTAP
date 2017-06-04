@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using HeaderArrayConverter;
 
 namespace HeaderArrayConsole
@@ -11,16 +12,21 @@ namespace HeaderArrayConsole
             //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
             //const string file = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
             //const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
-            
+
             HeaderArrayFile arrays = HeaderArrayFile.Read(file);
 
             Console.WriteLine(arrays);
 
-            Console.WriteLine(arrays["TVOM"]["AGR"]["USA"]);
+            Console.WriteLine(arrays["TVOM"]["AGR", "USA"]);
 
-            Console.WriteLine(arrays["TVOM"]["AGR"]["ROW"]);
+            Console.WriteLine(arrays["TVOM"]["AGR", "ROW"]);
 
             Console.WriteLine(arrays["TVOM"]["AGR"]);
+
+            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>())
+            {
+                Console.WriteLine(item);
+            }
 
             Console.ReadLine();
         }
