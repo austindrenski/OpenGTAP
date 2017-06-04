@@ -23,7 +23,32 @@ namespace HeaderArrayConsole
 
             Console.WriteLine(arrays["TVOM"]["AGR"]);
 
-            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>())
+            foreach (object item in arrays["TVOM"]["AGR", "USA"])
+            {
+                Console.WriteLine(item);
+            }
+
+            foreach (object item in arrays["TVOM"]["AGR", "ROW"])
+            {
+                Console.WriteLine(item);
+            }
+
+            foreach (object item in arrays["TVOM"]["AGR"])
+            {
+                Console.WriteLine(item);
+            }
+
+            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR", "USA"])
+            {
+                Console.WriteLine(item);
+            }
+
+            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR", "ROW"])
+            {
+                Console.WriteLine(item);
+            }
+
+            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR"])
             {
                 Console.WriteLine(item);
             }
