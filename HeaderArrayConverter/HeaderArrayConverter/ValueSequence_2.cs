@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter
 {
     [PublicAPI]
-    public struct ValueSequence<TKey, TValue> : IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>, IEquatable<IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>>, IEquatable<KeyValuePair<KeySequence<TKey>, TValue>>
+    public struct ValueSequence<TKey, TValue> : IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>, IEquatable<ValueSequence<TKey, TValue>>, IEquatable<IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>>, IEquatable<KeyValuePair<KeySequence<TKey>, TValue>>
     {
         [NotNull]
         private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _items;
@@ -46,21 +46,66 @@ namespace HeaderArrayConverter
             return new ValueSequence<TKey, TValue>(value);
         }
 
+        public bool Equals(ValueSequence<TKey, TValue> other)
+        {
+            return _items.SequenceEqual(other);
+        }
+
+        public static bool operator ==(ValueSequence<TKey, TValue> left, ValueSequence<TKey, TValue> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ValueSequence<TKey, TValue> left, ValueSequence<TKey, TValue> right)
+        {
+            return !left.Equals(right);
+        }
+
         public bool Equals(IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> other)
         {
             return _items.SequenceEqual(other);
+        }
+
+        public static bool operator ==(ValueSequence<TKey, TValue> left, IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ValueSequence<TKey, TValue> left, IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> right)
+        {
+            return !left.Equals(right);
         }
 
         public bool Equals(KeyValuePair<KeySequence<TKey>, TValue> other)
         {
             return _items.Count == 1 && _items.Single().Equals(other);
         }
+        
+        public static bool operator ==(ValueSequence<TKey, TValue> left, KeyValuePair<KeySequence<TKey>, TValue> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ValueSequence<TKey, TValue> left, KeyValuePair<KeySequence<TKey>, TValue> right)
+        {
+            return !left.Equals(right);
+        }
 
         public override bool Equals(object obj)
         {
             return obj is IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> sequence && Equals(sequence);
         }
-        
+
+        public static bool operator ==(ValueSequence<TKey, TValue> left, object right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ValueSequence<TKey, TValue> left, object right)
+        {
+            return !left.Equals(right);
+        }
+
         public override int GetHashCode()
         {
             return _items.GetHashCode();
