@@ -41,14 +41,26 @@ namespace HeaderArrayConverter
         /// </summary>
         public IEnumerable<T> this[params int[] index] => Yield(index);
 
-        public KeySequence(params T[] keys)
+        public KeySequence(params T[] keys) : this(keys as IEnumerable<T>) { }
+
+        public KeySequence(IEnumerable<T> keys) 
         {
             _values = keys.ToImmutableArray();
         }
-
+        
         public static implicit operator KeySequence<T>(T value)
         {
             return new KeySequence<T>(value);
+        }
+
+        public static KeySequence<T> operator +(KeySequence<T> left, KeySequence<T> right)
+        {
+            return new KeySequence<T>(left.Concat(right));
+        }
+
+        public static KeySequence<T> operator +(KeySequence<T> left, T[] right)
+        {
+            return new KeySequence<T>(left.Concat(right));
         }
 
         private IEnumerable<T> Yield(IEnumerable<int> index)
