@@ -35,26 +35,23 @@ namespace HeaderArrayConverter
         /// Gets the number of elements in the collection.
         /// </summary>
         public int Count => _dictionary.Count;
-
+        
         /// <summary>
         /// Gets the element that has the specified key in the read-only dictionary.
         /// </summary>
-        public TValue this[KeySequence<TKey> key] => _dictionary[key];
-
-        /// <summary>
-        /// Gets the element that has the specified key in the read-only dictionary.
-        /// </summary>
-        public IKeyValueSequence<TKey, TValue> this[params TKey[] keyComponents]
+        public KeyValueSequence<TKey, TValue> this[KeySequence<TKey> keyComponents]
         {
             get
             {
                 KeySequence<TKey> key = new KeySequence<TKey>(keyComponents);
-                return 
-                    _dictionary.ContainsKey(key) 
-                    ? new KeyValueSequence<TKey, TValue>(key, _dictionary[key]) 
+                return
+                    _dictionary.ContainsKey(key)
+                    ? new KeyValueSequence<TKey, TValue>(key, _dictionary[key])
                     : new KeyValueSequence<TKey, TValue>(key, _dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
             }
-        } 
+        }
+
+        TValue IReadOnlyDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key] => _dictionary[key];
 
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
@@ -74,7 +71,7 @@ namespace HeaderArrayConverter
         [NotNull]
         [ItemNotNull]
         public IImmutableList<IImmutableSet<TKey>> Sets { get; }
-
+        
         /// <summary>
         /// Constructs an <see cref="ImmutableOrderedDictionary{TKey, TValue}"/> in which the insertion order is preserved.
         /// </summary>

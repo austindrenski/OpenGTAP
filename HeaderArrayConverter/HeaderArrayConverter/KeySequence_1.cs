@@ -41,24 +41,54 @@ namespace HeaderArrayConverter
         /// </summary>
         public IEnumerable<T> this[params int[] index] => Yield(index);
 
-        public KeySequence(params T[] keys) : this(keys as IEnumerable<T>) { }
+        public KeySequence<T> Combine(T next)
+        {
+            return Create(this, next);
+        }
+
+        public KeySequence<T> Combine(params T[] next)
+        {
+            return Create(this, next);
+        }
+
+        public KeySequence<T> Combine(IEnumerable<T> next)
+        {
+            return Create(this, next);
+        }
 
         public KeySequence(IEnumerable<T> keys) 
         {
             _values = keys.ToImmutableArray();
         }
-        
+
+        public KeySequence(params T[] keys) : this(keys as IEnumerable<T>) { }
+
+        public static implicit operator KeySequence<T>(KeySequence<object> value)
+        {
+            return new KeySequence<T>((IEnumerable<T>) value._values);
+        }
+
         public static implicit operator KeySequence<T>(T value)
         {
             return new KeySequence<T>(value);
         }
 
-        public static KeySequence<T> operator +(KeySequence<T> left, KeySequence<T> right)
+        public static explicit operator KeySequence<T>(T[] value)
+        {
+            return new KeySequence<T>(value);
+        }
+
+        public static KeySequence<T> Create(KeySequence<T> left, params KeySequence<T>[] right)
+        {
+            return new KeySequence<T>(left.Concat(right.SelectMany(x => x)));
+        }
+
+        public static KeySequence<T> Create(KeySequence<T> left, params T[] right)
         {
             return new KeySequence<T>(left.Concat(right));
         }
 
-        public static KeySequence<T> operator +(KeySequence<T> left, T[] right)
+        public static KeySequence<T> Create(KeySequence<T> left, IEnumerable<T> right)
         {
             return new KeySequence<T>(left.Concat(right));
         }

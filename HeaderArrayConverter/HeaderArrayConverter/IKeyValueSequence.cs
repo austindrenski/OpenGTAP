@@ -4,8 +4,7 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter
 {
     [PublicAPI]
-    public interface IKeyValueSequence : IEnumerable
+    public interface KeyValueSequence : IEnumerable, IIndexerProvider
     {
-        IKeyValueSequence this[params object[] keyComponents] { get; }
     }
 }

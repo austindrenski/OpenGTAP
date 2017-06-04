@@ -18,7 +18,9 @@ namespace HeaderArrayConsole
 
             Console.WriteLine(arrays["TVOM"]["AGR"]["USA"]);
 
-            Console.WriteLine(arrays["TVOM"]["AGR", "ROW"]);
+            Console.WriteLine(arrays["TVOM"]["AGR"]["ROW"]);
+
+            Console.WriteLine(arrays["TVOM"]["AGR"]);
 
             Console.ReadLine();
         }

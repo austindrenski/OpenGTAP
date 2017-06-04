@@ -8,27 +8,24 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter
 {
     [PublicAPI]
-    public struct KeyValueSequence<TKey, TValue> : IKeyValueSequence<TKey, TValue>
+    public struct KeyValueSequence<TKey, TValue> : KeyValueSequence, IIndexerProvider<TKey, TValue>, IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>
     {
         private readonly ImmutableOrderedDictionary<TKey, TValue> _dictionary;
         
         public KeySequence<TKey> Key { get; }
 
-        public TValue this[KeySequence<TKey> key] => _dictionary[key];
+        public KeyValueSequence<TKey, TValue> this[KeySequence<TKey> nextKeyComponent] => Index(nextKeyComponent);
 
-        public IKeyValueSequence<TKey, TValue> this[params TKey[] keyComponents]
+        KeyValueSequence IIndexerProvider.this[KeySequence<object> nextKeyComponent] => Index(new KeySequence<TKey>(nextKeyComponent.Cast<TKey>()));
+
+        private KeyValueSequence<TKey, TValue> Index(KeySequence<TKey> nextKeyComponent)
         {
-            get
-            {
-                KeySequence<TKey> newKey = new KeySequence<TKey>(Key + keyComponents);
-                return
-                    _dictionary.ContainsKey(newKey)
-                        ? new KeyValueSequence<TKey, TValue>(newKey, _dictionary[newKey])
-                        : new KeyValueSequence<TKey, TValue>(Key, _dictionary.Where(x => x.Key.Take(newKey.Count).SequenceEqual(newKey)));
-            }
+            KeySequence<TKey> newKey = new KeySequence<TKey>(Key.Combine(nextKeyComponent));
+            return
+                _dictionary.ContainsKey(newKey)
+                    ? new KeyValueSequence<TKey, TValue>(newKey, _dictionary[newKey])
+                    : new KeyValueSequence<TKey, TValue>(Key, _dictionary.Where(x => x.Key.Take(newKey.Count).SequenceEqual(newKey)));
         }
-
-        IKeyValueSequence IKeyValueSequence.this[params object[] keyComponents] => this[keyComponents.Cast<TKey>().ToArray()];
 
         public KeyValueSequence(KeySequence<TKey> key, IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
@@ -61,8 +58,6 @@ namespace HeaderArrayConverter
                         current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
                     x =>
                         x.ToString());
-
-            //return $"{Key}: {string.Join(", ", _values)}";
         }
 
         public IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetEnumerator()

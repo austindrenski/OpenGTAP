@@ -53,30 +53,17 @@ namespace HeaderArrayConverter
         private ImmutableOrderedDictionary<string, T> Records { get; }
 
         /// <summary>
-        /// Returns the value with the specified key or throws an exception if the key is not found.
-        /// </summary>
-        /// <param name="key">
-        /// The key whose value is returned.
-        /// </param>
-        /// <returns>
-        /// The value stored by the given key.
-        /// </returns>
-        public T this[KeySequence<string> key] => Records[key];
-
-        object IHeaderArray.this[KeySequence<string> key] => Records[key];
-
-        /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
-        /// <param name="keyComponents">
+        /// <param name="key">
         /// The components that define the key whose value is returned.
         /// </param>
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        public IKeyValueSequence<string, T> this[params string[] keyComponents] => Records[keyComponents];
+        public KeyValueSequence<string, T> this[KeySequence<string> key] => new KeyValueSequence<string, T>(key, Records[key]);
 
-        IKeyValueSequence IHeaderArray.this[params string[] keyComponents] => Records[keyComponents];
+        KeyValueSequence IIndexerProvider.this[KeySequence<object> key] => this[new KeySequence<string>(key.Cast<string>())];
 
         /// <summary>
         /// Represents one entry from a Header Array (HAR) file.
