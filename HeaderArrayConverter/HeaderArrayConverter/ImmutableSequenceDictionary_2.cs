@@ -18,7 +18,7 @@ namespace HeaderArrayConverter
     /// The item type.
     /// </typeparam>
     [PublicAPI]
-    public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableDictionary<KeySequence<TKey>, TValue>
+    public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableDictionary<KeySequence<TKey>, TValue>, ISequenceIndexer<TKey, TValue>
     {
         /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
@@ -52,6 +52,10 @@ namespace HeaderArrayConverter
             }
         }
 
+        IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> ISequenceIndexer<TKey, TValue>.this[params TKey[] keys] => this[keys];
+
+        IEnumerable ISequenceIndexer<TKey>.this[params TKey[] keys] => this[keys];
+
         TValue IReadOnlyDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key] => _dictionary[key];
 
         /// <summary>
@@ -59,7 +63,7 @@ namespace HeaderArrayConverter
         /// </summary>
         [NotNull]
         public IEnumerable<KeySequence<TKey>> Keys => _dictionary.Keys;
-
+        
         /// <summary>
         /// Gets an enumerable collection that contains the values in the read-only dictionary.
         /// </summary>
@@ -72,7 +76,7 @@ namespace HeaderArrayConverter
         [NotNull]
         [ItemNotNull]
         public IImmutableList<IImmutableSet<TKey>> Sets { get; }
-        
+
         /// <summary>
         /// Constructs an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> in which the insertion order is preserved.
         /// </summary>
@@ -131,6 +135,17 @@ namespace HeaderArrayConverter
             }
 
             return new ImmutableSequenceDictionary<TKey, TValue>(source);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="ImmutableSequenceDictionary{TKey, Object}"/> from a <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> .
+        /// </summary>
+        /// <param name="source">
+        /// The source <see cref="ImmutableSequenceDictionary{TKey, TValue}"/>.
+        /// </param>
+        public static explicit operator ImmutableSequenceDictionary<TKey, object>(ImmutableSequenceDictionary<TKey, TValue> source)
+        {
+            return source.ToImmutableSequenceDictionary(x => x.Key, x => x.Value as object);
         }
 
         /// <summary>

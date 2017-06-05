@@ -18,10 +18,10 @@ namespace HeaderArrayConverter
     public class HeaderArray<T> : IHeaderArray<T>
     {
         /// <summary>
-        /// An immutable dictionary of the records with set labels.
+        /// An immutable dictionary whose entries are stored by a sequence of the defining sets.
         /// </summary>
         [NotNull]
-        private readonly ImmutableSequenceDictionary<string, T> _records;
+        private readonly ImmutableSequenceDictionary<string, T> _entries;
 
         /// <summary>
         /// The four character identifier for this <see cref="HeaderArray{T}"/>.
@@ -47,7 +47,7 @@ namespace HeaderArrayConverter
         /// The sets defined on the array.
         /// </summary>
         public IImmutableList<ImmutableOrderedSet<string>> Sets { get; }
-
+        
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
@@ -57,7 +57,11 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        public IEnumerable<KeyValuePair<KeySequence<string>, T>> this[params string[] keys] => _records[keys];
+        public ImmutableSequenceDictionary<string, T> this[params string[] keys] => _entries[keys];
+
+        ImmutableSequenceDictionary<string, object> IHeaderArray.this[params string[] keys] => (ImmutableSequenceDictionary<string, object>)_entries[keys];
+
+        IEnumerable<KeyValuePair<KeySequence<string>, T>> ISequenceIndexer<string, T>.this[params string[] keys] => _entries[keys];
 
         IEnumerable ISequenceIndexer<string>.this[params string[] keys] => this[keys];
 
@@ -111,12 +115,12 @@ namespace HeaderArrayConverter
             Sets = sets.ToImmutableArray();
             Type = type;
 
-            _records =
+            _entries =
                 Sets.AsExpandedSet()
                     .FullOuterZip(
                         records,
                         x => x.ToString())
-                    .ToImmutableOrderedDictionary(
+                    .ToImmutableSequenceDictionary(
                         x => x.Left.Split('*') as IEnumerable<string>,
                         x => x.Right);
         }
@@ -140,10 +144,10 @@ namespace HeaderArrayConverter
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             stringBuilder.AppendLine($"{nameof(Dimensions)}: {Sets.Select(x => x.Count).Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
 
-            int length = _records.Keys.Max(x => x.ToString().Length);
+            int length = _entries.Keys.Max(x => x.ToString().Length);
 
             return
-                _records.Aggregate(
+                _entries.Aggregate(
                     stringBuilder,
                     (current, next) =>
                         current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
@@ -159,7 +163,7 @@ namespace HeaderArrayConverter
         /// </returns>
         public IEnumerator<KeyValuePair<KeySequence<string>, T>> GetEnumerator()
         {
-            return _records.GetEnumerator();
+            return _entries.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

@@ -50,7 +50,7 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(arrays));
             }
 
-            _arrays = arrays.ToImmutableOrderedDictionary(x => x.Header, x => x);
+            _arrays = arrays.ToImmutableSequenceDictionary(x => (KeySequence<string>)x.Header, x => x);
         }
 
         /// <summary>

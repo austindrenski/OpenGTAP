@@ -26,7 +26,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableOrderedDictionary<TKey, TValue>([NotNull] this IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<TKey, TValue>([NotNull] this IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
@@ -52,7 +52,7 @@ namespace HeaderArrayConverter
         /// The collection from which to create the <see cref="ImmutableSequenceDictionary{TKey, TValue}"/>.
         /// </param>
         /// <param name="keySelector">
-        /// A selector function returning a key.
+        /// A selector function returning a <see cref="KeySequence{TKey}"/>.
         /// </param>
         /// <param name="valueSelector">
         /// A selector function returning a value.
@@ -60,7 +60,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableOrderedDictionary<T, TKey, TValue>([NotNull] this IEnumerable<T> source, Func<T, TKey> keySelector, Func<T, TValue> valueSelector)
+        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<T, TKey, TValue>([NotNull] this IEnumerable<T> source, Func<T, KeySequence<TKey>> keySelector, Func<T, TValue> valueSelector)
         {
             if (source is null)
             {
@@ -97,7 +97,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableOrderedDictionary<TLeft, TRight, TKey, TValue>([NotNull] this IEnumerable<(TLeft Left, TRight Right)> source, Func<(TLeft Left, TRight Right), IEnumerable<TKey>> keySelector, Func<(TLeft Left, TRight Right), TValue> valueSelector)
+        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<TLeft, TRight, TKey, TValue>([NotNull] this IEnumerable<(TLeft Left, TRight Right)> source, Func<(TLeft Left, TRight Right), IEnumerable<TKey>> keySelector, Func<(TLeft Left, TRight Right), TValue> valueSelector)
         {
             if (source is null)
             {
