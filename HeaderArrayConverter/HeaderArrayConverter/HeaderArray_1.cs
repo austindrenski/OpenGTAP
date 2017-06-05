@@ -143,16 +143,9 @@ namespace HeaderArrayConverter
             stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Select(x => $"{{ {string.Join(", ", x)} }}"))}");
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             stringBuilder.AppendLine($"{nameof(Dimensions)}: {Sets.Select(x => x.Count).Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
-
-            int length = _entries.Keys.Max(x => x.ToString().Length);
-
-            return
-                _entries.Aggregate(
-                    stringBuilder,
-                    (current, next) =>
-                        current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
-                    x =>
-                        x.ToString());
+            stringBuilder.AppendLine(_entries.ToString());
+            
+            return stringBuilder.ToString();
         }
 
         /// <summary>

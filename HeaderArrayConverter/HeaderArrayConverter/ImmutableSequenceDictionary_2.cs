@@ -153,11 +153,35 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
+            IEnumerable<KeySequence<TKey>> sets =
+                _items.Select(x => x.Key).OrderBy(x => x.Reverse().ToString());
+
+            int length =
+                sets.Max(x => x.ToString().Length);
+
             return
-                _dictionary.Aggregate(
-                    new StringBuilder(),
-                    (current, next) => current.AppendLine($"{next.Key}: {next.Value}"),
-                    result => result.ToString());
+                sets.Join(
+                        _dictionary,
+                        left => left,
+                        right => right.Key,
+                        (left, right) => right)
+                       .Aggregate(
+                           new StringBuilder(),
+                           (current, next) => current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
+                           result => result.ToString());
+
+
+            //_dictionary.OrderBy(x => x.Key.Reverse().ToString())
+            //           .Aggregate(
+            //               new StringBuilder(),
+            //               (current, next) => current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
+            //               result => result.ToString());
+
+            //return
+            //    sets.Aggregate(
+            //        new StringBuilder(),
+            //        (current, next) => current.AppendLine($"{next.ToString().PadRight(length)}: {_dictionary[next]}"),
+            //        result => result.ToString());
         }
 
         /// <summary>

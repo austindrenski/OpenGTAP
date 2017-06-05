@@ -121,6 +121,20 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
+        /// Implicitly casts the <see cref="KeySequence{TKey}"/> to a string.
+        /// </summary>
+        /// <param name="value">
+        /// The sequence create a string.
+        /// </param>
+        /// <param name="parser">
+        /// A function that parses one string component into a key.
+        /// </param>
+        public static KeySequence<TKey> Parse(string value, Func<string, TKey> parser)
+        {
+            return new KeySequence<TKey>(value.Replace(" ", null).Trim('[', ']').Split('*').Select(parser));
+        }
+
+        /// <summary>
         /// Returns a new <see cref="KeySequence{TKey}"/> that is a combination of this and the next sequence.
         /// </summary>
         /// <param name="next">
@@ -137,6 +151,20 @@ namespace HeaderArrayConverter
             }
 
             return new KeySequence<TKey>(_keys.Concat(next));
+        }
+
+        /// <summary>
+        /// Returns a new <see cref="KeySequence{TKey}"/> that is a combination of this and the next sequence.
+        /// </summary>
+        /// <param name="next">
+        /// The next keys to combine.
+        /// </param>
+        /// <returns>
+        /// Returns a new <see cref="KeySequence{TKey}"/> that is a combination of this and the next sequence.
+        /// </returns>
+        public KeySequence<TKey> Combine(params TKey[] next)
+        {
+            return Combine(next as IEnumerable<TKey>);
         }
 
         /// <summary>
