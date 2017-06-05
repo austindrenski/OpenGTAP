@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using AD.IO;
+// ReSharper disable UnusedVariable
 
 namespace HeaderArrayConverter
 {

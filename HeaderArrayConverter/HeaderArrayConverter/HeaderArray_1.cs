@@ -18,40 +18,35 @@ namespace HeaderArrayConverter
     public class HeaderArray<T> : IHeaderArray<T>
     {
         /// <summary>
-        /// The four character identifier for this <see cref="HeaderArray{T}"/>.
+        /// An immutable dictionary of the records with set labels.
         /// </summary>
         [NotNull]
+        private readonly ImmutableSequenceDictionary<string, T> _records;
+
+        /// <summary>
+        /// The four character identifier for this <see cref="HeaderArray{T}"/>.
+        /// </summary>
         public string Header { get; }
 
         /// <summary>
         /// The long name description of the <see cref="HeaderArray{T}"/>.
         /// </summary>
-        [CanBeNull]
         public string Description { get; }
 
         /// <summary>
         /// The type of element stored in the array.
         /// </summary>
-        [NotNull]
         public string Type { get; }
 
         /// <summary>
         /// The dimensions of the array.
         /// </summary>
-        [NotNull]
         public IImmutableList<int> Dimensions { get; }
 
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        [NotNull]
         public IImmutableList<ImmutableOrderedSet<string>> Sets { get; }
-
-        /// <summary>
-        /// An immutable dictionary of the records with set labels.
-        /// </summary>
-        [NotNull]
-        private ImmutableSequenceDictionary<string, T> Records { get; }
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -62,7 +57,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        public IEnumerable<KeyValuePair<KeySequence<string>, T>> this[params string[] keys] => Records[keys];
+        public IEnumerable<KeyValuePair<KeySequence<string>, T>> this[params string[] keys] => _records[keys];
 
         IEnumerable ISequenceIndexer<string>.this[params string[] keys] => this[keys];
 
@@ -116,7 +111,7 @@ namespace HeaderArrayConverter
             Sets = sets.ToImmutableArray();
             Type = type;
 
-            Records =
+            _records =
                 Sets.AsExpandedSet()
                     .FullOuterZip(
                         records,
@@ -145,10 +140,10 @@ namespace HeaderArrayConverter
             //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
             stringBuilder.AppendLine($"{nameof(Dimensions)}: {Sets.Select(x => x.Count).Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
 
-            int length = Records.Keys.Max(x => x.ToString().Length);
+            int length = _records.Keys.Max(x => x.ToString().Length);
 
             return
-                Records.Aggregate(
+                _records.Aggregate(
                     stringBuilder,
                     (current, next) =>
                         current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
@@ -156,9 +151,15 @@ namespace HeaderArrayConverter
                         x.ToString());
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the collection.
+        /// </returns>
         public IEnumerator<KeyValuePair<KeySequence<string>, T>> GetEnumerator()
         {
-            return Records.GetEnumerator();
+            return _records.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

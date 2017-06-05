@@ -261,6 +261,15 @@ namespace HeaderArrayConverter
             return _set.Contains(value) ? Create(_enumerable.Where(x => !_equalityComparer.Equals(x, value)), _equalityComparer) : this;
         }
 
+        /// <summary>
+        /// Produces a set that contains elements either in this set or a given sequence, but not both.
+        /// </summary>
+        /// <param name="other">
+        /// The other sequence of items.
+        /// </param>
+        /// <returns>
+        /// The new set.
+        /// </returns>
         [Pure]
         [NotNull]
         public IImmutableSet<T> SymmetricExcept(IEnumerable<T> other)
@@ -268,55 +277,145 @@ namespace HeaderArrayConverter
             return _set.SymmetricExcept(other);
         }
 
+        /// <summary>
+        /// Adds a given set of items to this set.
+        /// </summary>
+        /// <param name="other">
+        /// The items to add.
+        /// </param>
+        /// <returns>
+        /// The new set with the items added; or the original set if all the items were already in the set.
+        /// </returns>
         [Pure]
         [NotNull]
         public IImmutableSet<T> Union(IEnumerable<T> other)
         {
             return _set.Union(other);
         }
-
+        
+        /// <summary>
+        /// Determines whether this set contains the specified value.
+        /// </summary>
+        /// <param name="value">
+        /// The value.
+        /// </param>
+        /// <returns>
+        /// True if the set contains the specified value; otherwise, false.
+        /// </returns>
         [Pure]
         public bool Contains(T value)
         {
             return _set.Contains(value);
         }
 
+        /// <summary>
+        /// Determines whether the current set is a proper (strict) subset of a specified collection.
+        /// </summary>
+        /// <param name="other">
+        /// The collection to compare to the current set.
+        /// </param>
+        /// <returns>
+        /// True if the current set is a correct subset of other; otherwise, false.
+        /// </returns>
         [Pure]
         public bool IsProperSubsetOf(IEnumerable<T> other)
         {
             return _set.IsProperSubsetOf(other);
         }
 
+        /// <summary>
+        /// Determines whether the current set is a proper superset of a specified collection.
+        /// </summary>
+        /// <param name="other">
+        /// The collection to compare to the current set.
+        /// </param>
+        /// <returns>
+        /// True if the current set is a correct superset of other; otherwise, false.
+        /// </returns>
         [Pure]
         public bool IsProperSupersetOf(IEnumerable<T> other)
         {
             return _set.IsProperSupersetOf(other);
         }
 
+        /// <summary>
+        /// Determines whether a set is a subset of a specified collection.
+        /// </summary>
+        /// <param name="other">
+        /// The collection to compare to the current set.
+        /// </param>
+        /// <returns>
+        /// True if the current set is a subset of other; otherwise, false.
+        /// </returns>
         [Pure]
         public bool IsSubsetOf(IEnumerable<T> other)
         {
             return _set.IsSubsetOf(other);
         }
 
+        /// <summary>
+        /// Determines whether the current set is a superset of a specified collection.
+        /// </summary>
+        /// <param name="other">
+        /// The collection to compare to the current set.
+        /// </param>
+        /// <returns>
+        /// True if the current set is a superset of other; otherwise, false.
+        /// </returns>
         [Pure]
         public bool IsSupersetOf(IEnumerable<T> other)
         {
             return _set.IsSupersetOf(other);
         }
 
+        /// <summary>
+        /// Determines whether the current set overlaps with the specified collection.
+        /// </summary>
+        /// <param name="other">
+        /// The collection to compare to the current set.
+        /// </param>
+        /// <returns>
+        /// True if the current set and other share at least one common element; otherwise, false.
+        /// </returns>
         [Pure]
         public bool Overlaps(IEnumerable<T> other)
         {
             return _set.Overlaps(other);
         }
 
+        /// <summary>
+        /// Checks whether a given sequence of items entirely describe the contents of this set.
+        /// </summary>
+        /// <param name="other">
+        /// The sequence of items to check against this set.
+        /// </param>
+        /// <returns>
+        /// A value indicating whether the sets are equal.
+        /// </returns>
         [Pure]
         public bool SetEquals(IEnumerable<T> other)
         {
             return _set.SetEquals(other);
         }
 
+        /// <summary>
+        /// Searches the set for a given value and returns the equal value it finds, if any.
+        /// </summary>
+        /// <param name="equalValue">
+        /// The value to search for.
+        /// </param>
+        /// <param name="actualValue">
+        /// The value from the set that the search found, or <paramref name="equalValue"/> if the search yielded no match.
+        /// </param>
+        /// <returns>
+        /// A value indicating whether the search was successful.
+        /// </returns>
+        /// <remarks>
+        /// This can be useful when you want to reuse a previously stored reference instead of
+        /// a newly constructed one (so that more sharing of references can occur) or to look up
+        /// a value that has more complete data than the value you currently have, although their
+        /// comparer functions indicate they are equal.
+        /// </remarks>
         [Pure]
         public bool TryGetValue(T equalValue, out T actualValue)
         {

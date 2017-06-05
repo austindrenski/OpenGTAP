@@ -28,7 +28,9 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An enumerable collection of pairwise tuples.
         /// </returns>
-        public static IEnumerable<(TLeft Left, TRight Right)> FullOuterZip<TLeft, TRight>(this IEnumerable<TLeft> left, IEnumerable<TRight> right)
+        [Pure]
+        [NotNull]
+        public static IEnumerable<(TLeft Left, TRight Right)> FullOuterZip<TLeft, TRight>([NotNull] this IEnumerable<TLeft> left, [NotNull] IEnumerable<TRight> right)
         {
             if (left is null)
             {
@@ -63,7 +65,9 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An enumerable collection of pairwise tuples.
         /// </returns>
-        public static IEnumerable<(TLeft Left, TRight Right)> FullOuterZip<TLeft, TRight>(this IEnumerable<TLeft> left, IEnumerable<TRight> right, Func<int, TLeft> defaultLeft)
+        [Pure]
+        [NotNull]
+        public static IEnumerable<(TLeft Left, TRight Right)> FullOuterZip<TLeft, TRight>([NotNull] this IEnumerable<TLeft> left, [NotNull] IEnumerable<TRight> right, Func<int, TLeft> defaultLeft)
         {
             if (left is null)
             {
@@ -101,7 +105,9 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An enumerable collection of pairwise tuples.
         /// </returns>
-        public static IEnumerable<(TLeft Left, TRight Right)> FullOuterZip<TLeft, TRight>(this IEnumerable<TLeft> left, IEnumerable<TRight> right, Func<int, TLeft> leftDefault, Func<int, TRight> rightDefault)
+        [Pure]
+        [NotNull]
+        public static IEnumerable<(TLeft Left, TRight Right)> FullOuterZip<TLeft, TRight>([NotNull] this IEnumerable<TLeft> left, [NotNull] IEnumerable<TRight> right, [NotNull] Func<int, TLeft> leftDefault, [NotNull] Func<int, TRight> rightDefault)
         {
             if (left is null)
             {
@@ -141,7 +147,6 @@ namespace HeaderArrayConverter
                         {
                             yield return (leftDefault(index), rightEnumerator.Current);
                         }
-                        //yield return (valid ? leftEnumerator.Current : leftDefault(index), !valid ? rightEnumerator.Current : rightDefault(index));
                         index++;
                     }
                 }
