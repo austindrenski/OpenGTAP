@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -39,15 +40,15 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets the element that has the specified key in the read-only dictionary.
         /// </summary>
-        public ValueSequence<TKey, TValue> this[params TKey[] keys]
+        public ImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys]
         {
             get
             {
                 KeySequence<TKey> key = new KeySequence<TKey>(keys);
                 return
                     _dictionary.ContainsKey(key)
-                        ? new ValueSequence<TKey, TValue>(key, _dictionary[key])
-                        : new ValueSequence<TKey, TValue>(_dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
+                        ? new ImmutableSequenceDictionary<TKey, TValue>(new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]))
+                        : new ImmutableSequenceDictionary<TKey, TValue>(_dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
             }
         }
 
@@ -90,6 +91,9 @@ namespace HeaderArrayConverter
             Sets = _dictionary.Keys.Select(x => (IImmutableSet<TKey>) x.ToImmutableHashSet()).ToImmutableArray();
         }
 
+        public ImmutableSequenceDictionary(params KeyValuePair<KeySequence<TKey>, TValue>[] entries) 
+            : this(entries as IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>) { }
+
         /// <summary>
         /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
         /// </summary>
@@ -109,6 +113,19 @@ namespace HeaderArrayConverter
             }
 
             return new ImmutableSequenceDictionary<TKey, TValue>(source);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return
+                _items.Aggregate(
+                    new StringBuilder(),
+                    (current, next) => current.AppendLine($"{next.Key}: {next.Value}"),
+                    result => result.ToString());
         }
 
         /// <summary>
