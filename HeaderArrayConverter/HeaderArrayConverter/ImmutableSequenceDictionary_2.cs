@@ -27,12 +27,6 @@ namespace HeaderArrayConverter
         private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>
-        /// The collection stored as an <see cref="IImmutableList{T}"/> where T is <see cref="KeyValuePair{TKey, TValue}"/>.
-        /// </summary>
-        [NotNull]
-        private readonly IImmutableList<KeyValuePair<KeySequence<TKey>, TValue>> _items;
-
-        /// <summary>
         /// Gets the number of elements in the collection.
         /// </summary>
         public int Count => _dictionary.Count;
@@ -90,8 +84,7 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(source));
             }
 
-            _items = source.ToImmutableArray();
-            _dictionary = _items.ToImmutableDictionary();
+            _dictionary = source.ToImmutableDictionary();
             Sets = _dictionary.Keys.Select(x => (IImmutableSet<TKey>) x.ToImmutableHashSet()).ToImmutableArray();
         }
 
@@ -153,35 +146,15 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
-            IEnumerable<KeySequence<TKey>> sets =
-                _items.Select(x => x.Key).OrderBy(x => x.Reverse().ToString());
-
             int length =
-                sets.Max(x => x.ToString().Length);
+                _dictionary.Max(x => x.Key.ToString().Length);
 
             return
-                sets.Join(
-                        _dictionary,
-                        left => left,
-                        right => right.Key,
-                        (left, right) => right)
-                       .Aggregate(
-                           new StringBuilder(),
-                           (current, next) => current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
-                           result => result.ToString());
-
-
-            //_dictionary.OrderBy(x => x.Key.Reverse().ToString())
-            //           .Aggregate(
-            //               new StringBuilder(),
-            //               (current, next) => current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
-            //               result => result.ToString());
-
-            //return
-            //    sets.Aggregate(
-            //        new StringBuilder(),
-            //        (current, next) => current.AppendLine($"{next.ToString().PadRight(length)}: {_dictionary[next]}"),
-            //        result => result.ToString());
+                _dictionary.OrderBy(x => x.Key.ToString(Enumerable.Reverse))
+                           .Aggregate(
+                               new StringBuilder(),
+                               (current, next) => current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
+                               result => result.ToString());
         }
 
         /// <summary>

@@ -14,8 +14,7 @@ namespace HeaderArrayConverter
     /// The type of key in the sequence.
     /// </typeparam>
     [PublicAPI]
-    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable
-    {
+    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable{
         /// <summary>
         /// The sequence values.
         /// </summary>
@@ -168,11 +167,19 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// Returns a string representation of this instance.
+        /// Returns a string representation of this sequence.
         /// </summary>
         public override string ToString()
         {
-            return _keys.Aggregate(string.Empty, (current, next) => $"{current}[{next}]");
+            return ToString(x => x);
+        }
+
+        /// <summary>
+        /// Returns a string representation of this sequence with the transform function applied.
+        /// </summary>
+        public string ToString(Func<IEnumerable<TKey>, IEnumerable<TKey>> transform)
+        {
+            return transform(_keys).Aggregate(string.Empty, (current, next) => $"{current}[{next}]");
         }
 
         /// <summary>
