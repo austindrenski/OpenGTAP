@@ -154,7 +154,7 @@ namespace HeaderArrayConverter
         public override string ToString()
         {
             return
-                _items.Aggregate(
+                _dictionary.Aggregate(
                     new StringBuilder(),
                     (current, next) => current.AppendLine($"{next.Key}: {next.Value}"),
                     result => result.ToString());
@@ -170,7 +170,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetEnumerator()
         {
-            return _items.GetEnumerator();
+            return _dictionary.GetEnumerator();
         }
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace HeaderArrayConverter
         [NotNull]
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return _items.GetEnumerator();
+            return _dictionary.GetEnumerator();
         }
 
         /// <summary>

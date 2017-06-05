@@ -19,38 +19,34 @@ namespace HeaderArrayConsole
             
             Console.WriteLine(arrays);
 
+            Console.WriteLine(arrays["TVOM"]["AGR"]);
+
             Console.WriteLine(arrays["TVOM"]["AGR", "USA"]);
 
             Console.WriteLine(arrays["TVOM"]["AGR"]["AGR", "ROW"]);
-
-            Console.WriteLine(arrays["TVOM"]["AGR"]);
-
-            foreach (KeyValuePair<KeySequence<string>, object> item in arrays["TVOM"]["AGR", "USA"])
-            {
-                Console.WriteLine(item);
-            }
-
-            foreach (KeyValuePair<KeySequence<string>, object> item in arrays["TVOM"]["AGR", "ROW"])
-            {
-                Console.WriteLine(item);
-            }
-
+            
             foreach (KeyValuePair<KeySequence<string>, object> item in arrays["TVOM"]["AGR"])
             {
                 Console.WriteLine(item);
             }
-
-            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR", "USA"])
+            foreach (KeyValuePair<KeySequence<string>, object> item in arrays["TVOM"]["AGR", "USA"])
             {
                 Console.WriteLine(item);
             }
-
-            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR", "ROW"])
+            foreach (KeyValuePair<KeySequence<string>, object> item in arrays["TVOM"]["AGR"]["AGR", "USA"])
             {
                 Console.WriteLine(item);
             }
 
             foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR"])
+            {
+                Console.WriteLine(item);
+            }
+            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR", "USA"])
+            {
+                Console.WriteLine(item);
+            }
+            foreach (KeyValuePair<KeySequence<string>, float> item in arrays["TVOM"].As<float>()["AGR"]["AGR", "USA"])
             {
                 Console.WriteLine(item);
             }
