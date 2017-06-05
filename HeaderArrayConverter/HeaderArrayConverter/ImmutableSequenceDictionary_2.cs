@@ -47,8 +47,8 @@ namespace HeaderArrayConverter
                 KeySequence<TKey> key = new KeySequence<TKey>(keys);
                 return
                     _dictionary.ContainsKey(key)
-                        ? new ImmutableSequenceDictionary<TKey, TValue>(new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]))
-                        : new ImmutableSequenceDictionary<TKey, TValue>(_dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
+                        ? Create(new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]))
+                        : Create(_dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
             }
         }
 
@@ -91,8 +91,26 @@ namespace HeaderArrayConverter
             Sets = _dictionary.Keys.Select(x => (IImmutableSet<TKey>) x.ToImmutableHashSet()).ToImmutableArray();
         }
 
-        public ImmutableSequenceDictionary(params KeyValuePair<KeySequence<TKey>, TValue>[] entries) 
-            : this(entries as IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>) { }
+        /// <summary>
+        /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
+        /// </summary>
+        /// <param name="source">
+        /// The source collection.
+        /// </param>
+        /// <returns>
+        /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> created from the collection.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            return new ImmutableSequenceDictionary<TKey, TValue>(source);
+        }
 
         /// <summary>
         /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
@@ -105,7 +123,7 @@ namespace HeaderArrayConverter
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableSequenceDictionary<TKey, TValue> Create(IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        public static ImmutableSequenceDictionary<TKey, TValue> Create(params KeyValuePair<KeySequence<TKey>, TValue>[] source)
         {
             if (source is null)
             {
@@ -116,9 +134,8 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// 
+        /// Returns a string representation of the contents of the header array.
         /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
             return

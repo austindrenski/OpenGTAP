@@ -10,21 +10,21 @@ namespace HeaderArrayConverter
     /// <summary>
     /// Represents a sequence of zero or more keys. This type is suitable for use in a <see cref="IDictionary{TKey, TValue}"/>.
     /// </summary>
-    /// <typeparam name="T">
+    /// <typeparam name="TKey">
     /// The type of key in the sequence.
     /// </typeparam>
     [PublicAPI]
-    public struct KeySequence<T> : IEnumerable<T>, IEquatable<T>, IEquatable<KeySequence<T>>, IStructuralEquatable
+    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable
     {
         /// <summary>
         /// The sequence values.
         /// </summary>
-        private readonly IImmutableList<T> _values;
+        private readonly IImmutableList<TKey> _values;
 
         /// <summary>
         /// Returns an empty <see cref="KeySequence{T}"/> with the specified type argument.
         /// </summary>
-        public static KeySequence<T> Empty { get; } = new KeySequence<T>(new T[0]);
+        public static KeySequence<TKey> Empty { get; } = new KeySequence<TKey>(new TKey[0]);
         
         /// <summary>
         /// Gets the number of items contained in the sequence.
@@ -34,71 +34,71 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Returns the value at the specified index.
         /// </summary>
-        public T this[int index] => _values[index];
+        public TKey this[int index] => _values[index];
 
         /// <summary>
         /// Returns the values at the specified index.
         /// </summary>
-        public IEnumerable<T> this[params int[] index] => Yield(index);
+        public IEnumerable<TKey> this[params int[] index] => Yield(index);
 
-        public KeySequence<T> Combine(T next)
+        public KeySequence<TKey> Combine(TKey next)
         {
             return Create(this, next);
         }
 
-        public KeySequence<T> Combine(params T[] next)
+        public KeySequence<TKey> Combine(params TKey[] next)
         {
             return Create(this, next);
         }
 
-        public KeySequence<T> Combine(IEnumerable<T> next)
+        public KeySequence<TKey> Combine(IEnumerable<TKey> next)
         {
             return Create(this, next);
         }
 
-        public KeySequence(IEnumerable<T> keys) 
+        public KeySequence(IEnumerable<TKey> keys) 
         {
             _values = keys.ToImmutableArray();
         }
 
-        public KeySequence(params T[] keys) : this(keys as IEnumerable<T>) { }
+        public KeySequence(params TKey[] keys) : this(keys as IEnumerable<TKey>) { }
 
-        public static implicit operator KeySequence<T>(KeySequence<object> value)
+        public static implicit operator KeySequence<TKey>(KeySequence<object> value)
         {
-            return new KeySequence<T>((IEnumerable<T>) value._values);
+            return new KeySequence<TKey>((IEnumerable<TKey>) value._values);
         }
 
-        public static implicit operator string(KeySequence<T> value)
+        public static implicit operator string(KeySequence<TKey> value)
         {
             return value.ToString();
         }
 
-        public static implicit operator KeySequence<T>(T value)
+        public static implicit operator KeySequence<TKey>(TKey value)
         {
-            return new KeySequence<T>(value);
+            return new KeySequence<TKey>(value);
         }
 
-        public static explicit operator KeySequence<T>(T[] value)
+        public static explicit operator KeySequence<TKey>(TKey[] value)
         {
-            return new KeySequence<T>(value);
+            return new KeySequence<TKey>(value);
         }
 
-        public static KeySequence<T> Create(KeySequence<T> left, params KeySequence<T>[] right)
+        public static KeySequence<TKey> Create(KeySequence<TKey> left, params KeySequence<TKey>[] right)
         {
-            return new KeySequence<T>(left.Concat(right.SelectMany(x => x)));
+            return new KeySequence<TKey>(left.Concat(right.SelectMany(x => x)));
         }
 
-        public static KeySequence<T> Create(KeySequence<T> left, params T[] right)
+        public static KeySequence<TKey> Create(KeySequence<TKey> left, params TKey[] right)
         {
-            return new KeySequence<T>(left.Concat(right));
+            return new KeySequence<TKey>(left.Concat(right));
         }
 
-        public static KeySequence<T> Create(KeySequence<T> left, IEnumerable<T> right)
+        public static KeySequence<TKey> Create(KeySequence<TKey> left, IEnumerable<TKey> right)
         {
-            return new KeySequence<T>(left.Concat(right));
+            return new KeySequence<TKey>(left.Concat(right));
         }
 
-        private IEnumerable<T> Yield(IEnumerable<int> index)
+        private IEnumerable<TKey> Yield(IEnumerable<int> index)
         {
             foreach (int i in index)
             {
@@ -120,9 +120,9 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An enumerator that can be used to iterate through the collection.
         /// </returns>
-        public IEnumerator<T> GetEnumerator()
+        public IEnumerator<TKey> GetEnumerator()
         {
-            return _values?.GetEnumerator() ?? Enumerable.Empty<T>().GetEnumerator();
+            return _values?.GetEnumerator() ?? Enumerable.Empty<TKey>().GetEnumerator();
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// True if the current object is equal to the <paramref name="other"/> parameter; otherwise, false.
         /// </returns>
-        public bool Equals(KeySequence<T> other)
+        public bool Equals(KeySequence<TKey> other)
         {
             return _values.SequenceEqual(other);
         }
@@ -159,9 +159,9 @@ namespace HeaderArrayConverter
         /// <returns>
         /// True if the current object is equal to the <paramref name="other"/> parameter; otherwise, false.
         /// </returns>
-        public bool Equals(T other)
+        public bool Equals(TKey other)
         {
-            return _values.SequenceEqual(Enumerable.Empty<T>().Append(other));
+            return _values.SequenceEqual(Enumerable.Empty<TKey>().Append(other));
         }
 
         /// <summary>
@@ -189,11 +189,11 @@ namespace HeaderArrayConverter
                 {
                     return Equals(Empty);
                 }
-                case T value:
+                case TKey value:
                 {
                     return Equals(value);
                 }
-                case KeySequence<T> value:
+                case KeySequence<TKey> value:
                 {
                     return Equals(value);
                 }
