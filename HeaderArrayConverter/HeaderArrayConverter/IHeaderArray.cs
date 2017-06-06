@@ -37,7 +37,7 @@ namespace HeaderArrayConverter
         /// The sets of the array.
         /// </summary>
         [NotNull]
-        IImmutableList<ImmutableOrderedSet<string>> Sets { get; }
+        IImmutableList<IImmutableList<string>> Sets { get; }
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -63,5 +63,12 @@ namespace HeaderArrayConverter
         [Pure]
         [NotNull]
         IHeaderArray<T> As<T>();
+
+        /// <summary>
+        /// Returns a JSON representation of this <see cref="IHeaderArray{T}"/>.
+        /// </summary>
+        [Pure]
+        [NotNull]
+        string ToJson();
     }
 }

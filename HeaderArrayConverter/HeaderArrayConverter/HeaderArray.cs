@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using AD.IO;
+using Newtonsoft.Json;
 // ReSharper disable UnusedVariable
 
 namespace HeaderArrayConverter
@@ -16,6 +18,97 @@ namespace HeaderArrayConverter
     [PublicAPI]
     public static class HeaderArray
     {
+        /// <summary>
+        /// Enumerates the arrays from the HARX file.
+        /// </summary>
+        /// <param name="file">
+        /// The HARX file from which to read arrays.
+        /// </param>
+        /// <returns>
+        /// An enumerable collection of the arrays in the file.
+        /// </returns>
+        [NotNull]
+        [ItemNotNull]
+        public static IEnumerable<IHeaderArray> ReadHarxArrays(FilePath file)
+        {
+            using (ZipArchive archive = new ZipArchive(File.Open(file, FileMode.Open, FileAccess.Read)))
+            {
+                foreach (ZipArchiveEntry entry in archive.Entries)
+                {
+                    string json = new StreamReader(entry.Open()).ReadToEnd();
+
+                    //IEnumerable<KeyValuePair<KeySequence<string>, float>> a;
+
+                    ////if (json.Contains("\"Type\":\"1C\""))
+                    //try
+                    //{
+                    //    a =
+                    //        JsonConvert.DeserializeObject<IEnumerable<KeyValuePair<KeySequence<string>, float>>>(json);
+                    //}
+                    ////else
+                    //catch
+                    //{
+                    //    continue;
+                    //}
+
+                    //yield return new HeaderArray<float>(a);
+
+
+                    yield return
+                        (IHeaderArray)
+                        JsonConvert.DeserializeObject(
+                            json,
+                            json.Contains("\"Type\":\"1C\"")
+                                ? typeof(IEnumerable<KeyValuePair<KeySequence<string>, string>>)
+                                : typeof(IEnumerable<KeyValuePair<KeySequence<string>, float>>));
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Enumerates the arrays from the HAR file.
+        /// </summary>
+        /// <param name="file">
+        /// The HAR file from which to read arrays.
+        /// </param>
+        /// <returns>
+        /// An enumerable collection of the arrays in the file.
+        /// </returns>
+        [NotNull]
+        [ItemNotNull]
+        public static IEnumerable<IHeaderArray> ReadHarArrays(FilePath file)
+        {
+            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
+            {
+                while (reader.BaseStream.Position != reader.BaseStream.Length)
+                {
+                    yield return ReadNext(reader);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously enumerates the arrays from the HAR file.
+        /// </summary>
+        /// <param name="file">
+        /// The HAR file from which to read arrays.
+        /// </param>
+        /// <returns>
+        /// An enumerable collection of tasks that when completed return the arrays in the file.
+        /// </returns>
+        [NotNull]
+        [ItemNotNull]
+        public static IEnumerable<Task<IHeaderArray>> ReadHarArraysAsync(FilePath file)
+        {
+            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
+            {
+                while (reader.BaseStream.Position != reader.BaseStream.Length)
+                {
+                    yield return ReadNextAsync(reader);
+                }
+            }
+        }
+
         /// <summary>
         /// Reads one entry from a Header Array (HAR) file.
         /// </summary>
@@ -56,50 +149,6 @@ namespace HeaderArrayConverter
         private static async Task<IHeaderArray> ReadNextAsync(BinaryReader reader)
         {
             return await Task.FromResult(ReadNext(reader));
-        }
-
-        /// <summary>
-        /// Enumerates the arrays from the HAR file.
-        /// </summary>
-        /// <param name="file">
-        /// The HAR file from which to read arrays.
-        /// </param>
-        /// <returns>
-        /// An enumerable collection of the arrays in the file.
-        /// </returns>
-        [NotNull]
-        [ItemNotNull]
-        public static IEnumerable<IHeaderArray> ReadArrays(FilePath file)
-        {
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
-            {
-                while (reader.BaseStream.Position != reader.BaseStream.Length)
-                {
-                    yield return ReadNext(reader);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Asynchronously enumerates the arrays from the HAR file.
-        /// </summary>
-        /// <param name="file">
-        /// The HAR file from which to read arrays.
-        /// </param>
-        /// <returns>
-        /// An enumerable collection of tasks that when completed return the arrays in the file.
-        /// </returns>
-        [NotNull]
-        [ItemNotNull]
-        public static IEnumerable<Task<IHeaderArray>> ReadArraysAsync(FilePath file)
-        {
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
-            {
-                while (reader.BaseStream.Position != reader.BaseStream.Length)
-                {
-                    yield return ReadNextAsync(reader);
-                }
-            }
         }
 
         /// <summary>

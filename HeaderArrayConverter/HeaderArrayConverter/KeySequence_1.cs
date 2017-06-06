@@ -114,7 +114,7 @@ namespace HeaderArrayConverter
         /// <param name="value">
         /// The sequence create a string.
         /// </param>
-        public static implicit operator string(KeySequence<TKey> value)
+        public static explicit operator string(KeySequence<TKey> value)
         {
             return value.ToString();
         }
@@ -130,7 +130,7 @@ namespace HeaderArrayConverter
         /// </param>
         public static KeySequence<TKey> Parse(string value, Func<string, TKey> parser)
         {
-            return new KeySequence<TKey>(value.Replace(" ", null).Trim('[', ']').Split('*').Select(parser));
+            return new KeySequence<TKey>(value.Replace(" ", null).Trim('[', ']').Split(new string[] { "*", "][" }, StringSplitOptions.RemoveEmptyEntries).Select(parser));
         }
 
         /// <summary>

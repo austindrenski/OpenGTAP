@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace HeaderArrayConverter
 {
@@ -15,12 +16,14 @@ namespace HeaderArrayConverter
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
+    [JsonObject]
     public class HeaderArray<T> : IHeaderArray<T>
     {
         /// <summary>
         /// An immutable dictionary whose entries are stored by a sequence of the defining sets.
         /// </summary>
         [NotNull]
+        [JsonProperty(Order = int.MaxValue)]
         private readonly ImmutableSequenceDictionary<string, T> _entries;
 
         /// <summary>
@@ -46,7 +49,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        public IImmutableList<ImmutableOrderedSet<string>> Sets { get; }
+        public IImmutableList<IImmutableList<string>> Sets { get; }
         
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -80,17 +83,17 @@ namespace HeaderArrayConverter
         /// <param name="dimensions">
         /// The dimensions of the array.
         /// </param>
-        /// <param name="records">
+        /// <param name="entries">
         /// The data in the array.
         /// </param>
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] IEnumerable<T> records, [NotNull] IEnumerable<ImmutableOrderedSet<string>> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] IEnumerable<T> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
         {
-            if (records is null)
+            if (entries is null)
             {
-                throw new ArgumentNullException(nameof(records));
+                throw new ArgumentNullException(nameof(entries));
             }
             if (header is null)
             {
@@ -112,22 +115,39 @@ namespace HeaderArrayConverter
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
             Dimensions = dimensions.ToImmutableArray();
-            Sets = sets.ToImmutableArray();
+            Sets = sets.Select(x => (IImmutableList<string>) x.ToImmutableArray()).ToImmutableArray();
             Type = type;
 
             _entries =
                 Sets.AsExpandedSet()
                     .FullOuterZip(
-                        records,
+                        entries,
                         x => x.ToString())
                     .ToImmutableSequenceDictionary(
                         x => x.Left.Split('*') as IEnumerable<string>,
                         x => x.Right);
         }
 
+        public HeaderArray(IEnumerable<KeyValuePair<KeySequence<string>, T>> entries)
+        {
+            _entries = entries.ToImmutableSequenceDictionary();
+            Sets = Enumerable.Empty<IImmutableList<string>>().ToImmutableArray();
+        }
+
+        public HeaderArray(params KeyValuePair<KeySequence<string>, T>[] entries) 
+            : this(entries as IEnumerable<KeyValuePair<KeySequence<string>, T>>) { }
+
         IHeaderArray<TResult> IHeaderArray.As<TResult>()
         {
             return (IHeaderArray<TResult>)this;
+        }
+
+        /// <summary>
+        /// Returns a JSON representation of this <see cref="IHeaderArray{T}"/>.
+        /// </summary>
+        public string ToJson()
+        {
+            return JsonConvert.SerializeObject(this);
         }
 
         /// <summary>

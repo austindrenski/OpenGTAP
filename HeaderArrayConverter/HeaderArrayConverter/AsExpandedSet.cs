@@ -21,7 +21,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// A set of asterisk-delimited strings ordered with standard HAR semantics. 
         /// </returns>
-        public static IImmutableSet<string> AsExpandedSet<T>(this IEnumerable<ImmutableOrderedSet<T>> source)
+        public static IImmutableSet<string> AsExpandedSet<T>(this IEnumerable<IEnumerable<T>> source)
         {
             if (source is null)
             {
