@@ -143,10 +143,12 @@ namespace HeaderArrayConverter
                 {
                     string[] strings = GetStringArray(reader);
                     return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<ImmutableOrderedSet<string>>());
-                    }
+                }
                 case "RE":
                 {
                     (float[] floats, IEnumerable<ImmutableOrderedSet<string>> sets) = GetReArray(reader, sparse);
+                    Console.WriteLine(header);
+                    Console.WriteLine(floats.Length);
                     return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
@@ -330,46 +332,52 @@ namespace HeaderArrayConverter
             byte[] meta = InitializeArray(reader);
             int recordsFromEndOfThisHeaderArray = BitConverter.ToInt32(meta, 0);
             int dimensionLimit = BitConverter.ToInt32(meta, 4);
-            int d0 = BitConverter.ToInt32(meta, 8);
-            int d1 = BitConverter.ToInt32(meta, 12);
-            int d2 = BitConverter.ToInt32(meta, 16);
-            int d3 = BitConverter.ToInt32(meta, 20);
-            int d4 = BitConverter.ToInt32(meta, 24);
-            int d5 = BitConverter.ToInt32(meta, 28);
-            int d6 = BitConverter.ToInt32(meta, 32);
-
-            int count = d0 * d1 * d2 * d3 * d4 * d5 * d6;
-
-            if (count > 0)
+            int[] dimensions = new int[dimensionLimit];
+            for (int i = 0; i < dimensions.Length; i++)
             {
-                byte[] dimDefinitons = InitializeArray(reader);
-                int x0 = BitConverter.ToInt32(dimDefinitons, 0);
-                int[][] dimDescriptions = new int[x0][];
-                for (int i = 0; i < x0; i++)
-                {
-                    dimDescriptions[i] = new int[7];
-                    dimDescriptions[i][0] = BitConverter.ToInt32(dimDefinitons, 4);
-                    dimDescriptions[i][1] = BitConverter.ToInt32(dimDefinitons, 8);
-                    dimDescriptions[i][2] = BitConverter.ToInt32(dimDefinitons, 12);
-                    dimDescriptions[i][3] = BitConverter.ToInt32(dimDefinitons, 16);
-                    dimDescriptions[i][4] = BitConverter.ToInt32(dimDefinitons, 20);
-                    dimDescriptions[i][5] = BitConverter.ToInt32(dimDefinitons, 24);
-                    dimDescriptions[i][6] = BitConverter.ToInt32(dimDefinitons, 28);
-                }
+                dimensions[i] = BitConverter.ToInt32(meta, 8 + 4 * i);
+            }
+            int count = dimensions.Aggregate(1, (current, next) => current * next);
+
+            float[] results = new float[count];
+            bool test = true;
+            int counter = 0;
+            while (test)
+            {
+                test = CalculateNextArraySegment(reader, out float[] floats);
+                Array.Copy(floats, 0, results, counter, floats.Length);
+                counter += floats.Length;
+            }
+
+            return results;
+        }
+
+        private static bool CalculateNextArraySegment(BinaryReader reader, out float[] segment)
+        {
+            byte[] dimDefinitons = InitializeArray(reader);
+            int x0 = dimDefinitons.Length / 4;
+            int[] dimDescriptions = new int[x0];
+            for (int i = 0; i < x0; i++)
+            {
+                dimDescriptions[i] = BitConverter.ToInt32(dimDefinitons, 4 * i);
+            }
+            int[] dimLengths = new int[x0 / 2];
+            for (int i = 0; i < x0 / 2; i++)
+            {
+                dimLengths[i] = dimDescriptions[2 + 2 * i] - dimDescriptions[1 + 2 * i] + 1;
             }
 
             byte[] data = InitializeArray(reader);
             int dataDim = BitConverter.ToInt32(data, 0);
 
-            float[] floats = new float[count];
+            segment = new float[dimLengths.Aggregate(1, (current, next) => current * next)];
 
-            // Read records
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < segment.Length; i++)
             {
-                floats[i] = BitConverter.ToSingle(data, 4 + i * 4);
+                segment[i] = BitConverter.ToSingle(data, 4 + i * 4);
             }
 
-            return floats;
+            return dimDescriptions[0] != 2;
         }
 
         [NotNull]
