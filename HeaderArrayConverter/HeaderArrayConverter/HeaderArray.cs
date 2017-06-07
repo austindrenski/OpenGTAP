@@ -414,7 +414,9 @@ namespace HeaderArrayConverter
             //    indices[i] = BitConverter.ToInt32(data, 12 + i * 4) - 1;
             //}
 
-            byte[] records = data.Skip(12 + totalCountOfEntries * 4).ToArray();
+            int t = totalCountOfEntries - (numberOfVectors - 1) * maxEntriesPerVector;
+
+            byte[] records = data.Skip(12 + t * 4).ToArray();
 
             float[] floats = new float[count];//new float[valueCount * valueCount + idk0 + idk1];
 

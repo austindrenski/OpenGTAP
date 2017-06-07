@@ -12,8 +12,8 @@ namespace HeaderArrayConsole
             //const string harFile = "c:\\users\\adren\\desktop\\gtap source\\new2.har";
 
             //const string harFile = "G:\\data\\Austin D\\GTAP source code\\sets.har";
-            //const string harFile = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
-            const string harFile = "G:\\data\\Austin D\\GTAP source code\\gsddat.har";
+            const string harFile = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
+            //const string harFile = "G:\\data\\Austin D\\GTAP source code\\gsddat.har";
 
             //const string harxFile = "c:\\users\\adren\\desktop\\test2.harx";
             const string harxFile = "c:\\users\\austin.drenski\\desktop\\test3.harx";
