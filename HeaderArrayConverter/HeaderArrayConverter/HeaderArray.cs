@@ -313,7 +313,7 @@ namespace HeaderArrayConverter
                 sets[i] = ImmutableOrderedSet<string>.Create(setNames[i], null, labelStrings[i]);
             }
             
-            float[] data = sparse ? GetReSparseArray(reader) : GetReFullArray(reader);
+            float[] data = sparse ? GetReSparseArray(reader, sets.Aggregate(1, (current, next) => current * next.Count)) : GetReFullArray(reader);
 
             if (!sets.Any())
             {
@@ -381,7 +381,7 @@ namespace HeaderArrayConverter
         }
 
         [NotNull]
-        private static float[] GetReSparseArray(BinaryReader reader)
+        private static float[] GetReSparseArray(BinaryReader reader, int count)
         {
             byte[] meta = InitializeArray(reader);
 
@@ -392,22 +392,36 @@ namespace HeaderArrayConverter
             byte[] data = InitializeArray(reader);
             int numberOfVectors = BitConverter.ToInt32(data, 0);
             int totalCountOfEntries = BitConverter.ToInt32(data, 4);
-            int maxEntriesPerVector= BitConverter.ToInt32(data, 8);
+            int maxEntriesPerVector = BitConverter.ToInt32(data, 8);
 
             int[] indices = new int[totalCountOfEntries];
-            for (int i = 0; i < totalCountOfEntries; i++)
+
+            for (int i = 0; i < numberOfVectors; i++)
             {
-                indices[i] = BitConverter.ToInt32(data, 12 + i * 4) - 1;
+                if (i > 0)
+                {
+                    data = InitializeArray(reader);
+                }
+                int length = i + 1 == numberOfVectors ? totalCountOfEntries - i * maxEntriesPerVector : maxEntriesPerVector;
+                for (int j = 0; j < length; j++)
+                {
+                    indices[i * maxEntriesPerVector + j] = BitConverter.ToInt32(data, 12 + j * 4) - 1;
+                }
             }
 
-            byte[] record = data.Skip(12 + totalCountOfEntries * 4).ToArray();
+            //for (int i = 0; i < totalCountOfEntries; i++)
+            //{
+            //    indices[i] = BitConverter.ToInt32(data, 12 + i * 4) - 1;
+            //}
 
-            float[] floats = new float[valueCount * valueCount + idk0 + idk1];
+            byte[] records = data.Skip(12 + totalCountOfEntries * 4).ToArray();
+
+            float[] floats = new float[count];//new float[valueCount * valueCount + idk0 + idk1];
 
             // Read records
             for (int i = 0; i < totalCountOfEntries; i++)
             {
-                floats[indices[i]] = BitConverter.ToSingle(record, i * 4);
+                floats[indices[i]] = BitConverter.ToSingle(records, i * 4);
             }
 
             return floats;
