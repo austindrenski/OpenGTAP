@@ -7,13 +7,17 @@ namespace HeaderArrayConsole
     {
         public static void Main()
         {
-            //const string file = "c:\\users\\adren\\desktop\\gtap source\\new2.har";
-            const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\US_3x3_BaseData.har";
-            //const string file = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
-            //const string file = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
-            //const string file = "G:\\data\\Austin D\\GTAP source code\\sets.har";
+            //const string harFile = "c:\\users\\adren\\desktop\\gtap source\\new2.har";
+            //const string harFile = "C:\\Users\\adren\\Desktop\\GTAP source\\US_3x3_BaseData.har";
+            //const string harFile = "C:\\Users\\adren\\Desktop\\GTAP source\\sets.har";
+            const string harFile = "G:\\data\\Austin D\\GTAP source code\\basedata.har";
+            //const string harFile = "G:\\data\\Austin D\\GTAP source code\\sets.har";
 
-            HeaderArrayFile arrays = HeaderArrayFile.ReadHarFile(file);
+            //const string harxFile = "c:\\users\\adren\\desktop\\test2.harx";
+            const string harxFile = "c:\\users\\austin.drenski\\desktop\\test2.harx";
+
+
+            HeaderArrayFile arrays = HeaderArrayFile.ReadHarFile(harFile);
             
             Console.WriteLine(arrays);
 
@@ -49,9 +53,9 @@ namespace HeaderArrayConsole
             //    Console.WriteLine(item);
             //}
 
-            HeaderArrayFile.WriteHarx("c:\\users\\adren\\desktop\\test2.harx", arrays);
+            HeaderArrayFile.WriteHarx(harxFile, arrays);
 
-            Console.WriteLine(HeaderArrayFile.ReadHarxFile("c:\\users\\adren\\desktop\\test2.harx"));
+            Console.WriteLine(HeaderArrayFile.ReadHarxFile(harxFile));
 
             Console.ReadLine();
         }
