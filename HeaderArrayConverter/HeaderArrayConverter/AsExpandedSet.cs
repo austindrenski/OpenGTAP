@@ -28,6 +28,7 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(source));
             }
 
+
             return
                 source.Aggregate(
                     Enumerable.Empty<string>(),
