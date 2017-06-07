@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace HeaderArrayConverter
 {
@@ -18,12 +19,14 @@ namespace HeaderArrayConverter
     /// The item type.
     /// </typeparam>
     [PublicAPI]
+    [JsonDictionary]
     public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableDictionary<KeySequence<TKey>, TValue>, ISequenceIndexer<TKey, TValue>
     {
         /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
         /// </summary>
         [NotNull]
+        [JsonProperty(Order = int.MaxValue)]
         private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HeaderArrayConverter
 {
@@ -14,11 +16,14 @@ namespace HeaderArrayConverter
     /// The type of key in the sequence.
     /// </typeparam>
     [PublicAPI]
-    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable{
+    [JsonObject(MemberSerialization.OptIn)]
+    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable
+    {
         /// <summary>
         /// The sequence values.
         /// </summary>
         [NotNull]
+        [JsonProperty]
         private readonly IImmutableList<TKey> _keys;
 
         /// <summary>
@@ -118,9 +123,22 @@ namespace HeaderArrayConverter
         {
             return value.ToString();
         }
+        
+        /// <summary>
+        /// Parses the string to a <see cref="KeySequence{String}"/>.
+        /// </summary>
+        /// <param name="value">
+        /// The <see cref="JToken"/> from which to parse a <see cref="KeySequence{String}"/>.
+        /// </param>
+        public static KeySequence<string> Parse(JToken value)
+        {
+            string name = ((JProperty) value).Name;
+
+            return new KeySequence<string>(Parse(name));
+        }
 
         /// <summary>
-        /// Implicitly casts the <see cref="KeySequence{TKey}"/> to a string.
+        /// Parses the string to a <see cref="KeySequence{TKey}"/>.
         /// </summary>
         /// <param name="value">
         /// The sequence create a string.
@@ -130,7 +148,18 @@ namespace HeaderArrayConverter
         /// </param>
         public static KeySequence<TKey> Parse(string value, Func<string, TKey> parser)
         {
-            return new KeySequence<TKey>(value.Replace(" ", null).Trim('[', ']').Split(new string[] { "*", "][" }, StringSplitOptions.RemoveEmptyEntries).Select(parser));
+            return new KeySequence<TKey>(Parse(value).Select(parser));
+        }
+
+        /// <summary>
+        /// Parses the string to a <see cref="KeySequence{TKey}"/>.
+        /// </summary>
+        /// <param name="value">
+        /// The sequence create a string.
+        /// </param>
+        private static string[] Parse(string value)
+        {
+            return value.Replace(" ", null).Trim('[', ']').Split(new string[] { "*", "][" }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         /// <summary>

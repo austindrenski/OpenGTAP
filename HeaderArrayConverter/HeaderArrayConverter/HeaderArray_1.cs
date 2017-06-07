@@ -16,7 +16,7 @@ namespace HeaderArrayConverter
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
-    [JsonObject]
+    [JsonObject(MemberSerialization.OptIn)]
     public class HeaderArray<T> : IHeaderArray<T>
     {
         /// <summary>
@@ -29,26 +29,31 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The four character identifier for this <see cref="HeaderArray{T}"/>.
         /// </summary>
+        [JsonProperty]
         public string Header { get; }
 
         /// <summary>
         /// The long name description of the <see cref="HeaderArray{T}"/>.
         /// </summary>
+        [JsonProperty]
         public string Description { get; }
 
         /// <summary>
         /// The type of element stored in the array.
         /// </summary>
+        [JsonProperty]
         public string Type { get; }
 
         /// <summary>
         /// The dimensions of the array.
         /// </summary>
+        [JsonProperty]
         public IImmutableList<int> Dimensions { get; }
 
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
+        [JsonProperty]
         public IImmutableList<IImmutableList<string>> Sets { get; }
         
         /// <summary>
@@ -128,14 +133,58 @@ namespace HeaderArrayConverter
                         x => x.Right);
         }
 
-        public HeaderArray(IEnumerable<KeyValuePair<KeySequence<string>, T>> entries)
+        /// <summary>
+        /// Represents one entry from a Header Array (HAR) file.
+        /// </summary>
+        /// <param name="header">
+        /// The four character identifier for this <see cref="HeaderArray"/>.
+        /// </param>
+        /// <param name="description">
+        /// The long name description of the <see cref="HeaderArray"/>.
+        /// </param>
+        /// <param name="type">
+        /// The type of element stored in the array.
+        /// </param>
+        /// <param name="dimensions">
+        /// The dimensions of the array.
+        /// </param>
+        /// <param name="entries">
+        /// The data in the array.
+        /// </param>
+        /// <param name="sets">
+        /// The sets defined on the array.
+        /// </param>
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, T>> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
         {
-            _entries = entries.ToImmutableSequenceDictionary();
-            Sets = Enumerable.Empty<IImmutableList<string>>().ToImmutableArray();
-        }
+            if (entries is null)
+            {
+                throw new ArgumentNullException(nameof(entries));
+            }
+            if (header is null)
+            {
+                throw new ArgumentNullException(nameof(header));
+            }
+            if (type is null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+            if (dimensions is null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+            if (sets is null)
+            {
+                throw new ArgumentNullException(nameof(sets));
+            }
 
-        public HeaderArray(params KeyValuePair<KeySequence<string>, T>[] entries) 
-            : this(entries as IEnumerable<KeyValuePair<KeySequence<string>, T>>) { }
+            Header = header;
+            Description = description?.Trim('\u0000', '\u0002', '\u0020');
+            Dimensions = dimensions.ToImmutableArray();
+            Sets = sets.Select(x => (IImmutableList<string>)x.ToImmutableArray()).ToImmutableArray();
+            Type = type;
+
+            _entries = entries.ToImmutableSequenceDictionary();
+        }
 
         IHeaderArray<TResult> IHeaderArray.As<TResult>()
         {

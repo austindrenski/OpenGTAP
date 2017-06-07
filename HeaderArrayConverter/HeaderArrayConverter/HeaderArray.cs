@@ -31,40 +31,60 @@ namespace HeaderArrayConverter
         [ItemNotNull]
         public static IEnumerable<IHeaderArray> ReadHarxArrays(FilePath file)
         {
+            foreach (Task<IHeaderArray> array in ReadHarxArraysAsync(file))
+            {
+                yield return array.Result;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously enumerates the arrays from the HAR file.
+        /// </summary>
+        /// <param name="file">
+        /// The HAR file from which to read arrays.
+        /// </param>
+        /// <returns>
+        /// An enumerable collection of tasks that when completed return the arrays in the file.
+        /// </returns>
+        [NotNull]
+        [ItemNotNull]
+        public static IEnumerable<Task<IHeaderArray>> ReadHarxArraysAsync(FilePath file)
+        {
             using (ZipArchive archive = new ZipArchive(File.Open(file, FileMode.Open, FileAccess.Read)))
             {
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
-                    string json = new StreamReader(entry.Open()).ReadToEnd();
-
-                    //IEnumerable<KeyValuePair<KeySequence<string>, float>> a;
-
-                    ////if (json.Contains("\"Type\":\"1C\""))
-                    //try
-                    //{
-                    //    a =
-                    //        JsonConvert.DeserializeObject<IEnumerable<KeyValuePair<KeySequence<string>, float>>>(json);
-                    //}
-                    ////else
-                    //catch
-                    //{
-                    //    continue;
-                    //}
-
-                    //yield return new HeaderArray<float>(a);
-
-
-                    yield return
-                        (IHeaderArray)
-                        JsonConvert.DeserializeObject(
-                            json,
-                            json.Contains("\"Type\":\"1C\"")
-                                ? typeof(IEnumerable<KeyValuePair<KeySequence<string>, string>>)
-                                : typeof(IEnumerable<KeyValuePair<KeySequence<string>, float>>));
+                    yield return ReadHarxArrayAsync(entry);
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Reads one entry from a HARX file.
+        /// </summary>
+        [NotNull]
+        [ItemNotNull]
+        private static async Task<IHeaderArray> ReadHarxArrayAsync(ZipArchiveEntry entry)
+        {
+            string json = new StreamReader(entry.Open()).ReadToEnd();
+
+            switch (json.Contains("\"Type\":\"1C\""))
+            {
+                case true:
+                {
+                    return await Task.FromResult<IHeaderArray>(JsonConvert.DeserializeObject<IHeaderArray<string>>(json, new HeaderArrayJsonConverter<string>()));
+                }
+                case false:
+                {
+                    return await Task.FromResult<IHeaderArray>(JsonConvert.DeserializeObject<IHeaderArray<float>>(json, new HeaderArrayJsonConverter<float>()));
+                }
+                default:
+                {
+                    throw new NotSupportedException();
+                }
+            }
+        }
+
         /// <summary>
         /// Enumerates the arrays from the HAR file.
         /// </summary>

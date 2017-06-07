@@ -57,6 +57,41 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
+        /// Returns a string representation of the contents of the <see cref="HeaderArrayFile"/>.
+        /// </summary>
+        [Pure]
+        [NotNull]
+        public override string ToString()
+        {
+            return
+                _arrays.OrderBy(x => x.Key.ToString())
+                       .Aggregate(
+                           new StringBuilder(),
+                           (current, next) =>
+                               current.AppendLine(next.Value.ToString()),
+                           x =>
+                               x.ToString());
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the collection.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        public IEnumerator<IHeaderArray> GetEnumerator()
+        {
+            return _arrays.Select(x => x.Value).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        /// <summary>
         /// Reads the contents of a HAR file.
         /// </summary>
         /// <param name="file">
@@ -65,7 +100,6 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The contents of the HAR file.
         /// </returns>
-        [Pure]
         [NotNull]
         public static HeaderArrayFile ReadHarFile([NotNull] FilePath file)
         {
@@ -86,7 +120,6 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The contents of the HARX file.
         /// </returns>
-        [Pure]
         [NotNull]
         public static HeaderArrayFile ReadHarxFile([NotNull] FilePath file)
         {
@@ -96,55 +129,6 @@ namespace HeaderArrayConverter
             }
 
             return new HeaderArrayFile(HeaderArray.ReadHarxArrays(file));
-        }
-
-        /// <summary>
-        /// Returns a string representation of the contents of the <see cref="HeaderArrayFile"/>.
-        /// </summary>
-        [Pure]
-        [NotNull]
-        public override string ToString()
-        {
-            return
-                _arrays.OrderBy(x => x.Key.ToString())
-                       .Aggregate(
-                           new StringBuilder(),
-                           (current, next) =>
-                               current.AppendLine(next.Value.ToString()),
-                           x =>
-                               x.ToString());
-        }
-
-        /// <summary>
-        /// Asynchronously writes the header arrays to a zipped archive of JSON files.
-        /// </summary>
-        /// <param name="file">
-        /// The output file.
-        /// </param>
-        public async Task WriteHarxAsync([NotNull] string file)
-        {
-            if (file is null)
-            {
-                throw new ArgumentNullException(nameof(file));
-            }
-
-            await WriteHarxAsync(file, _arrays.Values);
-        }
-
-        /// <summary>
-        /// Writes the header arrays to a zipped archive of JSON files.
-        /// </summary>
-        /// <param name="file">
-        /// The output file.
-        /// </param>
-        public void WriteHarx([NotNull] string file)
-        {
-            if (file is null)
-            {
-                throw new ArgumentNullException(nameof(file));
-            }
-
-            WriteHarxAsync(file, _arrays.Values).Wait();
         }
 
         /// <summary>
@@ -231,24 +215,6 @@ namespace HeaderArrayConverter
             }
 
             WriteHarxAsync(file, arrays as IEnumerable<IHeaderArray>).Wait();
-        }
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// An enumerator that can be used to iterate through the collection.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IEnumerator<IHeaderArray> GetEnumerator()
-        {
-            return _arrays.Select(x => x.Value).GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }
