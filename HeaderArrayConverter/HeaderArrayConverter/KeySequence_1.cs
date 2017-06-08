@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace HeaderArrayConverter
@@ -16,7 +15,6 @@ namespace HeaderArrayConverter
     /// The type of key in the sequence.
     /// </typeparam>
     [PublicAPI]
-    [JsonObject(MemberSerialization.OptIn)]
     public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable
     {
         /// <summary>
@@ -29,19 +27,31 @@ namespace HeaderArrayConverter
         /// The sequence values or an empty sequence.
         /// </summary>
         [NotNull]
-        [JsonProperty]
         private IImmutableList<TKey> Keys => _keys ?? EmptyArray;
 
         /// <summary>
         /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
         /// </summary>
+        [NotNull]
         private static IImmutableList<TKey> EmptyArray { get; } = new TKey[0].ToImmutableArray();
 
         /// <summary>
         /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
         /// </summary>
         public static KeySequence<TKey> Empty { get; } = new KeySequence<TKey>(new TKey[0]);
-        
+
+        /// <summary>
+        /// Compares sequences with <see cref="StringComparison.OrdinalIgnoreCase"/> semantics.
+        /// </summary>
+        [NotNull]
+        public static IComparer<KeySequence<TKey>> ForwardComparer = new Comparer(StringComparer.OrdinalIgnoreCase.Compare);
+
+        /// <summary>
+        /// Compares sequences with reverse <see cref="StringComparison.OrdinalIgnoreCase"/> semantics.
+        /// </summary>
+        [NotNull]
+        public static IComparer<KeySequence<TKey>> ReverseComparer = new Comparer(StringComparer.OrdinalIgnoreCase.Compare, Enumerable.Reverse);
+
         /// <summary>
         /// Gets the number of items contained in the sequence.
         /// </summary>
@@ -341,6 +351,47 @@ namespace HeaderArrayConverter
         public int GetHashCode(IEqualityComparer comparer)
         {
             return comparer.GetHashCode(this);
+        }
+
+        /// <summary>
+        /// Compares two <see cref="KeySequence{TKey}"/> objects.
+        /// </summary>
+        private sealed class Comparer : IComparer<KeySequence<TKey>>
+        {
+            /// <summary>
+            /// The function applied to compare keys.
+            /// </summary>
+            [NotNull]
+            private readonly Func<string, string, int> _comparer;
+
+            /// <summary>
+            /// A transform function applied to the keys before comparison.
+            /// </summary>
+            [CanBeNull]
+            private readonly Func<IEnumerable<TKey>, IEnumerable<TKey>> _transform;
+
+            /// <summary>
+            /// Constructs a <see cref="IComparable{TKey}"/>.
+            /// </summary>
+            /// <param name="comparer"></param>
+            /// <param name="transform"></param>
+            public Comparer([NotNull] Func<string, string, int> comparer, [CanBeNull] Func<IEnumerable<TKey>, IEnumerable<TKey>> transform = null)
+            {
+                _comparer = comparer;
+                _transform = transform;
+            }
+
+            /// <summary>
+            /// Compares two sequences.
+            /// </summary>
+            [Pure]
+            public int Compare(KeySequence<TKey> x, KeySequence<TKey> y)
+            {
+                return
+                    _transform is null
+                        ? _comparer(x.ToString(), y.ToString())
+                        : _comparer(x.ToString(_transform), y.ToString(_transform));
+            }
         }
     }
 }

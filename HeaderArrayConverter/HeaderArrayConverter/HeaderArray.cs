@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using AD.IO;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
 // ReSharper disable UnusedVariable
 
 namespace HeaderArrayConverter
@@ -158,7 +161,7 @@ namespace HeaderArrayConverter
                     ZipArchiveEntry entry = archive.CreateEntry($"{item.Header}.json", CompressionLevel.Optimal);
                     using (StreamWriter writer = new StreamWriter(entry.Open()))
                     {
-                        await writer.WriteAsync(item.ToJson());
+                        await writer.WriteAsync(item.SerializeJson());
                     }
                 }
             }
@@ -232,7 +235,7 @@ namespace HeaderArrayConverter
 
             source.WriteHarxAsync(file).Wait();
         }
-
+        
         #endregion
 
         #region Read HAR files
@@ -294,17 +297,37 @@ namespace HeaderArrayConverter
                 case "1C":
                 {
                     string[] strings = GetStringArray(reader);
-                    return new HeaderArray<string>(header, description, type, dimensions, strings, Enumerable.Empty<ImmutableOrderedSet<string>>());
+
+                    IEnumerable<KeyValuePair<KeySequence<string>, string>> items =
+                        strings.Select(
+                            (x, i) =>
+                                new KeyValuePair<KeySequence<string>, string>(i.ToString(), x));
+
+                    return new HeaderArray<string>(header, description, type, dimensions, items, Enumerable.Empty<IEnumerable<string>>());
                 }
                 case "RE":
                 {
-                    (float[] floats, IEnumerable<ImmutableOrderedSet<string>> sets) = GetReArray(reader, sparse);
-                    return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
+                    (float[] floats, IEnumerable<string>[] sets) = GetReArray(reader, sparse);
+
+                    IEnumerable<KeySequence<string>> expandedSets =
+                        sets.AsExpandedSet()
+                            .ToArray();
+
+                    IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
+                            expandedSets.Zip(floats, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
+
+                    return new HeaderArray<float>(header, description, type, dimensions, items, sets);
                 }
                 case "RL":
                 {
                     float[] floats = GetRlArray(reader);
-                    return new HeaderArray<float>(header, description, type, dimensions, floats, Enumerable.Empty<ImmutableOrderedSet<string>>());
+
+                    IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
+                        floats.Select(
+                            (x, i) =>
+                                new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
+
+                    return new HeaderArray<float>(header, description, type, dimensions, items, Enumerable.Empty<IEnumerable<string>>());
                 }
                 default:
                 {
@@ -398,7 +421,7 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, ImmutableOrderedSet<string>[] Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, string[][] Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -456,20 +479,20 @@ namespace HeaderArrayConverter
                 labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
             }
 
-            ImmutableOrderedSet<string>[] sets = new ImmutableOrderedSet<string>[setNames.Length];
+            string[][] sets = new string[setNames.Length][];
 
             for (int i = 0; i < setNames.Length; i++)
             {
-                sets[i] = ImmutableOrderedSet<string>.Create(setNames[i], null, labelStrings[i]);
+                sets[i] = labelStrings[i];
             }
             
-            float[] data = sparse ? GetReSparseArray(reader, sets.Aggregate(1, (current, next) => current * next.Count)) : GetReFullArray(reader);
+            float[] data = sparse ? GetReSparseArray(reader, sets.Aggregate(1, (current, next) => current * next.Length)) : GetReFullArray(reader);
 
             if (!sets.Any())
             {
-                sets = new ImmutableOrderedSet<string>[]
+                sets = new string[][]
                 {
-                    ImmutableOrderedSet<string>.Create(coefficient, null, coefficient)
+                    new string[] { coefficient }
                 };
             }
 
@@ -646,5 +669,88 @@ namespace HeaderArrayConverter
         }
 
         #endregion
+
+        /// <summary>
+        /// Custom converter from JSON <see cref="IHeaderArray{TValue}"/>.
+        /// </summary>
+        /// <typeparam name="TValue">
+        /// The type of data in the array.
+        /// </typeparam>
+        internal sealed class HeaderArrayJsonConverter<TValue> : JsonConverter
+        {
+            /// <summary>
+            /// True if the type implements <see cref="IHeaderArray"/>; otherwise false.
+            /// </summary>
+            /// <param name="objectType">
+            /// The type to compare.
+            /// </param>
+            public override bool CanConvert(Type objectType)
+            {
+                return typeof(IHeaderArray).GetTypeInfo().IsAssignableFrom(objectType);
+            }
+            
+            /// <summary>
+            /// Reads the JSON representation of the object.
+            /// </summary>
+            /// <param name="reader">
+            /// The <see cref="JsonReader"/> to read from.
+            /// </param>
+            /// <param name="objectType">
+            /// Type of the object.
+            /// </param>
+            /// <param name="existingValue">
+            /// The existing value of object being read.
+            /// </param>
+            /// <param name="serializer">
+            /// The calling serializer.
+            /// </param>
+            /// <returns>
+            /// The object value.
+            /// </returns>
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                JObject jObject = JObject.Load(reader);
+
+                IEnumerable<KeyValuePair<KeySequence<string>, TValue>> items =
+                    jObject["Entries"].Values<JToken>()
+                                       .Select(
+                                           x => new
+                                           {
+                                               Key = KeySequence<string>.Parse(x),
+                                               Value = x.Single().Value<TValue>()
+                                           })
+                                       .Select(
+                                           x =>
+                                               new KeyValuePair<KeySequence<string>, TValue>(x.Key, x.Value));
+
+                IHeaderArray<TValue> array =
+                    new HeaderArray<TValue>(
+                        jObject["Header"].Value<string>(),
+                        jObject["Description"].Value<string>(),
+                        jObject["Type"].Value<string>(),
+                        jObject["Dimensions"].Values<int>(),
+                        items,
+                        jObject["Sets"].Values<JToken>().Select(x => x.Values<string>()));
+
+                return array;
+            }
+
+            /// <summary>
+            /// Writes the JSON representation of the object.
+            /// </summary>
+            /// <param name="writer">
+            /// The <see cref="JsonWriter"/> to write to.
+            /// </param>
+            /// <param name="value">
+            /// The value.
+            /// </param>
+            /// <param name="serializer">
+            /// The calling serializer.
+            /// </param>
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new NotSupportedException();
+            }
+        }
     }
 }

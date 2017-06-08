@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -32,7 +31,7 @@ namespace HeaderArrayConverter
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
         /// </summary>
         [NotNull]
-        [JsonProperty(Order = int.MaxValue)]
+        [JsonProperty]
         private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>
@@ -145,7 +144,7 @@ namespace HeaderArrayConverter
             }
 
             Sets = sets.ToImmutableArray();
-            _dictionary = source.ToImmutableDictionary();
+            _dictionary = source.Where(x => !x.Value.Equals(default(TValue))).ToImmutableSortedDictionary(KeySequence<TKey>.ReverseComparer);
         }
 
         /// <summary>
@@ -212,16 +211,7 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
-            int length =
-                _dictionary.DefaultIfEmpty()
-                           .Max(x => x.Key.ToString().Length);
-
-            return
-                _dictionary.OrderBy(x => x.Key.ToString(Enumerable.Reverse))
-                           .Aggregate(
-                               new StringBuilder(),
-                               (current, next) => current.AppendLine($"{next.Key.ToString().PadRight(length)}: {next.Value}"),
-                               result => result.ToString());
+            return JsonConvert.SerializeObject(this);
         }
 
         /// <summary>
@@ -431,7 +421,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Provides comparisons between entries based on the keys.
         /// </summary>
-        private class KeyComparer : IEqualityComparer<KeyValuePair<KeySequence<TKey>, TValue>>
+        private sealed class KeyComparer : IEqualityComparer<KeyValuePair<KeySequence<TKey>, TValue>>
         {
             public bool Equals(KeyValuePair<KeySequence<TKey>, TValue> x, KeyValuePair<KeySequence<TKey>, TValue> y)
             {

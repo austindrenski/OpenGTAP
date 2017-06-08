@@ -69,6 +69,6 @@ namespace HeaderArrayConverter
         /// </summary>
         [Pure]
         [NotNull]
-        string ToJson();
+        string SerializeJson();
     }
 }

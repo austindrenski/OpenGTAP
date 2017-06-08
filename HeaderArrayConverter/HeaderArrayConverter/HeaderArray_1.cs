@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -23,7 +22,7 @@ namespace HeaderArrayConverter
         /// An immutable dictionary whose entries are stored by a sequence of the defining sets.
         /// </summary>
         [NotNull]
-        [JsonProperty(Order = int.MaxValue)]
+        [JsonProperty("Entries", Order = int.MaxValue)]
         private readonly ImmutableSequenceDictionary<string, TValue> _entries;
 
         /// <summary>
@@ -121,73 +120,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] IEnumerable<TValue> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
-        {
-            if (entries is null)
-            {
-                throw new ArgumentNullException(nameof(entries));
-            }
-            if (header is null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
-            if (type is null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
-            if (dimensions is null)
-            {
-                throw new ArgumentNullException(nameof(type));
-            }
-            if (sets is null)
-            {
-                throw new ArgumentNullException(nameof(sets));
-            }
-
-            Header = header;
-            Description = description?.Trim('\u0000', '\u0002', '\u0020');
-            Dimensions = dimensions.ToImmutableArray();
-            Sets = sets.Select(x => (IImmutableList<string>) x.ToImmutableArray()).ToImmutableArray();
-            Type = type;
-
-            IEnumerable<KeySequence<string>> expandedSets = 
-                Sets.AsExpandedSet()
-                    .ToArray();
-
-            _entries =
-                expandedSets.FullOuterZip(
-                                entries,
-                                x => x.ToString())
-                            .Where(
-                                x => !x.Right.Equals(default(TValue)))
-                            .ToImmutableSequenceDictionary(
-                                x => x.Left,
-                                x => x.Right,
-                                expandedSets);
-        }
-
-        /// <summary>
-        /// Represents one entry from a Header Array (HAR) file.
-        /// </summary>
-        /// <param name="header">
-        /// The four character identifier for this <see cref="HeaderArray"/>.
-        /// </param>
-        /// <param name="description">
-        /// The long name description of the <see cref="HeaderArray"/>.
-        /// </param>
-        /// <param name="type">
-        /// The type of element stored in the array.
-        /// </param>
-        /// <param name="dimensions">
-        /// The dimensions of the array.
-        /// </param>
-        /// <param name="entries">
-        /// The data in the array.
-        /// </param>
-        /// <param name="sets">
-        /// The sets defined on the array.
-        /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
         {
             if (entries is null)
             {
@@ -237,7 +170,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Returns a JSON representation of this <see cref="IHeaderArray{TValue}"/>.
         /// </summary>
-        public string ToJson()
+        public string SerializeJson()
         {
             return JsonConvert.SerializeObject(this);
         }
@@ -247,17 +180,7 @@ namespace HeaderArrayConverter
         /// </summary>
         public override string ToString()
         {
-            StringBuilder stringBuilder = new StringBuilder();
-
-            stringBuilder.AppendLine($"{nameof(Header)}: {Header}");
-            stringBuilder.AppendLine($"{nameof(Description)}: {Description}");
-            stringBuilder.AppendLine($"{nameof(Type)}: {Type}");
-            stringBuilder.AppendLine($"{nameof(Sets)}: {string.Join(" * ", Sets.Select(x => $"{{ {string.Join(", ", x)} }}"))}");
-            //stringBuilder.AppendLine($"{nameof(Dimensions)}: {Dimensions.Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
-            stringBuilder.AppendLine($"{nameof(Dimensions)}: {Sets.Select(x => x.Count).Aggregate(string.Empty, (current, next) => $"{current}[{next}]")}");
-            stringBuilder.AppendLine(_entries.ToString());
-            
-            return stringBuilder.ToString();
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
 
         /// <summary>

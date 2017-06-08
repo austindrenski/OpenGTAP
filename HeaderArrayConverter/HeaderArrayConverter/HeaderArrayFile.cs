@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace HeaderArrayConverter
 {
@@ -12,13 +12,15 @@ namespace HeaderArrayConverter
     /// Represents the contents of a HAR file.
     /// </summary>
     [PublicAPI]
+    [JsonObject(MemberSerialization.OptIn)]
     public class HeaderArrayFile : IEnumerable<IHeaderArray>
     {
         /// <summary>
         /// The contents of the HAR file.
         /// </summary>
         [NotNull]
-        private readonly ImmutableDictionary<string, IHeaderArray> _arrays;
+        [JsonProperty("Arrays", Order = int.MaxValue)]
+        private readonly IImmutableDictionary<string, IHeaderArray> _arrays;
 
         /// <summary>
         /// Gets the count of arrays in the file, including metadata arrays.
@@ -50,12 +52,15 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(arrays));
             }
 
-            arrays = arrays as IHeaderArray[] ?? arrays.ToArray();
+            _arrays = arrays.ToImmutableSortedDictionary(x => x.Header, x => x);
+        }
 
-            _arrays =
-                arrays.ToImmutableDictionary(
-                    x => x.Header, 
-                    x => x);
+        /// <summary>
+        /// Returns a JSON representation of this <see cref="HeaderArrayFile"/>.
+        /// </summary>
+        public string SerializeJson()
+        {
+            return JsonConvert.SerializeObject(this);
         }
 
         /// <summary>
@@ -65,14 +70,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public override string ToString()
         {
-            return
-                _arrays.OrderBy(x => x.Key.ToString())
-                       .Aggregate(
-                           new StringBuilder(),
-                           (current, next) =>
-                               current.AppendLine(next.Value.ToString()),
-                           x =>
-                               x.ToString());
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
 
         /// <summary>
