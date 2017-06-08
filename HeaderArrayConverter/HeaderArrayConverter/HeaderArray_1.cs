@@ -155,6 +155,7 @@ namespace HeaderArrayConverter
                     .FullOuterZip(
                         entries,
                         x => x.ToString())
+                    .Where(x => !x.Right.Equals(default(TValue)))
                     .ToImmutableSequenceDictionary(
                         x => x.Left.Split('*') as IEnumerable<string>,
                         x => x.Right);

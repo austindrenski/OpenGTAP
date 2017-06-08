@@ -143,7 +143,8 @@ namespace HeaderArrayConverter
         public override string ToString()
         {
             int length =
-                _dictionary.Max(x => x.Key.ToString().Length);
+                _dictionary.DefaultIfEmpty()
+                           .Max(x => x.Key.ToString().Length);
 
             return
                 _dictionary.OrderBy(x => x.Key.ToString(Enumerable.Reverse))
