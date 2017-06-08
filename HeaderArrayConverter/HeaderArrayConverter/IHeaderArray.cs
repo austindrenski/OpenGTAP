@@ -52,17 +52,17 @@ namespace HeaderArrayConverter
         new ImmutableSequenceDictionary<string, object> this[params string[] keys] { get; }
 
         /// <summary>
-        /// Casts the <see cref="IHeaderArray"/> as an <see cref="IHeaderArray{T}"/>.
+        /// Casts the <see cref="IHeaderArray"/> as an <see cref="IHeaderArray{TResult}"/>.
         /// </summary>
-        /// <typeparam name="T">
+        /// <typeparam name="TResult">
         /// The type of the array.
         /// </typeparam>
         /// <returns>
-        /// An <see cref="IHeaderArray{T}"/>.
+        /// An <see cref="IHeaderArray{TResult}"/>.
         /// </returns>
         [Pure]
         [NotNull]
-        IHeaderArray<T> As<T>();
+        IHeaderArray<TResult> As<TResult>();
 
         /// <summary>
         /// Returns a JSON representation of this <see cref="IHeaderArray{T}"/>.

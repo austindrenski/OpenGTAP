@@ -12,19 +12,19 @@ namespace HeaderArrayConverter
     /// <summary>
     /// Represents a single entry from a Header Array (HAR) file.
     /// </summary>
-    /// <typeparam name="T">
+    /// <typeparam name="TValue">
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
     [JsonObject(MemberSerialization.OptIn)]
-    public class HeaderArray<T> : IHeaderArray<T>
+    public class HeaderArray<TValue> : IHeaderArray<TValue>
     {
         /// <summary>
         /// An immutable dictionary whose entries are stored by a sequence of the defining sets.
         /// </summary>
         [NotNull]
         [JsonProperty(Order = int.MaxValue)]
-        private readonly ImmutableSequenceDictionary<string, T> _entries;
+        private readonly ImmutableSequenceDictionary<string, TValue> _entries;
 
         /// <summary>
         /// The four character identifier for this <see cref="HeaderArray{T}"/>.
@@ -65,12 +65,39 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        public ImmutableSequenceDictionary<string, T> this[params string[] keys] => _entries[keys];
+        public ImmutableSequenceDictionary<string, TValue> this[params string[] keys] => _entries[keys];
 
+        /// <summary>
+        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
+        /// </summary>
+        /// <param name="keys">
+        /// The components that define the key whose value is returned.
+        /// </param>
+        /// <returns>
+        /// The value stored by the given key.
+        /// </returns>
         ImmutableSequenceDictionary<string, object> IHeaderArray.this[params string[] keys] => (ImmutableSequenceDictionary<string, object>)_entries[keys];
 
-        IEnumerable<KeyValuePair<KeySequence<string>, T>> ISequenceIndexer<string, T>.this[params string[] keys] => _entries[keys];
+        /// <summary>
+        /// Gets an <see cref="IEnumerable{T}"/> for the given keys.
+        /// </summary>
+        /// <param name="keys">
+        /// The collection of keys.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IEnumerable{T}"/> for the given keys.
+        /// </returns>
+        IEnumerable<KeyValuePair<KeySequence<string>, TValue>> ISequenceIndexer<string, TValue>.this[params string[] keys] => _entries[keys];
 
+        /// <summary>
+        /// Gets an <see cref="IEnumerable"/> for the given keys.
+        /// </summary>
+        /// <param name="keys">
+        /// The collection of keys.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IEnumerable"/> for the given keys.
+        /// </returns>
         IEnumerable ISequenceIndexer<string>.this[params string[] keys] => this[keys];
 
         /// <summary>
@@ -94,7 +121,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] IEnumerable<T> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] IEnumerable<TValue> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
         {
             if (entries is null)
             {
@@ -154,7 +181,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, int[] dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, T>> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] int[] dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
         {
             if (entries is null)
             {
@@ -186,13 +213,23 @@ namespace HeaderArrayConverter
             _entries = entries.ToImmutableSequenceDictionary();
         }
 
+        /// <summary>
+        /// Casts the <see cref="IHeaderArray"/> as an <see cref="IHeaderArray{TResult}"/>.
+        /// </summary>
+        /// <typeparam name="TResult">
+        /// The type of the array.
+        /// </typeparam>
+        /// <returns>
+        /// An <see cref="IHeaderArray{TResult}"/>.
+        /// </returns>
+        [Pure]
         IHeaderArray<TResult> IHeaderArray.As<TResult>()
         {
             return (IHeaderArray<TResult>)this;
         }
 
         /// <summary>
-        /// Returns a JSON representation of this <see cref="IHeaderArray{T}"/>.
+        /// Returns a JSON representation of this <see cref="IHeaderArray{TValue}"/>.
         /// </summary>
         public string ToJson()
         {
@@ -223,11 +260,21 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An enumerator that can be used to iterate through the collection.
         /// </returns>
-        public IEnumerator<KeyValuePair<KeySequence<string>, T>> GetEnumerator()
+        [Pure]
+        [NotNull]
+        public IEnumerator<KeyValuePair<KeySequence<string>, TValue>> GetEnumerator()
         {
             return _entries.GetEnumerator();
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the collection.
+        /// </returns>
+        [Pure]
+        [NotNull]
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();

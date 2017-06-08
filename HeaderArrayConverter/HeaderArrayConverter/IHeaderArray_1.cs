@@ -3,13 +3,13 @@
 namespace HeaderArrayConverter
 {
     /// <summary>
-    /// Represents an <see cref="IHeaderArray{T}"/>.
+    /// Represents an <see cref="IHeaderArray{TValue}"/>.
     /// </summary>
-    /// <typeparam name="T">
+    /// <typeparam name="TValue">
     /// The type of element in the array.
     /// </typeparam>
     [PublicAPI]
-    public interface IHeaderArray<T> : IHeaderArray, ISequenceIndexer<string, T>
+    public interface IHeaderArray<TValue> : IHeaderArray, ISequenceIndexer<string, TValue>
     {
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -21,6 +21,6 @@ namespace HeaderArrayConverter
         /// The value stored by the given key.
         /// </returns>
         [NotNull]
-        new ImmutableSequenceDictionary<string, T> this[params string[] keys] { get; }
+        new ImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
     }
 }

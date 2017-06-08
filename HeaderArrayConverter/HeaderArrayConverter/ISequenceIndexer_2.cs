@@ -24,6 +24,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An <see cref="IEnumerable{T}"/> for the given keys.
         /// </returns>
+        [NotNull]
         new IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> this[params TKey[] keys] { get; }
     }
 }

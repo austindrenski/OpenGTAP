@@ -5,8 +5,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using AD.IO;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 // ReSharper disable UnusedVariable
 
@@ -18,6 +18,8 @@ namespace HeaderArrayConverter
     [PublicAPI]
     public static class HeaderArray
     {
+        #region Read HARX files
+
         /// <summary>
         /// Enumerates the arrays from the HARX file.
         /// </summary>
@@ -84,6 +86,156 @@ namespace HeaderArrayConverter
                 }
             }
         }
+
+        /// <summary>
+        /// Reads the contents of a HAR file.
+        /// </summary>
+        /// <param name="file">
+        /// The file to read.
+        /// </param>
+        /// <returns>
+        /// The contents of the HAR file.
+        /// </returns>
+        [NotNull]
+        public static HeaderArrayFile ReadHarFile([NotNull] FilePath file)
+        {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            return new HeaderArrayFile(ReadHarArrays(file));
+        }
+
+        /// <summary>
+        /// Reads the contents of a HARX file.
+        /// </summary>
+        /// <param name="file">
+        /// The file to read.
+        /// </param>
+        /// <returns>
+        /// The contents of the HARX file.
+        /// </returns>
+        [NotNull]
+        public static HeaderArrayFile ReadHarxFile([NotNull] FilePath file)
+        {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            return new HeaderArrayFile(ReadHarxArrays(file));
+        }
+
+        #endregion
+
+        #region Write HARX files
+
+        /// <summary>
+        /// Asynchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
+        /// </summary>
+        /// <param name="source">
+        /// The array collection to write.
+        /// </param>
+        /// <param name="file">
+        /// The output file.
+        /// </param>
+        public static async Task WriteHarxAsync([NotNull] this IEnumerable<IHeaderArray> source, [NotNull] string file)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            using (ZipArchive archive = new ZipArchive(new FileStream(file, FileMode.Create), ZipArchiveMode.Create))
+            {
+                foreach (IHeaderArray item in source)
+                {
+                    ZipArchiveEntry entry = archive.CreateEntry($"{item.Header}.json", CompressionLevel.Optimal);
+                    using (StreamWriter writer = new StreamWriter(entry.Open()))
+                    {
+                        await writer.WriteAsync(item.ToJson());
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously writes the <see cref="IHeaderArray"/> to a zipped archive of JSON files.
+        /// </summary>
+        /// <param name="source">
+        /// The array to write.
+        /// </param>
+        /// <param name="file">
+        /// The output file.
+        /// </param>
+        public static async Task WriteHarxAsync([NotNull] this IHeaderArray source, [NotNull] string file)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            await new IHeaderArray[] { source }.WriteHarxAsync(file);
+        }
+
+        /// <summary>
+        /// Writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
+        /// </summary>
+        /// <param name="source">
+        /// The arrays to write.
+        /// </param>
+        /// <param name="file">
+        /// The output file.
+        /// </param>
+        public static void WriteHarx([NotNull] this IEnumerable<IHeaderArray> source, [NotNull] string file)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            source.WriteHarxAsync(file).Wait();
+        }
+
+        /// <summary>
+        /// writes the <see cref="IHeaderArray"/> to a zipped archive of JSON files.
+        /// </summary>
+        /// <param name="source">
+        /// The array to write.
+        /// </param>
+        /// <param name="file">
+        /// The output file.
+        /// </param>
+        public static void WriteHarx([NotNull] IHeaderArray source, [NotNull] string file)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            source.WriteHarxAsync(file).Wait();
+        }
+
+        #endregion
+
+        #region Read HAR files
 
         /// <summary>
         /// Enumerates the arrays from the HAR file.
@@ -492,5 +644,7 @@ namespace HeaderArrayConverter
 
             return strings;
         }
+
+        #endregion
     }
 }
