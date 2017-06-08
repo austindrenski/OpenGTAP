@@ -25,13 +25,12 @@ namespace HeaderArrayConverter
             JObject jObject = JObject.Load(reader);
 
             IEnumerable<KeyValuePair<KeySequence<string>, TValue>> items =
-                jObject["_entries"]
-                    .Values<JToken>()
-                    .Select(
-                        x =>
-                            new KeyValuePair<KeySequence<string>, TValue>(
-                                KeySequence<string>.Parse(x),
-                                x.Single().Value<TValue>()));
+                jObject["_entries"].Values<JToken>()
+                                   .Select(
+                                       x =>
+                                           new KeyValuePair<KeySequence<string>, TValue>(
+                                               KeySequence<string>.Parse(x),
+                                               x.Single().Value<TValue>()));
 
             IEnumerable<IEnumerable<string>> sets = 
                 jObject["Sets"].Values<JToken>().Select(x => x.Values<string>());

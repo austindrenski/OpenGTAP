@@ -37,6 +37,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets the element that has the specified key in the read-only dictionary.
         /// </summary>
+        [NotNull]
         public ImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys]
         {
             get
@@ -68,13 +69,6 @@ namespace HeaderArrayConverter
         public IEnumerable<TValue> Values => _dictionary.Values;
 
         /// <summary>
-        /// Gets an immutable collection of the immutable sets defined on the header array.
-        /// </summary>
-        [NotNull]
-        [ItemNotNull]
-        public IImmutableList<IImmutableSet<TKey>> Sets { get; }
-
-        /// <summary>
         /// Constructs an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> in which the insertion order is preserved.
         /// </summary>
         /// <param name="source">
@@ -88,7 +82,6 @@ namespace HeaderArrayConverter
             }
 
             _dictionary = source.ToImmutableDictionary();
-            Sets = _dictionary.Keys.Select(x => (IImmutableSet<TKey>) x.ToImmutableHashSet()).ToImmutableArray();
         }
 
         /// <summary>

@@ -147,8 +147,6 @@ namespace HeaderArrayConverter
                 case "RE":
                 {
                     (float[] floats, IEnumerable<ImmutableOrderedSet<string>> sets) = GetReArray(reader, sparse);
-                    Console.WriteLine(header);
-                    Console.WriteLine(floats.Length);
                     return new HeaderArray<float>(header, description, type, dimensions, floats, sets);
                 }
                 case "RL":
@@ -395,6 +393,7 @@ namespace HeaderArrayConverter
             int maxEntriesPerVector = BitConverter.ToInt32(data, 8);
 
             int[] indices = new int[totalCountOfEntries];
+            float[] floats = new float[count];
 
             for (int i = 0; i < numberOfVectors; i++)
             {
@@ -407,23 +406,10 @@ namespace HeaderArrayConverter
                 {
                     indices[i * maxEntriesPerVector + j] = BitConverter.ToInt32(data, 12 + j * 4) - 1;
                 }
-            }
-
-            //for (int i = 0; i < totalCountOfEntries; i++)
-            //{
-            //    indices[i] = BitConverter.ToInt32(data, 12 + i * 4) - 1;
-            //}
-
-            int t = totalCountOfEntries - (numberOfVectors - 1) * maxEntriesPerVector;
-
-            byte[] records = data.Skip(12 + t * 4).ToArray();
-
-            float[] floats = new float[count];//new float[valueCount * valueCount + idk0 + idk1];
-
-            // Read records
-            for (int i = 0; i < totalCountOfEntries; i++)
-            {
-                floats[indices[i]] = BitConverter.ToSingle(records, i * 4);
+                for (int j = 0; j < length; j++)
+                {
+                    floats[indices[i * maxEntriesPerVector + j]] = BitConverter.ToSingle(data, 12 + length * 4 + j * 4);
+                }
             }
 
             return floats;
@@ -433,19 +419,17 @@ namespace HeaderArrayConverter
         private static float[] GetRlArray(BinaryReader reader)
         {
             // read dimension array
-            byte[] dimensions = InitializeArray(reader);
-            int countFromEndOfThisHeaderArray = BitConverter.ToInt32(dimensions, 0);
-            int dimensionLimit = BitConverter.ToInt32(dimensions, 4);
-            int d0 = BitConverter.ToInt32(dimensions, 8);
-            int d1 = BitConverter.ToInt32(dimensions, 12);
-            int d2 = BitConverter.ToInt32(dimensions, 16);
-            int d3 = BitConverter.ToInt32(dimensions, 20);
-            int d4 = BitConverter.ToInt32(dimensions, 24);
-            int d5 = BitConverter.ToInt32(dimensions, 28);
-            int d6 = BitConverter.ToInt32(dimensions, 32);
+            byte[] dims = InitializeArray(reader);
+            int countFromEndOfThisHeaderArray = BitConverter.ToInt32(dims, 0);
+            int dimensionLimit = BitConverter.ToInt32(dims, 4);
+            int[] dimensions = new int[dimensionLimit];
+            for (int i = 0; i < dimensions.Length; i++)
+            {
+                dimensions[i] = BitConverter.ToInt32(dims, 8 + 4 * i);
+            }
 
             byte[] dimDefinitons = InitializeArray(reader);
-            int x0 = d0 * d1 * d2 * d3 * d4 * d5 * d6; 
+            int x0 = dimensions.Aggregate(1, (current, next) => current * next);
             int[][] dimDescriptions = new int[x0][];
             for (int i = 0; i < x0; i++)
             {
@@ -460,7 +444,7 @@ namespace HeaderArrayConverter
             int dataDim = BitConverter.ToInt32(data, 0);
             byte[][] record = new byte[2][];
 
-            record[0] = dimensions;
+            record[0] = dims;
             record[1] = data.Skip(4).ToArray();
 
             float[] floats = new float[x0];
