@@ -22,9 +22,20 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sequence values.
         /// </summary>
+        [CanBeNull]
+        private readonly IImmutableList<TKey> _keys;
+
+        /// <summary>
+        /// The sequence values or an empty sequence.
+        /// </summary>
         [NotNull]
         [JsonProperty]
-        private readonly IImmutableList<TKey> _keys;
+        private IImmutableList<TKey> Keys => _keys ?? EmptyArray;
+
+        /// <summary>
+        /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
+        /// </summary>
+        private static IImmutableList<TKey> EmptyArray { get; } = new TKey[0].ToImmutableArray();
 
         /// <summary>
         /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
@@ -34,12 +45,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets the number of items contained in the sequence.
         /// </summary>
-        public int Count => _keys.Count;
-
-        /// <summary>
-        /// Returns the value at the specified index.
-        /// </summary>
-        public TKey this[int index] => _keys[index];
+        public int Count => Keys.Count;
 
         /// <summary>
         /// Returns the values at the specified index.
@@ -51,7 +57,7 @@ namespace HeaderArrayConverter
             {
                 foreach (int i in index)
                 {
-                    yield return this[i];
+                    yield return Keys[i];
                 }
             }
         }
@@ -110,7 +116,7 @@ namespace HeaderArrayConverter
         /// </param>
         public static implicit operator KeySequence<TKey>(KeySequence<object> value)
         {
-            return new KeySequence<TKey>((IEnumerable<TKey>)value._keys);
+            return new KeySequence<TKey>((IEnumerable<TKey>)value.Keys);
         }
 
         /// <summary>
@@ -178,7 +184,7 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(next));
             }
 
-            return new KeySequence<TKey>(_keys.Concat(next));
+            return new KeySequence<TKey>(Keys.Concat(next));
         }
 
         /// <summary>
@@ -208,7 +214,7 @@ namespace HeaderArrayConverter
         /// </summary>
         public string ToString(Func<IEnumerable<TKey>, IEnumerable<TKey>> transform)
         {
-            return transform(_keys).Aggregate(string.Empty, (current, next) => $"{current}[{next}]");
+            return transform(Keys).Aggregate(string.Empty, (current, next) => $"{current}[{next}]");
         }
 
         /// <summary>
@@ -221,7 +227,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public IEnumerator<TKey> GetEnumerator()
         {
-            return _keys.GetEnumerator() ?? Enumerable.Empty<TKey>().GetEnumerator();
+            return Keys.GetEnumerator();
         }
 
         /// <summary>
@@ -246,7 +252,7 @@ namespace HeaderArrayConverter
         /// </returns>
         public bool Equals(KeySequence<TKey> other)
         {
-            return _keys.SequenceEqual(other);
+            return Keys.SequenceEqual(other);
         }
 
         /// <summary>
@@ -260,7 +266,7 @@ namespace HeaderArrayConverter
         /// </returns>
         public bool Equals(TKey other)
         {
-            return _keys.SequenceEqual(Enumerable.Empty<TKey>().Append(other));
+            return Keys.SequenceEqual(Enumerable.Empty<TKey>().Append(other));
         }
 
         /// <summary>
@@ -320,7 +326,7 @@ namespace HeaderArrayConverter
         /// </returns>
         public override int GetHashCode()
         {
-            return _keys.GetHashCode();
+            return Keys.GetHashCode();
         }
 
         /// <summary>

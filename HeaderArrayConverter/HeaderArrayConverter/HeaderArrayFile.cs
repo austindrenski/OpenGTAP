@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
@@ -17,7 +18,7 @@ namespace HeaderArrayConverter
         /// The contents of the HAR file.
         /// </summary>
         [NotNull]
-        private readonly ImmutableSequenceDictionary<string, IHeaderArray> _arrays;
+        private readonly ImmutableDictionary<string, IHeaderArray> _arrays;
 
         /// <summary>
         /// Gets the count of arrays in the file, including metadata arrays.
@@ -34,7 +35,7 @@ namespace HeaderArrayConverter
         /// The <see cref="IHeaderArray"/> with the given header.
         /// </returns>
         [NotNull]
-        public IHeaderArray this[string header] => _arrays[header].Single().Value;
+        public IHeaderArray this[string header] => _arrays[header];
 
         /// <summary>
         /// Constructs a <see cref="HeaderArrayFile"/> from an <see cref="IHeaderArray"/> collection.
@@ -49,7 +50,12 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(arrays));
             }
 
-            _arrays = arrays.ToImmutableSequenceDictionary(x => (KeySequence<string>)x.Header, x => x);
+            arrays = arrays as IHeaderArray[] ?? arrays.ToArray();
+
+            _arrays =
+                arrays.ToImmutableDictionary(
+                    x => x.Header, 
+                    x => x);
         }
 
         /// <summary>

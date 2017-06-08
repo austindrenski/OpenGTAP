@@ -150,15 +150,20 @@ namespace HeaderArrayConverter
             Sets = sets.Select(x => (IImmutableList<string>) x.ToImmutableArray()).ToImmutableArray();
             Type = type;
 
-            _entries =
+            IEnumerable<KeySequence<string>> expandedSets = 
                 Sets.AsExpandedSet()
-                    .FullOuterZip(
-                        entries,
-                        x => x.ToString())
-                    .Where(x => !x.Right.Equals(default(TValue)))
-                    .ToImmutableSequenceDictionary(
-                        x => x.Left.Split('*') as IEnumerable<string>,
-                        x => x.Right);
+                    .ToArray();
+
+            _entries =
+                expandedSets.FullOuterZip(
+                                entries,
+                                x => x.ToString())
+                            .Where(
+                                x => !x.Right.Equals(default(TValue)))
+                            .ToImmutableSequenceDictionary(
+                                x => x.Left,
+                                x => x.Right,
+                                expandedSets);
         }
 
         /// <summary>
@@ -211,7 +216,7 @@ namespace HeaderArrayConverter
             Sets = sets.Select(x => (IImmutableList<string>)x.ToImmutableArray()).ToImmutableArray();
             Type = type;
 
-            _entries = entries.ToImmutableSequenceDictionary();
+            _entries = entries.ToImmutableSequenceDictionary(Sets.AsExpandedSet());
         }
 
         /// <summary>

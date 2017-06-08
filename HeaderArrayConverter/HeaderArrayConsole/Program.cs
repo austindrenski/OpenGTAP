@@ -12,8 +12,8 @@ namespace HeaderArrayConsole
 
             //string harFile = $"{directory}\\sets.har";
             //string harFile = $"{directory}\\basedata.har";
-            //string harFile = $"{directory}\\isep.har";
-            string harFile = $"{directory}\\gsddat.har";
+            string harFile = $"{directory}\\isep.har";
+            //string harFile = $"{directory}\\gsddat.har";
             //string harFile = $"{directory}\\samdata.har";
 
             string harxFile = $"{directory}\\test3.harx";
@@ -21,7 +21,7 @@ namespace HeaderArrayConsole
             HeaderArrayFile arrays = HeaderArray.ReadHarFile(harFile);
 
             Console.WriteLine(arrays);
-
+            
             arrays.WriteHarx(harxFile);
 
             Console.WriteLine(HeaderArray.ReadHarxFile(harxFile));

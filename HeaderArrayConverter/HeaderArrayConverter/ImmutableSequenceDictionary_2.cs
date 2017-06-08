@@ -23,6 +23,12 @@ namespace HeaderArrayConverter
     public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableDictionary<KeySequence<TKey>, TValue>, ISequenceIndexer<TKey, TValue>
     {
         /// <summary>
+        /// Compares dictionary entries based on the keys.
+        /// </summary>
+        [NotNull]
+        private static readonly KeyComparer DistinctKeyComparer = new KeyComparer();
+
+        /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
         /// </summary>
         [NotNull]
@@ -30,12 +36,17 @@ namespace HeaderArrayConverter
         private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>
-        /// Gets the number of elements in the collection.
+        /// Gets the number of entries stored in the dictionary.
         /// </summary>
         public int Count => _dictionary.Count;
 
         /// <summary>
-        /// Gets the element that has the specified key in the read-only dictionary.
+        /// Gets the total number of entries represented by the dictionary.
+        /// </summary>
+        public int Total => Sets.Count;
+
+        /// <summary>
+        /// Gets the entry that has the specified key or the entries that begin with the specified key.
         /// </summary>
         [NotNull]
         public ImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys]
@@ -43,17 +54,60 @@ namespace HeaderArrayConverter
             get
             {
                 KeySequence<TKey> key = new KeySequence<TKey>(keys);
-                return
-                    _dictionary.ContainsKey(key)
-                        ? Create(new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]))
-                        : Create(_dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
+
+                if (!Sets.Any(x => x.Take(key.Count).SequenceEqual(key)))
+                {
+                    throw new KeyNotFoundException();
+                }
+
+                if (_dictionary.ContainsKey(key))
+                {
+                    return Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]));
+                }
+
+                IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> entries =
+                    _dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key));
+
+                IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> virtualEntries =
+                    Sets.Where(x => x.Take(key.Count).SequenceEqual(key))
+                        .Select(x => new KeyValuePair<KeySequence<TKey>, TValue>(x, default(TValue)))
+                        .ToArray();
+
+                return Create(Sets, entries.Concat(virtualEntries).Distinct(DistinctKeyComparer));//.OrderBy(x => x));
             }
         }
 
+        /// <summary>
+        /// Gets an <see cref="IEnumerable{T}"/> for the given keys.
+        /// </summary>
+        /// <param name="keys">
+        /// The collection of keys.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IEnumerable{T}"/> for the given keys.
+        /// </returns>
         IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> ISequenceIndexer<TKey, TValue>.this[params TKey[] keys] => this[keys];
 
+        /// <summary>
+        /// Gets an <see cref="IEnumerable"/> for the given keys.
+        /// </summary>
+        /// <param name="keys">
+        /// The collection of keys.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IEnumerable"/> for the given keys.
+        /// </returns>
         IEnumerable ISequenceIndexer<TKey>.this[params TKey[] keys] => this[keys];
 
+        /// <summary>
+        /// Gets the element that has the specified key in the read-only dictionary.
+        /// </summary>
+        /// <returns>
+        /// The element that has the specified key in the read-only dictionary.
+        /// </returns>
+        /// <param name="key">
+        /// The key to locate.
+        /// </param>
         TValue IReadOnlyDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key] => _dictionary[key];
 
         /// <summary>
@@ -69,24 +123,37 @@ namespace HeaderArrayConverter
         public IEnumerable<TValue> Values => _dictionary.Values;
 
         /// <summary>
+        /// Gets the sets that define this dictionary.
+        /// </summary>
+        [NotNull]
+        public IImmutableList<KeySequence<TKey>> Sets { get; }
+
+        /// <summary>
         /// Constructs an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> in which the insertion order is preserved.
         /// </summary>
+        /// <param name="sets">
+        /// The collection of sets that define this dictionary.
+        /// </param>
         /// <param name="source">
         /// The collection from which to create the 
         /// </param>
-        public ImmutableSequenceDictionary([NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        private ImmutableSequenceDictionary([NotNull] IEnumerable<KeySequence<TKey>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
+            Sets = sets.ToImmutableArray();
             _dictionary = source.ToImmutableDictionary();
         }
 
         /// <summary>
         /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
         /// </summary>
+        /// <param name="sets">
+        /// The collection of sets that define this dictionary.
+        /// </param>
         /// <param name="source">
         /// The source collection.
         /// </param>
@@ -95,19 +162,22 @@ namespace HeaderArrayConverter
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeySequence<TKey>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            return new ImmutableSequenceDictionary<TKey, TValue>(source);
+            return new ImmutableSequenceDictionary<TKey, TValue>(sets, source);
         }
 
         /// <summary>
         /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
         /// </summary>
+        /// <param name="sets">
+        /// The collection of sets that define this dictionary.
+        /// </param>
         /// <param name="source">
         /// The source collection.
         /// </param>
@@ -116,14 +186,14 @@ namespace HeaderArrayConverter
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableSequenceDictionary<TKey, TValue> Create(params KeyValuePair<KeySequence<TKey>, TValue>[] source)
+        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeySequence<TKey>> sets, params KeyValuePair<KeySequence<TKey>, TValue>[] source)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            return new ImmutableSequenceDictionary<TKey, TValue>(source);
+            return Create(sets, source as IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>);
         }
 
         /// <summary>
@@ -134,7 +204,7 @@ namespace HeaderArrayConverter
         /// </param>
         public static explicit operator ImmutableSequenceDictionary<TKey, object>(ImmutableSequenceDictionary<TKey, TValue> source)
         {
-            return source.ToImmutableSequenceDictionary(x => x.Key, x => x.Value as object);
+            return source.ToImmutableSequenceDictionary(x => x.Key, x => x.Value as object, source.Sets);
         }
 
         /// <summary>
@@ -220,7 +290,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public IImmutableDictionary<KeySequence<TKey>, TValue> Clear()
         {
-            return _dictionary.Any() ? Create(Enumerable.Empty<KeyValuePair<KeySequence<TKey>, TValue>>()) : this;
+            return _dictionary.Any() ? Create(Enumerable.Empty<KeySequence<TKey>>(), Enumerable.Empty<KeyValuePair<KeySequence<TKey>, TValue>>()) : this;
         }
 
         /// <summary>
@@ -356,6 +426,22 @@ namespace HeaderArrayConverter
         public bool Contains(KeyValuePair<KeySequence<TKey>, TValue> pair)
         {
             return _dictionary.Contains(pair);
+        }
+
+        /// <summary>
+        /// Provides comparisons between entries based on the keys.
+        /// </summary>
+        private class KeyComparer : IEqualityComparer<KeyValuePair<KeySequence<TKey>, TValue>>
+        {
+            public bool Equals(KeyValuePair<KeySequence<TKey>, TValue> x, KeyValuePair<KeySequence<TKey>, TValue> y)
+            {
+                return x.Key.Equals(y.Key);
+            }
+
+            public int GetHashCode(KeyValuePair<KeySequence<TKey>, TValue> obj)
+            {
+                return obj.Key.GetHashCode();
+            }
         }
     }
 }
