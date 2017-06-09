@@ -1,13 +1,14 @@
+﻿using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.IO
 {
     /// <summary>
-    /// Writes <see cref="IHeaderArray"/> collections to file.
+    /// Writes Header Array (HAR) files in binary format.
     /// </summary>
     [PublicAPI]
-    public abstract class HeaderArrayWriter
+    public class BinaryHeaderArrayWriter : HeaderArrayWriter
     {
         /// <summary>
         /// Asynchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
@@ -18,7 +19,15 @@ namespace HeaderArrayConverter
         /// <param name="source">
         /// The array collection to write.
         /// </param>
-        public abstract Task WriteAsync([NotNull] string file, params IHeaderArray[] source);
+        public override Task WriteAsync(string file, params IHeaderArray[] source)
+        {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Synchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
@@ -29,6 +38,14 @@ namespace HeaderArrayConverter
         /// <param name="source">
         /// The array collection to write.
         /// </param>
-        public abstract void Write([NotNull] string file, params IHeaderArray[] source);
+        public override void Write(string file, params IHeaderArray[] source)
+        {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            throw new NotImplementedException();
+        }
     }
 }

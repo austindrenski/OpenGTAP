@@ -4,13 +4,13 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.IO
 {
     /// <summary>
     /// Writes <see cref="IHeaderArray"/> collections to a zipped archive of JSON files.
     /// </summary>
     [PublicAPI]
-    public class HeaderArrayWriterJson : HeaderArrayWriter
+    public class JsonHeaderArrayWriter : HeaderArrayWriter
     {
         /// <summary>
         /// Asynchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.

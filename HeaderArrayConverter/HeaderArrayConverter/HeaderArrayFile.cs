@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using HeaderArrayConverter.IO;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -15,6 +16,30 @@ namespace HeaderArrayConverter
     [JsonObject(MemberSerialization.OptIn)]
     public class HeaderArrayFile : IEnumerable<IHeaderArray>
     {
+        /// <summary>
+        /// Provides methods to read <see cref="IHeaderArray"/> collections from Header Array files in binary format (HAR).
+        /// </summary>
+        [NotNull]
+        public static HeaderArrayReader BinaryReader { get; } = new BinaryHeaderArrayReader();
+
+        /// <summary>
+        /// Provides methods to read <see cref="IHeaderArray"/> collections to Header Array files in binary format (HAR).
+        /// </summary>
+        [NotNull]
+        public static HeaderArrayWriter BinaryWriter { get; } = new BinaryHeaderArrayWriter();
+
+        /// <summary>
+        /// Provides methods to read <see cref="IHeaderArray"/> collections from Header Array files in zipped JSON format (HARX).
+        /// </summary>
+        [NotNull]
+        public static HeaderArrayReader JsonReader { get; } = new JsonHeaderArrayReader();
+
+        /// <summary>
+        /// Provides methods to write <see cref="IHeaderArray"/> collections to Header Array files in zipped JSON format (HARX).
+        /// </summary>
+        [NotNull]
+        public static HeaderArrayWriter JsonWriter { get; } = new JsonHeaderArrayWriter();
+
         /// <summary>
         /// The contents of the HAR file.
         /// </summary>
@@ -56,14 +81,6 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// Returns a JSON representation of this <see cref="HeaderArrayFile"/>.
-        /// </summary>
-        public string SerializeJson()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
-
-        /// <summary>
         /// Returns a string representation of the contents of the <see cref="HeaderArrayFile"/>.
         /// </summary>
         [Pure]
@@ -98,13 +115,5 @@ namespace HeaderArrayConverter
         {
             return GetEnumerator();
         }
-
-        public static HeaderArrayWriter BinaryWriter { get; } = new HeaderArrayWriterJson();
-
-        public static HeaderArrayReader BinaryReader { get; } = new HeaderArrayReaderJson();
-
-        public static HeaderArrayWriter JsonWriter { get; } = new HeaderArrayWriterJson();
-
-        public static HeaderArrayReader JsonReader { get; } = new HeaderArrayReaderJson();
     }
 }

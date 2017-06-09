@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
+using HeaderArrayConverter.Converters;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -15,7 +15,7 @@ namespace HeaderArrayConverter
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
-    [JsonObject(MemberSerialization.OptIn)]
+    [JsonObject(MemberSerialization.OptIn, ItemConverterType = typeof(HeaderArrayJsonConverter))]
     public class HeaderArray<TValue> : IHeaderArray<TValue>
     {
         /// <summary>
@@ -52,8 +52,8 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        [JsonProperty]
-        public IImmutableList<IImmutableList<string>> Sets { get; }
+        [JsonProperty(ItemConverterType = typeof(KeyValuePairJsonConverter))]
+        public IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
         
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -103,10 +103,10 @@ namespace HeaderArrayConverter
         /// Represents one entry from a Header Array (HAR) file.
         /// </summary>
         /// <param name="header">
-        /// The four character identifier for this <see cref="HeaderArray"/>.
+        /// The four character identifier for this <see cref="HeaderArray{TValue}"/>.
         /// </param>
         /// <param name="description">
-        /// The long name description of the <see cref="HeaderArray"/>.
+        /// The long name description of the <see cref="HeaderArray{TValue}"/>.
         /// </param>
         /// <param name="type">
         /// The type of element stored in the array.
@@ -120,7 +120,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IEnumerable<IEnumerable<string>> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IEnumerable<KeyValuePair<string, IImmutableList<string>>> sets)
         {
             if (entries is null)
             {
@@ -146,7 +146,7 @@ namespace HeaderArrayConverter
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
             Dimensions = dimensions.ToImmutableArray();
-            Sets = sets.Select(x => (IImmutableList<string>)x.ToImmutableArray()).ToImmutableArray();
+            Sets = sets.ToImmutableArray();
             Type = type;
 
             _entries = entries.ToImmutableSequenceDictionary(Sets.AsExpandedSet());
@@ -176,7 +176,7 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// Returns a string representation of the contents of this <see cref="HeaderArray"/>.
+        /// Returns a string representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
         public override string ToString()
         {

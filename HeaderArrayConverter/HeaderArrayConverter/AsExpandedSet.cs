@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
 
@@ -23,7 +24,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// A <see cref="KeySequence{TKey}"/> collection ordered with standard HAR semantics. 
         /// </returns>
-        public static IEnumerable<KeySequence<T>> AsExpandedSet<T>(this IEnumerable<IEnumerable<T>> source, IEnumerable<int> indexes)
+        public static IEnumerable<KeySequence<T>> AsExpandedSet<T>(this IEnumerable<KeyValuePair<string, IImmutableList<T>>> source, IEnumerable<int> indexes)
         {
             if (source is null)
             {
@@ -48,7 +49,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// A <see cref="KeySequence{TKey}"/> collection ordered with standard HAR semantics. 
         /// </returns>
-        public static IEnumerable<KeySequence<T>> AsExpandedSet<T>(this IEnumerable<IEnumerable<T>> source)
+        public static IEnumerable<KeySequence<T>> AsExpandedSet<T>(this IEnumerable<KeyValuePair<string, IImmutableList<T>>> source)
         {
             if (source is null)
             {
@@ -56,10 +57,11 @@ namespace HeaderArrayConverter
             }
 
             return
-                source.Aggregate(
-                    Enumerable.Empty<KeySequence<T>>().DefaultIfEmpty(),
-                    (current, next) =>
-                        next.SelectMany(x => current.Select(y => y.Combine(x))));
+                source.Select(x => x.Value)
+                      .Aggregate(
+                          Enumerable.Empty<KeySequence<T>>().DefaultIfEmpty(),
+                          (current, next) =>
+                              next.SelectMany(x => current.Select(y => y.Combine(x))));
         }
     }
 }

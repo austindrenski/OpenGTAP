@@ -1,31 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AD.IO;
 using JetBrains.Annotations;
+
 // ReSharper disable UnusedVariable
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.IO
 {
     /// <summary>
     /// Utilities for reading Header Array (HAR) files in binary format.
     /// </summary>
     [PublicAPI]
-    public class HeaderArrayReaderBinary : HeaderArrayReader
+    public class BinaryHeaderArrayReader : HeaderArrayReader
     {
         /// <summary>
-        /// Reads the contents of a HAR file.
+        /// Reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
         /// <param name="file">
         /// The file to read.
         /// </param>
-        /// <returns>
-        /// The contents of the HAR file.
-        /// </returns>
-
+        /// <return>
+        /// A <see cref="HeaderArrayFile"/> representing the contents of the file.
+        /// </return>
         public override HeaderArrayFile Read(FilePath file)
         {
             if (file is null)
@@ -33,49 +34,71 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return new HeaderArrayFile(ReadHarArrays(file));
+            return ReadAsync(file).Result;
         }
 
         /// <summary>
-        /// Enumerates the arrays from the HAR file.
+        /// Asynchronously reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
         /// <param name="file">
-        /// The HAR file from which to read arrays.
+        /// The file to read.
+        /// </param>
+        /// <return>
+        /// A task that upon completion returns a <see cref="HeaderArrayFile"/> representing the contents of the file.
+        /// </return>
+        public override async Task<HeaderArrayFile> ReadAsync(FilePath file)
+        {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            return new HeaderArrayFile(await Task.WhenAll(ReadArraysAsync(file)));
+        }
+
+        /// <summary>
+        /// Enumerates the <see cref="IHeaderArray"/> collection from file.
+        /// </summary>
+        /// <param name="file">
+        /// The file from which to read arrays.
         /// </param>
         /// <returns>
-        /// An enumerable collection of the arrays in the file.
+        /// A <see cref="IHeaderArray"/> collection from the file.
         /// </returns>
-        [NotNull]
-        [ItemNotNull]
-        public static IEnumerable<IHeaderArray> ReadHarArrays(FilePath file)
+        public override IEnumerable<IHeaderArray> ReadArrays(FilePath file)
         {
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
+            if (file is null)
             {
-                while (reader.BaseStream.Position != reader.BaseStream.Length)
-                {
-                    yield return ReadNext(reader);
-                }
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            foreach (Task<IHeaderArray> array in ReadArraysAsync(file))
+            {
+                yield return array.Result;
             }
         }
 
         /// <summary>
-        /// Asynchronously enumerates the arrays from the HAR file.
+        /// Asynchronously enumerates the arrays from file.
         /// </summary>
         /// <param name="file">
-        /// The HAR file from which to read arrays.
+        /// The file from which to read arrays.
         /// </param>
         /// <returns>
-        /// An enumerable collection of tasks that when completed return the arrays in the file.
+        /// An enumerable collection of tasks that when completed return an <see cref="IHeaderArray"/> from file.
         /// </returns>
-        [NotNull]
-        [ItemNotNull]
-        public static IEnumerable<Task<IHeaderArray>> ReadHarArraysAsync(FilePath file)
+        public override IEnumerable<Task<IHeaderArray>> ReadArraysAsync(FilePath file)
         {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+
             using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
             {
                 while (reader.BaseStream.Position != reader.BaseStream.Length)
                 {
-                    yield return ReadNextAsync(reader);
+                    yield return Task.FromResult(ReadNext(reader));
                 }
             }
         }
@@ -99,11 +122,11 @@ namespace HeaderArrayConverter
                             (x, i) =>
                                 new KeyValuePair<KeySequence<string>, string>(i.ToString(), x));
 
-                    return new HeaderArray<string>(header, description, type, dimensions, items, Enumerable.Empty<IEnumerable<string>>());
+                    return new HeaderArray<string>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>());
                 }
                 case "RE":
                 {
-                    (float[] floats, IEnumerable<string>[] sets) = GetReArray(reader, sparse);
+                    (float[] floats, KeyValuePair<string, IImmutableList<string>>[] sets) = GetReArray(reader, sparse);
 
                     IEnumerable<KeySequence<string>> expandedSets =
                         sets.AsExpandedSet()
@@ -123,23 +146,13 @@ namespace HeaderArrayConverter
                             (x, i) =>
                                 new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, Enumerable.Empty<IEnumerable<string>>());
-                }
+                    return new HeaderArray<float>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>());
+                    }
                 default:
                 {
                     throw new InvalidDataException($"Unknown array type encountered: {type}");
                 }
             }
-        }
-
-        /// <summary>
-        /// Asynchronously reads one entry from a Header Array (HAR) file.
-        /// </summary>
-        [NotNull]
-        [ItemNotNull]
-        private static async Task<IHeaderArray> ReadNextAsync(BinaryReader reader)
-        {
-            return await Task.FromResult(ReadNext(reader));
         }
 
         /// <summary>
@@ -217,7 +230,7 @@ namespace HeaderArrayConverter
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, string[][] Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, KeyValuePair<string, IImmutableList<string>>[] Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -275,20 +288,20 @@ namespace HeaderArrayConverter
                 labelStrings = labelStrings.Append(labelStrings.LastOrDefault()).ToArray();
             }
 
-            string[][] sets = new string[setNames.Length][];
+            KeyValuePair<string, IImmutableList<string>>[] sets = new KeyValuePair<string, IImmutableList<string>>[setNames.Length];
 
             for (int i = 0; i < setNames.Length; i++)
             {
-                sets[i] = labelStrings[i];
+                sets[i] = new KeyValuePair<string, IImmutableList<string>>(setNames[i], labelStrings[i].ToImmutableArray());
             }
 
-            float[] data = sparse ? GetReSparseArray(reader, sets.Aggregate(1, (current, next) => current * next.Length)) : GetReFullArray(reader);
+            float[] data = sparse ? GetReSparseArray(reader, sets.Aggregate(1, (current, next) => current * next.Value.Count)) : GetReFullArray(reader);
 
             if (!sets.Any())
             {
-                sets = new string[][]
+                sets = new KeyValuePair<string, IImmutableList<string>>[]
                 {
-                    new string[] { coefficient }
+                    new KeyValuePair<string, IImmutableList<string>>(coefficient, new string[] { coefficient }.ToImmutableArray())
                 };
             }
 

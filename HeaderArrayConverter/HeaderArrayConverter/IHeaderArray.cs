@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -37,7 +38,7 @@ namespace HeaderArrayConverter
         /// The sets of the array.
         /// </summary>
         [NotNull]
-        IImmutableList<IImmutableList<string>> Sets { get; }
+        IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
