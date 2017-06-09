@@ -18,13 +18,13 @@ namespace HeaderArrayConsole
 
             string harxFile = $"{directory}\\test3.harx";
             
-            HeaderArrayFile arrays = HeaderArray.ReadHarFile(harFile);
+            HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(harFile);
 
             Console.WriteLine(arrays);
             
-            arrays.WriteHarx(harxFile);
+            HeaderArrayFile.JsonWriter.Write(harxFile);
 
-            Console.WriteLine(HeaderArray.ReadHarxFile(harxFile));
+            Console.WriteLine(HeaderArrayFile.JsonReader.Read(harxFile));
 
             Console.ReadLine();
         }

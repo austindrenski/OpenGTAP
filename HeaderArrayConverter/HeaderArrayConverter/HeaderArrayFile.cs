@@ -98,5 +98,13 @@ namespace HeaderArrayConverter
         {
             return GetEnumerator();
         }
+
+        public static HeaderArrayWriter BinaryWriter { get; } = new HeaderArrayWriterJson();
+
+        public static HeaderArrayReader BinaryReader { get; } = new HeaderArrayReaderJson();
+
+        public static HeaderArrayWriter JsonWriter { get; } = new HeaderArrayWriterJson();
+
+        public static HeaderArrayReader JsonReader { get; } = new HeaderArrayReaderJson();
     }
 }
