@@ -150,6 +150,7 @@ namespace HeaderArrayConverter
                 foreach (IHeaderArray item in source)
                 {
                     ZipArchiveEntry entry = archive.CreateEntry($"{item.Header}.json", CompressionLevel.Optimal);
+                    
                     using (StreamWriter writer = new StreamWriter(entry.Open()))
                     {
                         await writer.WriteAsync(item.SerializeJson());
@@ -701,31 +702,19 @@ namespace HeaderArrayConverter
 
                 return
                     jObject["Type"].Value<string>() == "1C"
-                        ? AsString(jObject)
-                        : AsFloat(jObject);
+                        ? Create<string>(jObject)
+                        : Create<float>(jObject);
             }
 
-            private static IHeaderArray AsString(JObject jObject)
+            private static IHeaderArray Create<T>(JObject jObject)
             {
                 return
-                    new HeaderArray<string>(
+                    new HeaderArray<T>(
                         jObject["Header"].Value<string>(),
                         jObject["Description"].Value<string>(),
                         jObject["Type"].Value<string>(),
                         jObject["Dimensions"].Values<int>(),
-                        ParseEntries<string>(jObject["Entries"]),
-                        ParseSets(jObject["Sets"]));
-            }
-
-            private static IHeaderArray AsFloat(JObject jObject)
-            {
-                return
-                    new HeaderArray<float>(
-                        jObject["Header"].Value<string>(),
-                        jObject["Description"].Value<string>(),
-                        jObject["Type"].Value<string>(),
-                        jObject["Dimensions"].Values<int>(),
-                        ParseEntries<float>(jObject["Entries"]),
+                        ParseEntries<T>(jObject["Entries"]),
                         ParseSets(jObject["Sets"]));
             }
 
@@ -746,9 +735,7 @@ namespace HeaderArrayConverter
 
             private static IEnumerable<IEnumerable<string>> ParseSets(JToken sets)
             {
-                return
-                    sets.Values<JToken>()
-                        .Select(x => x.Values<string>());
+                return sets.Values<JToken>().Select(x => x.Values<string>());
             }
 
             /// <summary>

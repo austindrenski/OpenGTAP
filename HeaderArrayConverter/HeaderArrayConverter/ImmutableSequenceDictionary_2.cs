@@ -72,7 +72,7 @@ namespace HeaderArrayConverter
                         .Select(x => new KeyValuePair<KeySequence<TKey>, TValue>(x, default(TValue)))
                         .ToArray();
 
-                return Create(Sets, entries.Concat(virtualEntries).Distinct(DistinctKeyComparer));//.OrderBy(x => x));
+                return Create(Sets, entries.Concat(virtualEntries).Distinct(DistinctKeyComparer));
             }
         }
 

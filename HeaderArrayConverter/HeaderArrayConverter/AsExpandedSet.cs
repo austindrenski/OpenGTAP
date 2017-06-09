@@ -6,13 +6,13 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter
 {
     /// <summary>
-    /// Extension methods for operating on sequences of <see cref="ImmutableOrderedSet{T}"/> objects.
+    /// Extension methods for operating on sequences of sets.
     /// </summary>
     [PublicAPI]
     public static class AsExpandedSetExtensions
     {
         /// <summary>
-        /// Expands a <see cref="ImmutableOrderedSet{T}"/> collection ordered with standard HAR semantics. 
+        /// Expands a sequence of sets ordered with standard HAR semantics. 
         /// </summary>
         /// <param name="source">
         /// The source collection.
@@ -40,7 +40,7 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// Expands a <see cref="ImmutableOrderedSet{T}"/> collection ordered with standard HAR semantics. 
+        /// Expands a sequence of sets ordered with standard HAR semantics. 
         /// </summary>
         /// <param name="source">
         /// The source collection.
