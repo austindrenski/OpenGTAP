@@ -7,12 +7,12 @@ namespace HeaderArrayConsole
     {
         public static void Main()
         {
-            //const string directory = "c:\\users\\adren\\desktop\\gtap source";
-            const string directory = "g:\\data\\austin d\\gtap source code";
+            const string directory = "c:\\users\\adren\\desktop\\gtap source";
+            //const string directory = "g:\\data\\austin d\\gtap source code";
 
             //string harFile = $"{directory}\\sets.har";
-            //string harFile = $"{directory}\\basedata.har";
-            string harFile = $"{directory}\\isep.har";
+            string harFile = $"{directory}\\basedata.har";
+            //string harFile = $"{directory}\\isep.har";
             //string harFile = $"{directory}\\gsddat.har";
             //string harFile = $"{directory}\\samdata.har";
 

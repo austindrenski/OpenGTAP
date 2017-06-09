@@ -21,6 +21,11 @@ namespace HeaderArrayConverter
     [PublicAPI]
     public static class HeaderArray
     {
+        /// <summary>
+        /// Static instance of a <see cref="HeaderArrayJsonConverter"/> to parse JSON objects into <see cref="IHeaderArray{TValue}"/>.
+        /// </summary>
+        private static readonly HeaderArrayJsonConverter HeaderArrayConverter = new HeaderArrayJsonConverter();
+
         #region Read HARX files
 
         /// <summary>
@@ -73,21 +78,7 @@ namespace HeaderArrayConverter
         {
             string json = new StreamReader(entry.Open()).ReadToEnd();
 
-            switch (json.Contains("\"Type\":\"1C\""))
-            {
-                case true:
-                {
-                    return await Task.FromResult<IHeaderArray>(JsonConvert.DeserializeObject<IHeaderArray<string>>(json, new HeaderArrayJsonConverter<string>()));
-                }
-                case false:
-                {
-                    return await Task.FromResult<IHeaderArray>(JsonConvert.DeserializeObject<IHeaderArray<float>>(json, new HeaderArrayJsonConverter<float>()));
-                }
-                default:
-                {
-                    throw new NotSupportedException();
-                }
-            }
+            return await Task.FromResult(JsonConvert.DeserializeObject<IHeaderArray>(json, HeaderArrayConverter));
         }
 
         /// <summary>
@@ -673,10 +664,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Custom converter from JSON <see cref="IHeaderArray{TValue}"/>.
         /// </summary>
-        /// <typeparam name="TValue">
-        /// The type of data in the array.
-        /// </typeparam>
-        internal sealed class HeaderArrayJsonConverter<TValue> : JsonConverter
+        private sealed class HeaderArrayJsonConverter : JsonConverter
         {
             /// <summary>
             /// True if the type implements <see cref="IHeaderArray"/>; otherwise false.
@@ -688,7 +676,7 @@ namespace HeaderArrayConverter
             {
                 return typeof(IHeaderArray).GetTypeInfo().IsAssignableFrom(objectType);
             }
-            
+
             /// <summary>
             /// Reads the JSON representation of the object.
             /// </summary>
@@ -711,28 +699,56 @@ namespace HeaderArrayConverter
             {
                 JObject jObject = JObject.Load(reader);
 
-                IEnumerable<KeyValuePair<KeySequence<string>, TValue>> items =
-                    jObject["Entries"].Values<JToken>()
-                                       .Select(
-                                           x => new
-                                           {
-                                               Key = KeySequence<string>.Parse(x),
-                                               Value = x.Single().Value<TValue>()
-                                           })
-                                       .Select(
-                                           x =>
-                                               new KeyValuePair<KeySequence<string>, TValue>(x.Key, x.Value));
+                return
+                    jObject["Type"].Value<string>() == "1C"
+                        ? AsString(jObject)
+                        : AsFloat(jObject);
+            }
 
-                IHeaderArray<TValue> array =
-                    new HeaderArray<TValue>(
+            private static IHeaderArray AsString(JObject jObject)
+            {
+                return
+                    new HeaderArray<string>(
                         jObject["Header"].Value<string>(),
                         jObject["Description"].Value<string>(),
                         jObject["Type"].Value<string>(),
                         jObject["Dimensions"].Values<int>(),
-                        items,
-                        jObject["Sets"].Values<JToken>().Select(x => x.Values<string>()));
+                        ParseEntries<string>(jObject["Entries"]),
+                        ParseSets(jObject["Sets"]));
+            }
 
-                return array;
+            private static IHeaderArray AsFloat(JObject jObject)
+            {
+                return
+                    new HeaderArray<float>(
+                        jObject["Header"].Value<string>(),
+                        jObject["Description"].Value<string>(),
+                        jObject["Type"].Value<string>(),
+                        jObject["Dimensions"].Values<int>(),
+                        ParseEntries<float>(jObject["Entries"]),
+                        ParseSets(jObject["Sets"]));
+            }
+
+            private static IEnumerable<KeyValuePair<KeySequence<string>, T>> ParseEntries<T>(JToken entries)
+            {
+                return
+                    entries.Values<JToken>()
+                           .Select(
+                               x => new
+                               {
+                                   Key = KeySequence<string>.Parse(((JProperty)x).Name),
+                                   Value = x.Single().Value<T>()
+                               })
+                           .Select(
+                               x =>
+                                   new KeyValuePair<KeySequence<string>, T>(x.Key, x.Value));
+            }
+
+            private static IEnumerable<IEnumerable<string>> ParseSets(JToken sets)
+            {
+                return
+                    sets.Values<JToken>()
+                        .Select(x => x.Values<string>());
             }
 
             /// <summary>

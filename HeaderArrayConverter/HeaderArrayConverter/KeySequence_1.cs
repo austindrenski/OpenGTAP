@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
-using Newtonsoft.Json.Linq;
 
 namespace HeaderArrayConverter
 {
@@ -139,43 +138,16 @@ namespace HeaderArrayConverter
         {
             return value.ToString();
         }
-        
-        /// <summary>
-        /// Parses the string to a <see cref="KeySequence{String}"/>.
-        /// </summary>
-        /// <param name="value">
-        /// The <see cref="JToken"/> from which to parse a <see cref="KeySequence{String}"/>.
-        /// </param>
-        public static KeySequence<string> Parse(JToken value)
-        {
-            string name = ((JProperty) value).Name;
-
-            return new KeySequence<string>(Parse(name));
-        }
 
         /// <summary>
-        /// Parses the string to a <see cref="KeySequence{TKey}"/>.
+        /// Parses a string in the form of '[AGR][USA][ROW]' to to a <see cref="KeySequence{TKey}"/>.
         /// </summary>
         /// <param name="value">
         /// The sequence create a string.
         /// </param>
-        /// <param name="parser">
-        /// A function that parses one string component into a key.
-        /// </param>
-        public static KeySequence<TKey> Parse(string value, Func<string, TKey> parser)
+        public static KeySequence<string> Parse(string value)
         {
-            return new KeySequence<TKey>(Parse(value).Select(parser));
-        }
-
-        /// <summary>
-        /// Parses the string to a <see cref="KeySequence{TKey}"/>.
-        /// </summary>
-        /// <param name="value">
-        /// The sequence create a string.
-        /// </param>
-        private static string[] Parse(string value)
-        {
-            return value.Replace(" ", null).Trim('[', ']').Split(new string[] { "*", "][" }, StringSplitOptions.RemoveEmptyEntries);
+            return value.Split(new string[] { "[", "]" }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         /// <summary>
