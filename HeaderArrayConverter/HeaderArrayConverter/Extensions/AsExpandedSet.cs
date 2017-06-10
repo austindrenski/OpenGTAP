@@ -5,7 +5,7 @@ using System.Linq;
 using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Extensions
 {
     /// <summary>
     /// Extension methods for operating on sequences of sets.

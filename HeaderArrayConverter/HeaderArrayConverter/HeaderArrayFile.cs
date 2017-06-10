@@ -14,7 +14,6 @@ namespace HeaderArrayConverter
     /// Represents the contents of a HAR file.
     /// </summary>
     [PublicAPI]
-    [JsonObject(MemberSerialization.OptIn)]
     public class HeaderArrayFile : IEnumerable<IHeaderArray>
     {
         /// <summary>
@@ -45,7 +44,6 @@ namespace HeaderArrayConverter
         /// The contents of the HAR file.
         /// </summary>
         [NotNull]
-        [JsonProperty("Arrays", Order = int.MaxValue)]
         private readonly IImmutableDictionary<string, IHeaderArray> _arrays;
 
         /// <summary>
@@ -90,55 +88,9 @@ namespace HeaderArrayConverter
         /// </returns>
         public bool ValidateSets([CanBeNull] TextWriter output = null)
         {
-            return ValidateSets(this, output);
+            return HeaderArray.ValidateSets(this, output);
         }
-
-        /// <summary>
-        /// Validates that the sets defined throughout the <see cref="HeaderArrayFile"/>. Validation information is logged to <paramref name="output"/>.
-        /// </summary>
-        /// <returns>
-        /// True if there are no conflicts; otherwise false.
-        /// </returns>
-        public static bool ValidateSets([NotNull] IEnumerable<IHeaderArray> arrays, [CanBeNull] TextWriter output = null)
-        {
-            if (arrays is null)
-            {
-                throw new ArgumentNullException(nameof(arrays));
-            }
-
-            bool valid = true;
-
-            IDictionary<string, IImmutableList<string>> verifiedSets = 
-                new Dictionary<string, IImmutableList<string>>();
-
-            foreach (IHeaderArray array in arrays)
-            {
-                foreach (KeyValuePair<string, IImmutableList<string>> set in array.Sets)
-                {
-                    if (!verifiedSets.TryGetValue(set.Key, out IImmutableList<string> existingSet))
-                    {
-                        verifiedSets.Add(set);
-                        continue;
-                    }
-
-                    if (set.Value.SequenceEqual(existingSet))
-                    {
-                        continue;
-                    }
-
-                    valid = false;
-
-                    output?.WriteLineAsync($"Set '{set.Key}' in '{array.Header}' does not match the existing definition of '{set.Key}'");
-                    output?.WriteLineAsync($"Existing definition: {string.Join(", ", existingSet)}.");
-                    output?.WriteLineAsync($"'{array.Header}' definition: {string.Join(", ", set.Value)}.");
-                }
-            }
-
-            output?.WriteLineAsync($"Sets validated: {valid}.");
-
-            return valid;
-        }
-        
+       
         /// <summary>
         /// Returns a string representation of the contents of the <see cref="HeaderArrayFile"/>.
         /// </summary>
@@ -146,7 +98,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this, Formatting.Indented);
+            return JsonConvert.SerializeObject(_arrays, Formatting.Indented);
         }
 
         /// <summary>

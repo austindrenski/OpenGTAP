@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Extensions
 {
     /// <summary>
     /// Extension methods to produce a full zip of two sequences.

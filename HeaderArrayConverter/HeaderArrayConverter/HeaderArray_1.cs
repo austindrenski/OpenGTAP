@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using HeaderArrayConverter.Collections;
+using HeaderArrayConverter.Extensions;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
