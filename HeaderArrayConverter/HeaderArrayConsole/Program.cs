@@ -11,8 +11,8 @@ namespace HeaderArrayConsole
             //const string directory = "g:\\data\\austin d\\gtap source code";
 
             //string harFile = $"{directory}\\sets.har";
-            //string harFile = $"{directory}\\basedata.har";
-            string harFile = $"{directory}\\isep.har";
+            string harFile = $"{directory}\\basedata.har";
+            //string harFile = $"{directory}\\isep.har";
             //string harFile = $"{directory}\\gsddat.har";
             //string harFile = $"{directory}\\samdata.har";
 
