@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -50,7 +51,7 @@ namespace HeaderArrayConverter
         /// The value stored by the given key.
         /// </returns>
         [NotNull]
-        new ImmutableSequenceDictionary<string, object> this[params string[] keys] { get; }
+        new IImmutableSequenceDictionary<string> this[params string[] keys] { get; }
 
         /// <summary>
         /// Casts the <see cref="IHeaderArray"/> as an <see cref="IHeaderArray{TResult}"/>.

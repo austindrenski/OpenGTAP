@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Collections
 {
     /// <summary>
     /// Represents a typed sequence that can be indexed by multiple keys.

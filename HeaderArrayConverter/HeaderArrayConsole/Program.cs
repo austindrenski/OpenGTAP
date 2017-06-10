@@ -10,21 +10,23 @@ namespace HeaderArrayConsole
             const string directory = "c:\\users\\adren\\desktop\\gtap source";
             //const string directory = "g:\\data\\austin d\\gtap source code";
 
-            //string harFile = $"{directory}\\sets.har";
-            string harFile = $"{directory}\\basedata.har";
-            //string harFile = $"{directory}\\isep.har";
-            //string harFile = $"{directory}\\gsddat.har";
-            //string harFile = $"{directory}\\samdata.har";
+            //string input = $"{directory}\\sets.har";
+            string input = $"{directory}\\basedata.har";
+            //string input = $"{directory}\\isep.har";
+            //string input = $"{directory}\\gsddat.har";
+            //string input = $"{directory}\\samdata.har";
 
-            string harxFile = $"{directory}\\test3.harx";
+            string output = $"{directory}\\test3.harx";
             
-            HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(harFile);
+            HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
             Console.WriteLine(arrays);
-            
-            HeaderArrayFile.JsonWriter.Write(harxFile, arrays);
+          
+            HeaderArrayFile.JsonWriter.Write(output, arrays);
 
-            Console.WriteLine(HeaderArrayFile.JsonReader.Read(harxFile));
+            Console.WriteLine(HeaderArrayFile.JsonReader.Read(output));
+
+            arrays.ValidateSets(Console.Out);
 
             Console.ReadLine();
         }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AD.IO;
+using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 
 // ReSharper disable UnusedVariable

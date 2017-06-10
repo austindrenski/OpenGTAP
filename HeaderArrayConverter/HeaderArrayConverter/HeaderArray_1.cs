@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -22,7 +23,7 @@ namespace HeaderArrayConverter
         /// </summary>
         [NotNull]
         [JsonProperty("Entries", Order = int.MaxValue)]
-        private readonly ImmutableSequenceDictionary<string, TValue> _entries;
+        private readonly IImmutableSequenceDictionary<string, TValue> _entries;
 
         /// <summary>
         /// The four character identifier for this <see cref="HeaderArray{T}"/>.
@@ -63,7 +64,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        public ImmutableSequenceDictionary<string, TValue> this[params string[] keys] => _entries[keys];
+        public IImmutableSequenceDictionary<string, TValue> this[params string[] keys] => _entries[keys];
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -74,7 +75,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        ImmutableSequenceDictionary<string, object> IHeaderArray.this[params string[] keys] => (ImmutableSequenceDictionary<string, object>)_entries[keys];
+        IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => _entries[keys];
 
         /// <summary>
         /// Gets an <see cref="IEnumerable{T}"/> for the given keys.

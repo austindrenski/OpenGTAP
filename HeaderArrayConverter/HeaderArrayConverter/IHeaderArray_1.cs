@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using HeaderArrayConverter.Collections;
+using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
 {
@@ -21,6 +22,6 @@ namespace HeaderArrayConverter
         /// The value stored by the given key.
         /// </returns>
         [NotNull]
-        new ImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
+        new IImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
     }
 }

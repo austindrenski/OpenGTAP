@@ -6,7 +6,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Collections
 {
     /// <summary>
     /// Represents an immutable dictionary using sequence keys and in which the insertion order is preserved.
@@ -19,13 +19,13 @@ namespace HeaderArrayConverter
     /// </typeparam>
     [PublicAPI]
     [JsonDictionary]
-    public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableDictionary<KeySequence<TKey>, TValue>, ISequenceIndexer<TKey, TValue>
+    public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey, TValue>
     {
         /// <summary>
         /// Compares dictionary entries based on the keys.
         /// </summary>
         [NotNull]
-        private static readonly KeyComparer DistinctKeyComparer = new KeyComparer();
+        private static KeyComparer DistinctKeyComparer { get; } = new KeyComparer();
 
         /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
@@ -47,7 +47,6 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
         /// </summary>
-        [NotNull]
         public ImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys]
         {
             get
@@ -76,6 +75,11 @@ namespace HeaderArrayConverter
             }
         }
 
+        /// <summary>
+        /// Gets the entry that has the specified key or the entries that begin with the specified key.
+        /// </summary>
+        IImmutableSequenceDictionary<TKey> IImmutableSequenceDictionary<TKey>.this[params TKey[] keys] => this[keys];
+        
         /// <summary>
         /// Gets an <see cref="IEnumerable{T}"/> for the given keys.
         /// </summary>
@@ -112,19 +116,16 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
         /// </summary>
-        [NotNull]
         public IEnumerable<KeySequence<TKey>> Keys => _dictionary.Keys;
         
         /// <summary>
         /// Gets an enumerable collection that contains the values in the read-only dictionary.
         /// </summary>
-        [NotNull]
         public IEnumerable<TValue> Values => _dictionary.Values;
 
         /// <summary>
         /// Gets the sets that define this dictionary.
         /// </summary>
-        [NotNull]
         public IImmutableList<KeySequence<TKey>> Sets { get; }
 
         /// <summary>
@@ -224,7 +225,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetEnumerator()
         {
-            return _dictionary.GetEnumerator();
+            return _dictionary.OrderBy(x => x.Key, KeySequence<TKey>.ReverseComparer).GetEnumerator();
         }
 
         /// <summary>
@@ -237,7 +238,7 @@ namespace HeaderArrayConverter
         [NotNull]
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return _dictionary.GetEnumerator();
+            return GetEnumerator();
         }
 
         /// <summary>

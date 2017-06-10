@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Collections
 {
     /// <summary>
     /// Extension methods for <see cref="ImmutableSequenceDictionary{TKey, TValue}"/>.

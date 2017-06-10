@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -56,7 +57,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        ImmutableSequenceDictionary<string, object> IHeaderArray.this[params string[] keys] => throw new NotSupportedException();
+        IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => throw new NotSupportedException();
 
         /// <summary>
         /// Gets an <see cref="IEnumerable"/> for the given keys.
@@ -97,7 +98,7 @@ namespace HeaderArrayConverter
         {
             return (IHeaderArray<TResult>)this;
         }
-        
+
         /// <summary>
         /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>

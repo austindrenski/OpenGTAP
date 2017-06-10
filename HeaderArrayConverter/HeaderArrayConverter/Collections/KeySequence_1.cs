@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Collections
 {
     /// <summary>
     /// Represents a sequence of zero or more keys. This type is suitable for use in a <see cref="IDictionary{TKey, TValue}"/>.

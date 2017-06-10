@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter

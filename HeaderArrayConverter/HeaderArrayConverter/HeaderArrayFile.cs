@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using HeaderArrayConverter.IO;
 using JetBrains.Annotations;
@@ -80,6 +81,64 @@ namespace HeaderArrayConverter
             _arrays = arrays.ToImmutableSortedDictionary(x => x.Header, x => x);
         }
 
+
+        /// <summary>
+        /// Validates that the sets defined throughout the <see cref="HeaderArrayFile"/>. Validation information is logged to <paramref name="output"/>.
+        /// </summary>
+        /// <returns>
+        /// True if there are no conflicts; otherwise false.
+        /// </returns>
+        public bool ValidateSets([CanBeNull] TextWriter output = null)
+        {
+            return ValidateSets(this, output);
+        }
+
+        /// <summary>
+        /// Validates that the sets defined throughout the <see cref="HeaderArrayFile"/>. Validation information is logged to <paramref name="output"/>.
+        /// </summary>
+        /// <returns>
+        /// True if there are no conflicts; otherwise false.
+        /// </returns>
+        public static bool ValidateSets([NotNull] IEnumerable<IHeaderArray> arrays, [CanBeNull] TextWriter output = null)
+        {
+            if (arrays is null)
+            {
+                throw new ArgumentNullException(nameof(arrays));
+            }
+
+            bool valid = true;
+
+            IDictionary<string, IImmutableList<string>> verifiedSets = 
+                new Dictionary<string, IImmutableList<string>>();
+
+            foreach (IHeaderArray array in arrays)
+            {
+                foreach (KeyValuePair<string, IImmutableList<string>> set in array.Sets)
+                {
+                    if (!verifiedSets.TryGetValue(set.Key, out IImmutableList<string> existingSet))
+                    {
+                        verifiedSets.Add(set);
+                        continue;
+                    }
+
+                    if (set.Value.SequenceEqual(existingSet))
+                    {
+                        continue;
+                    }
+
+                    valid = false;
+
+                    output?.WriteLineAsync($"Set '{set.Key}' in '{array.Header}' does not match the existing definition of '{set.Key}'");
+                    output?.WriteLineAsync($"Existing definition: {string.Join(", ", existingSet)}.");
+                    output?.WriteLineAsync($"'{array.Header}' definition: {string.Join(", ", set.Value)}.");
+                }
+            }
+
+            output?.WriteLineAsync($"Sets validated: {valid}.");
+
+            return valid;
+        }
+        
         /// <summary>
         /// Returns a string representation of the contents of the <see cref="HeaderArrayFile"/>.
         /// </summary>
