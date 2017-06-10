@@ -62,41 +62,32 @@ namespace HeaderArrayConverter.Converters
                     jObject["Description"].Value<string>(),
                     jObject["Type"].Value<string>(),
                     jObject["Dimensions"].Values<int>(),
-                    ParseEntries<T>(jObject["Entries"]),
+                    ParseEntries(jObject["Entries"]),
                     ParseSets(jObject["Sets"]));
-        }
-
-        private static IEnumerable<KeyValuePair<KeySequence<string>, T>> ParseEntries<T>(JToken entries)
-        {
-            return
-                entries.Values<JToken>()
-                       .Select(
-                           x => new
-                           {
-                               Key = KeySequence<string>.Parse(((JProperty) x).Name),
-                               Value = x.Single().Value<T>()
-                           })
-                       .Select(
-                           x =>
-                               new KeyValuePair<KeySequence<string>, T>(x.Key, x.Value));
-        }
 
 
-        private static IEnumerable<KeyValuePair<string, IImmutableList<string>>> ParseSets(JToken sets)
-        {
-            return
-                sets.Values<JToken>()
-                    .SelectMany(x => x.Value<JToken>())
-                    .Select(
-                        x => new
-                        {
-                            Key = ((JProperty) x).Name,
-                            Value = x.Single().Values<string>().ToImmutableArray()
-                        })
-                    .Select(
-                        x =>
-                            new KeyValuePair<string, IImmutableList<string>>(x.Key, x.Value))
-                    .ToArray();
+            IEnumerable<KeyValuePair<KeySequence<string>, T>> ParseEntries(JToken entries)
+            {
+                return
+                    entries.Values<JToken>()
+                           .Select(
+                               x =>
+                                   new KeyValuePair<KeySequence<string>, T>(
+                                       KeySequence<string>.Parse(((JProperty) x).Name),
+                                       x.Single().Value<T>()));
+            }
+
+            IEnumerable<KeyValuePair<string, IImmutableList<string>>> ParseSets(JToken sets)
+            {
+                return
+                    sets.Values<JToken>()
+                        .SelectMany(x => x.Value<JToken>())
+                        .Select(
+                            x =>
+                                new KeyValuePair<string, IImmutableList<string>>(
+                                    ((JProperty) x).Name,
+                                    x.Single().Values<string>().ToImmutableArray()));
+            }
         }
 
         /// <summary>
