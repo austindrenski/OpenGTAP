@@ -144,7 +144,7 @@ namespace HeaderArrayConverter
             }
 
             Sets = sets.ToImmutableArray();
-            _dictionary = source.Where(x => !x.Value.Equals(default(TValue))).ToImmutableSortedDictionary(KeySequence<TKey>.ReverseComparer);
+            _dictionary = source.Where(x => !x.Value.Equals(default(TValue))).ToImmutableDictionary();
         }
 
         /// <summary>
