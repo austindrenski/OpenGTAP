@@ -66,10 +66,10 @@ namespace HeaderArrayConverter
         IHeaderArray<TResult> As<TResult>();
 
         /// <summary>
-        /// Returns a JSON representation of this <see cref="IHeaderArray{T}"/>.
+        /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
         [Pure]
         [NotNull]
-        string SerializeJson();
+        string Serialize(bool indent);
     }
 }

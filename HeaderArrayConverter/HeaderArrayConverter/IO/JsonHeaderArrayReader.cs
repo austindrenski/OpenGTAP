@@ -5,7 +5,6 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using AD.IO;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 
 namespace HeaderArrayConverter.IO
 {
@@ -87,9 +86,7 @@ namespace HeaderArrayConverter.IO
                 {
                     string json = new StreamReader(entry.Open()).ReadToEnd();
 
-                    yield return
-                        Task.FromResult(
-                            JsonConvert.DeserializeObject<IHeaderArray>(json));
+                    yield return Task.FromResult(HeaderArray.Deserialize(json));
                 }
             }
         }

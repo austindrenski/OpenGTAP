@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using HeaderArrayConverter.Converters;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -15,8 +14,8 @@ namespace HeaderArrayConverter
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
-    [JsonObject(MemberSerialization.OptIn, ItemConverterType = typeof(HeaderArrayJsonConverter))]
-    public class HeaderArray<TValue> : IHeaderArray<TValue>
+    [JsonObject(MemberSerialization.OptIn)]
+    public class HeaderArray<TValue> : HeaderArray, IHeaderArray<TValue>
     {
         /// <summary>
         /// An immutable dictionary whose entries are stored by a sequence of the defining sets.
@@ -29,31 +28,31 @@ namespace HeaderArrayConverter
         /// The four character identifier for this <see cref="HeaderArray{T}"/>.
         /// </summary>
         [JsonProperty]
-        public string Header { get; }
+        public override string Header { get; }
 
         /// <summary>
         /// The long name description of the <see cref="HeaderArray{T}"/>.
         /// </summary>
         [JsonProperty]
-        public string Description { get; }
+        public override string Description { get; }
 
         /// <summary>
         /// The type of element stored in the array.
         /// </summary>
         [JsonProperty]
-        public string Type { get; }
+        public override  string Type { get; }
 
         /// <summary>
         /// The dimensions of the array.
         /// </summary>
         [JsonProperty]
-        public IImmutableList<int> Dimensions { get; }
+        public override IImmutableList<int> Dimensions { get; }
 
         /// <summary>
         /// The sets defined on the array.
         /// </summary>
-        [JsonProperty(ItemConverterType = typeof(KeyValuePairJsonConverter))]
-        public IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
+        [JsonProperty]
+        public override IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
         
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -120,7 +119,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IEnumerable<KeyValuePair<string, IImmutableList<string>>> sets)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
         {
             if (entries is null)
             {
@@ -145,42 +144,28 @@ namespace HeaderArrayConverter
 
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020');
-            Dimensions = dimensions.ToImmutableArray();
-            Sets = sets.ToImmutableArray();
             Type = type;
-
-            _entries = entries.ToImmutableSequenceDictionary(Sets.AsExpandedSet());
+            Dimensions = dimensions.ToImmutableArray();
+            Sets = sets;
+            _entries = entries.ToImmutableSequenceDictionary(sets.AsExpandedSet());
         }
 
         /// <summary>
-        /// Casts the <see cref="IHeaderArray"/> as an <see cref="IHeaderArray{TResult}"/>.
+        /// Returns an indented JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
-        /// <typeparam name="TResult">
-        /// The type of the array.
-        /// </typeparam>
-        /// <returns>
-        /// An <see cref="IHeaderArray{TResult}"/>.
-        /// </returns>
         [Pure]
-        IHeaderArray<TResult> IHeaderArray.As<TResult>()
-        {
-            return (IHeaderArray<TResult>)this;
-        }
-
-        /// <summary>
-        /// Returns a JSON representation of this <see cref="IHeaderArray{TValue}"/>.
-        /// </summary>
-        public string SerializeJson()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
-
-        /// <summary>
-        /// Returns a string representation of the contents of this <see cref="HeaderArray{TValue}"/>.
-        /// </summary>
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this, Formatting.Indented);
+            return Serialize(true);
+        }
+
+        /// <summary>
+        /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
+        /// </summary>
+        [Pure]
+        public override string Serialize(bool indent)
+        {
+            return JsonConvert.SerializeObject(this, indent ? Formatting.Indented : Formatting.None);
         }
 
         /// <summary>

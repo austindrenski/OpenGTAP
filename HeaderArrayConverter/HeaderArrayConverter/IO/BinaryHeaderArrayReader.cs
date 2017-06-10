@@ -122,7 +122,7 @@ namespace HeaderArrayConverter.IO
                             (x, i) =>
                                 new KeyValuePair<KeySequence<string>, string>(i.ToString(), x));
 
-                    return new HeaderArray<string>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>());
+                    return new HeaderArray<string>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>().ToImmutableArray());
                 }
                 case "RE":
                 {
@@ -135,7 +135,7 @@ namespace HeaderArrayConverter.IO
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         expandedSets.Zip(floats, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, sets);
+                    return new HeaderArray<float>(header, description, type, dimensions, items, sets.ToImmutableArray());
                 }
                 case "RL":
                 {
@@ -146,7 +146,7 @@ namespace HeaderArrayConverter.IO
                             (x, i) =>
                                 new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>());
+                    return new HeaderArray<float>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>().ToImmutableArray());
                     }
                 default:
                 {

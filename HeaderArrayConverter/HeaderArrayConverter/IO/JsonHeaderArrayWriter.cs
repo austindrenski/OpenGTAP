@@ -36,7 +36,7 @@ namespace HeaderArrayConverter.IO
 
                     using (StreamWriter writer = new StreamWriter(entry.Open()))
                     {
-                        await writer.WriteAsync(item.SerializeJson());
+                        await writer.WriteAsync(item.Serialize(false));
                     }
                 }
             }
