@@ -61,12 +61,7 @@ namespace HeaderArrayConverter.IO
 
             using (BinaryWriter writer = new BinaryWriter(new FileStream(file, FileMode.Create)))
             {
-                foreach (IHeaderArray array in source.Where(x => x.Type == "1C"))
-                {
-                    await WriteArrayAsync(writer, array);
-                }
-
-                foreach (IHeaderArray array in source.Where(x => x.Type == "RE"))
+                foreach (IHeaderArray array in source.Where(x => x.Type != "RL"))
                 {
                     await WriteArrayAsync(writer, array);
                 }
