@@ -72,6 +72,18 @@ namespace HeaderArrayConverter
         IHeaderArray<TResult> As<TResult>();
 
         /// <summary>
+        /// Returns the stored value or the default value. Throws <see cref="KeyNotFoundException"/> if the key is not valid.
+        /// </summary>
+        [Pure]
+        object Return(KeySequence<string> key);
+
+        /// <summary>
+        /// Returns the stored value or the default value.
+        /// </summary>
+        [Pure]
+        object ReturnUnchecked(KeySequence<string> key);
+
+        /// <summary>
         /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
         [Pure]

@@ -1,4 +1,5 @@
-﻿using HeaderArrayConverter.Collections;
+﻿using System.Collections.Generic;
+using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -37,8 +38,15 @@ namespace HeaderArrayConverter
         new IImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
 
         /// <summary>
+        /// Returns the stored value or the default value. Throws <see cref="KeyNotFoundException"/> if the key is not valid.
+        /// </summary>
+        [Pure]
+        new TValue Return(KeySequence<string> key);
+
+        /// <summary>
         /// Returns the stored value or the default value.
         /// </summary>
-        TValue TryGetValue(KeySequence<string> key);
+        [Pure]
+        new TValue ReturnUnchecked(KeySequence<string> key);
     }
 }

@@ -208,21 +208,16 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IEnumerable<byte[]> WriteSetEntries([NotNull] IHeaderArray array)
         {
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    HashSet<string> setsUsed = new HashSet<string>();
-                    foreach (KeyValuePair<string, IImmutableList<string>> set in array.Sets)
-                    {
-                        if (!setsUsed.Add(set.Key))
-                        {
-                            continue;
-                        }
+            HashSet<string> setsUsed = new HashSet<string>();
 
-                        yield return WriteSetsLocal(set);
-                    }
+            foreach (KeyValuePair<string, IImmutableList<string>> set in array.Sets)
+            {
+                if (!setsUsed.Add(set.Key))
+                {
+                    continue;
                 }
+
+                yield return WriteSetsLocal(set);
             }
 
             byte[] WriteSetsLocal(KeyValuePair<string, IImmutableList<string>> set)
@@ -364,7 +359,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(1);
                     foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
                     {
-                        writer.Write(array.TryGetValue(item));
+                        writer.Write(array.ReturnUnchecked(item));
                     }
                 }
                 return stream.ToArray();
@@ -385,7 +380,6 @@ namespace HeaderArrayConverter.IO
         private static byte[] Write1CArrayValues([NotNull] IHeaderArray<string> array)
         {
             int recordLength = array.Dimensions.Last();
-            int lengthOfRecords = recordLength * array.Total;
 
             using (MemoryStream stream = new MemoryStream())
             {

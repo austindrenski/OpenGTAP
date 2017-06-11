@@ -23,6 +23,11 @@ namespace HeaderArrayConverter.Collections
         private readonly IImmutableList<TKey> _keys;
 
         /// <summary>
+        /// The cached hash code for this key sequence.
+        /// </summary>
+        private readonly int _hashCode;
+
+        /// <summary>
         /// The sequence values or an empty sequence.
         /// </summary>
         [NotNull]
@@ -85,6 +90,7 @@ namespace HeaderArrayConverter.Collections
             }
 
             _keys = keys.ToImmutableArray();
+            _hashCode = _keys.Aggregate(0, (current, next) => unchecked(current + 391 * next.GetHashCode()));
         }
 
         /// <summary>
@@ -234,7 +240,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public bool Equals(KeySequence<TKey> other)
         {
-            return Keys.SequenceEqual(other);
+            return _hashCode == other._hashCode && Keys.SequenceEqual(other);
         }
 
         /// <summary>
@@ -248,7 +254,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public bool Equals(TKey other)
         {
-            return Keys.SequenceEqual(Enumerable.Empty<TKey>().Append(other));
+            return Keys.Count == 1 && Keys.FirstOrDefault().Equals(other);
         }
 
         /// <summary>
@@ -308,7 +314,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public override int GetHashCode()
         {
-            return Keys.Aggregate(0, (current, next) => unchecked (current + 17 * next.GetHashCode()));
+            return _hashCode;
         }
 
         /// <summary>

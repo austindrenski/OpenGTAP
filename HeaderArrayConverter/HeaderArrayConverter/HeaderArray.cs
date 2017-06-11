@@ -106,6 +106,22 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
+        /// Returns the stored value or the default value. Throws <see cref="KeyNotFoundException"/> if the key is not valid.
+        /// </summary>
+        object IHeaderArray.Return(KeySequence<string> key)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Returns the stored value or the default value.
+        /// </summary>
+        object IHeaderArray.ReturnUnchecked(KeySequence<string> key)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
         /// Validates that the sets defined throughout the <see cref="HeaderArrayFile"/>. Validation information is logged to <paramref name="output"/>.
         /// </summary>
         /// <returns>
