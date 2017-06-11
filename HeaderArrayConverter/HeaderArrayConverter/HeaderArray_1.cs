@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using HeaderArrayConverter.Collections;
 using HeaderArrayConverter.Extensions;
 using JetBrains.Annotations;
@@ -55,7 +56,23 @@ namespace HeaderArrayConverter
         /// </summary>
         [JsonProperty]
         public override IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
-        
+
+        /// <summary>
+        /// Gets the total number of entries in the array.
+        /// </summary>
+        public override int Total => _entries.Total;
+
+        /// <summary>
+        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
+        /// </summary>
+        /// <param name="keys">
+        /// The components that define the key whose value is returned.
+        /// </param>
+        /// <returns>
+        /// The value stored by the given key.
+        /// </returns>
+        public IImmutableSequenceDictionary<string, TValue> this[KeySequence<string> keys] => _entries[keys.ToArray()];
+
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
@@ -66,7 +83,7 @@ namespace HeaderArrayConverter
         /// The value stored by the given key.
         /// </returns>
         public IImmutableSequenceDictionary<string, TValue> this[params string[] keys] => _entries[keys];
-
+        
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>

@@ -42,6 +42,11 @@ namespace HeaderArrayConverter
         IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
 
         /// <summary>
+        /// Gets the total number of entries in the array.
+        /// </summary>
+        int Total { get; }
+
+        /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
         /// <param name="keys">

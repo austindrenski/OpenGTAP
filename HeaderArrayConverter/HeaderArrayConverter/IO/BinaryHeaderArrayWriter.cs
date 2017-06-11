@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using HeaderArrayConverter.Collections;
+using HeaderArrayConverter.Extensions;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
@@ -57,7 +61,7 @@ namespace HeaderArrayConverter.IO
 
             using (BinaryWriter writer = new BinaryWriter(new FileStream(file, FileMode.Create)))
             {
-                foreach (IHeaderArray array in source)
+                foreach (IHeaderArray array in source.Where(x => x.Type != "RL"))
                 {
                     await WriteArrayAsync(writer, array);
                 }
@@ -79,7 +83,26 @@ namespace HeaderArrayConverter.IO
 
             WriteHeader();
             WriteMetadata();
-
+            switch (array.Type)
+            {
+                case "1C":
+                {
+                    Write1CArray();
+                    break;
+                }
+                case "RE":
+                {
+                    WriteSets();
+                    WriteDimensions();
+                    WriteExtents();
+                    WriteReArray();
+                    break;
+                }
+                default:
+                {
+                    throw new NotSupportedException();
+                }
+            }
             await Task.CompletedTask;
 
             void WriteHeader()
@@ -92,7 +115,6 @@ namespace HeaderArrayConverter.IO
             void WriteMetadata()
             {
                 int size = 4 + array.Type.Length + "FULL".Length + 70 + 4 * (1 + array.Dimensions.Count);
-
                 writer.Write(size);
                 writer.Write(padding);
                 writer.Write(array.Type.ToCharArray());
@@ -104,6 +126,104 @@ namespace HeaderArrayConverter.IO
                     writer.Write(dim);
                 }
                 writer.Write(size);
+            }
+
+            void Write1CArray()
+            {
+                
+            }
+
+            void WriteReArray()
+            {
+                IHeaderArray<float> typedArray = array.As<float>();
+                int size3 = 4 * (2 + typedArray.Total);
+                writer.Write(size3);
+                writer.Write(padding);
+                writer.Write(1);
+                foreach (KeySequence<string> item in typedArray.Sets.AsExpandedSet())
+                {
+                    writer.Write(typedArray[item].SingleOrDefault().Value);
+                }
+                writer.Write(size3);
+            }
+
+            void WriteDimensions()
+            {
+                int dimensionSize = 4 * (3 + array.Dimensions.Count);
+                writer.Write(dimensionSize);
+                writer.Write(padding);
+                writer.Write(3);
+                writer.Write(array.Dimensions.Count);
+                foreach (int dimension in array.Dimensions)
+                {
+                    writer.Write(dimension);
+                }
+                writer.Write(dimensionSize);
+            }
+
+            void WriteExtents()
+            {
+                int extentSize = 4 * (2 + 2 * array.Dimensions.Count);
+                writer.Write(extentSize);
+                writer.Write(padding);
+                foreach (int dimension in array.Dimensions)
+                {
+                    writer.Write(1);
+                    writer.Write(dimension);
+                }
+                writer.Write(extentSize);
+            }
+
+            void WriteSets()
+            {
+                int setLabelSize = 4 * (1 + 1 + 1 + 1 + 1) + 12 + 12 * array.Sets.Select(x => x.Key).Count() + 19;
+                writer.Write(setLabelSize);
+                writer.Write(padding);
+                writer.Write(array.Sets.Select(x => x.Key).Distinct().Count());
+                writer.Write(0xFF_FF_FF_FF);
+                writer.Write(array.Sets.Select(x => x.Key).Count());
+                writer.Write(array.Header.PadRight(12));
+                writer.Write(0xFF_FF_FF_FF);
+                foreach (string name in array.Sets.Select(x => x.Key))
+                {
+                    writer.Write(name.PadRight(12).ToCharArray());
+                }
+                writer.Write((byte)0x6B);
+                writer.Write((byte)0x6B);
+                writer.Write((byte)0x6B);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write((byte)0x00);
+                writer.Write(setLabelSize);
+
+                foreach (KeyValuePair<string, IImmutableList<string>> set in array.Sets)
+                {
+                    int setSize = 4 * 4 + 12 * set.Value.Count;
+
+                    writer.Write(setSize);
+                    writer.Write(padding);
+                    writer.Write(1);
+                    writer.Write(set.Value.Count);
+                    writer.Write(set.Value.Count);
+                    foreach (string value in set.Value)
+                    {
+                        writer.Write(value.PadRight(12).ToCharArray());
+                    }
+                    writer.Write(setSize);
+                }
             }
         }
     }
