@@ -149,7 +149,7 @@ namespace HeaderArrayConverter.IO
                                 new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
 
                     return new HeaderArray<float>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>().ToImmutableArray());
-                    }
+                }
                 default:
                 {
                     throw new InvalidDataException($"Unknown array type encountered: {type}");
