@@ -42,7 +42,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Gets the total number of entries represented by the dictionary.
         /// </summary>
-        public int Total => Sets.Count;
+        public int Total => Math.Max(Sets.Count, Count);
 
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
