@@ -56,7 +56,7 @@ namespace HeaderArrayConverter
         /// </summary>
         [JsonProperty]
         public override IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
-
+        
         /// <summary>
         /// Gets the total number of entries in the array.
         /// </summary>

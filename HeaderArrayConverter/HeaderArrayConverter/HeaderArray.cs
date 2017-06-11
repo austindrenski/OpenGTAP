@@ -48,7 +48,7 @@ namespace HeaderArrayConverter
         /// The sets of the array.
         /// </summary>
         public abstract IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
-
+        
         /// <summary>
         /// Gets the total number of entries in the array.
         /// </summary>

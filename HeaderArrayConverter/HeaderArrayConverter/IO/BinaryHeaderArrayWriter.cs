@@ -87,50 +87,51 @@ namespace HeaderArrayConverter.IO
         /// <param name="array">
         /// The array to write.
         /// </param>
+        [NotNull]
         private static async Task WriteArrayAsync([NotNull] BinaryWriter writer, [NotNull] IHeaderArray array)
         {
-            WriteHeader(writer, array);
-            WriteMetadata(writer, array);
+
+            foreach (byte[] bytes in WriteArray(array))
+            {
+                writer.Write(bytes.Length);
+                writer.Write(bytes);
+                writer.Write(bytes.Length);
+            }
+
+            await Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Returns an enumerable of <see cref="byte"/> arrays representing the serialized <see cref="IHeaderArray"/>.
+        /// </summary>
+        /// <param name="array">
+        /// The array to write.
+        /// </param>
+        [Pure]
+        [NotNull]
+        [ItemNotNull]
+        private static IEnumerable<byte[]> WriteArray([NotNull] IHeaderArray array)
+        {
+            yield return WriteHeader(array);
+            yield return WriteMetadata(array);
+
             switch (array.Type)
             {
                 case "1C":
                 {
-                    byte[] bytes = Write1CArrayValues(array.As<string>());
-                    writer.Write(bytes.Length);
-                    writer.Write(bytes);
-                    writer.Write(bytes.Length);
-
+                    yield return Write1CArrayValues(array.As<string>());
                     break;
                 }
                 case "RE":
                 {
-                    byte[] setNames = WriteSetNames(array);
-                    writer.Write(setNames.Length);
-                    writer.Write(setNames);
-                    writer.Write(setNames.Length);
-
+                    yield return WriteSetNames(array);
                     foreach (byte[] setEntries in WriteSetEntries(array))
                     {
-                        writer.Write(setEntries.Length);
-                        writer.Write(setEntries);
-                        writer.Write(setEntries.Length);
+                        yield return setEntries;
                     }
-
-                    byte[] dimensionBytes = WriteDimensions(array);
-                    writer.Write(dimensionBytes.Length);
-                    writer.Write(dimensionBytes);
-                    writer.Write(dimensionBytes.Length);
-
-                    byte[] extentBytes = WriteExtents(array);
-                    writer.Write(extentBytes.Length);
-                    writer.Write(extentBytes);
-                    writer.Write(extentBytes.Length);
-
-                    byte[] bytes = WriteReArrayValues(array.As<float>());
-                    writer.Write(bytes.Length);
-                    writer.Write(bytes);
-                    writer.Write(bytes.Length);
-
+                    yield return WriteDimensions(array);
+                    yield return WriteExtents(array);
+                    yield return WriteReArrayValues(array.As<float>());
                     break;
                 }
                 default:
@@ -138,64 +139,60 @@ namespace HeaderArrayConverter.IO
                     throw new NotSupportedException($"Type: {array.Type}");
                 }
             }
-            await Task.CompletedTask;
         }
 
         /// <summary>
         /// Writes the <see cref="IHeaderArray.Header"/>.
         /// </summary>
-        /// <param name="writer">
-        /// The <see cref="BinaryWriter"/> positioned at the start of the file, or immediately following the previous header array.
-        /// </param>
         /// <param name="array">
         /// The <see cref="IHeaderArray"/> to write.
         /// </param>
-        private static void WriteHeader([NotNull] BinaryWriter writer, [NotNull] IHeaderArray array)
+        /// <returns>
+        /// A byte array containing the serialized data.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        private static byte[] WriteHeader([NotNull] IHeaderArray array)
         {
-            int headerLength = array.Header.Length;
-
-            writer.Write(headerLength);
-            writer.Write(array.Header.ToCharArray());
-            writer.Write(headerLength);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(array.Header.ToCharArray());
+                }
+                return stream.ToArray();
+            }
         }
 
         /// <summary>
         /// Writes the <see cref="IHeaderArray.Type"/>, sparseness, <see cref="IHeaderArray.Description"/> (70-byte padded), and the length-prefixed <see cref="IHeaderArray.Dimensions"/>.
         /// </summary>
-        /// <param name="writer">
-        /// The <see cref="BinaryWriter"/> positioned after the call to <see cref="WriteHeader(BinaryWriter, IHeaderArray)"/>.
-        /// </param>
         /// <param name="array">
         /// The <see cref="IHeaderArray"/> to write.
         /// </param>
-        private static void WriteMetadata([NotNull] BinaryWriter writer, [NotNull] IHeaderArray array)
+        /// <returns>
+        /// A byte array containing the serialized data.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        private static byte[] WriteMetadata([NotNull] IHeaderArray array)
         {
-            const int paddingLength = 4;
-            int typeLength = array.Type.Length;
-            const int fullLength = 4;
-            const int descriptionLength = 70;
-            const int dimensionCount = 4;
-            int dimensionsLength = 4 * array.Dimensions.Count;
-
-            int lengthInBytes =
-                paddingLength + 
-                typeLength + 
-                fullLength + 
-                descriptionLength + 
-                dimensionCount + 
-                dimensionsLength;
-            
-            writer.Write(lengthInBytes);
-            writer.Write(Padding);
-            writer.Write(array.Type.ToCharArray());
-            writer.Write("FULL".ToCharArray());
-            writer.Write(array.Description.PadRight(70).ToCharArray());
-            writer.Write(array.Dimensions.Count);
-            foreach (int dim in array.Dimensions)
+           using (MemoryStream stream = new MemoryStream())
             {
-                writer.Write(dim);
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(Padding);
+                    writer.Write(array.Type.ToCharArray());
+                    writer.Write("FULL".ToCharArray());
+                    writer.Write(array.Description.PadRight(70).ToCharArray());
+                    writer.Write(array.Dimensions.Count);
+                    foreach (int dim in array.Dimensions)
+                    {
+                        writer.Write(dim);
+                    }
+                }
+                return stream.ToArray();
             }
-            writer.Write(lengthInBytes);
         }
 
         /// <summary>
@@ -207,6 +204,8 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
+        [Pure]
+        [NotNull]
         private static IEnumerable<byte[]> WriteSetEntries([NotNull] IHeaderArray array)
         {
             using (MemoryStream stream = new MemoryStream())
@@ -255,6 +254,8 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
+        [Pure]
+        [NotNull]
         private static byte[] WriteSetNames(IHeaderArray array)
         {
             using (MemoryStream stream = new MemoryStream())
@@ -277,16 +278,13 @@ namespace HeaderArrayConverter.IO
                     }
                     for (int i = 0; i < array.Sets.Count + 1; i++)
                     {
-                        writer.Write((byte)0x00);
-                        writer.Write((byte)0x00);
-                        writer.Write((byte)0x00);
-                        writer.Write((byte)0x00);
+                        writer.Write(0x00_00_00_00);
                     }
                 }
                 return stream.ToArray();
             }
         }
-       
+
         /// <summary>
         /// Writes the <see cref="IHeaderArray.Dimensions"/>.
         /// </summary>
@@ -296,6 +294,8 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
+        [Pure]
+        [NotNull]
         private static byte[] WriteDimensions([NotNull] IHeaderArray array)
         {
             using (MemoryStream stream = new MemoryStream())
@@ -323,6 +323,8 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
+        [Pure]
+        [NotNull]
         private static byte[] WriteExtents([NotNull] IHeaderArray array)
         {
             using (MemoryStream stream = new MemoryStream())
@@ -350,6 +352,8 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
+        [Pure]
+        [NotNull]
         private static byte[] WriteReArrayValues([NotNull] IHeaderArray<float> array)
         {
             using (MemoryStream stream = new MemoryStream())
@@ -376,6 +380,8 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
+        [Pure]
+        [NotNull]
         private static byte[] Write1CArrayValues([NotNull] IHeaderArray<string> array)
         {
             int recordLength = array.Dimensions.Last();
