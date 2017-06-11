@@ -145,7 +145,7 @@ namespace HeaderArrayConverter
             }
 
             Header = header;
-            Description = description?.Trim('\u0000', '\u0002', '\u0020');
+            Description = description?.Trim('\u0000', '\u0002', '\u0020') ?? string.Empty;
             Type = type;
             Dimensions = dimensions.ToImmutableArray();
             Sets = sets;

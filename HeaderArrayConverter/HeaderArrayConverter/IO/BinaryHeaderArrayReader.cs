@@ -223,12 +223,6 @@ namespace HeaderArrayConverter.IO
                 dimensions[i] = BitConverter.ToInt32(descriptionBuffer, 80 + 4 * i);
             }
 
-            //// Read how many items are in the array
-            //int count = BitConverter.ToInt32(descriptionBuffer, description.Length - 4 - 4);
-
-            //// Read how long each element is
-            //int size = BitConverter.ToInt32(descriptionBuffer, description.Length - 4);
-
             return (description, header, sparse, type, dimensions);
         }
 

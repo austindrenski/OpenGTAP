@@ -12,7 +12,7 @@ namespace HeaderArrayConverter.IO
     public abstract class HeaderArrayReader
     {
         /// <summary>
-        /// Reads <see cref="IHeaderArray"/> collections from file..
+        /// Reads <see cref="IHeaderArray"/> collections from file.
         /// </summary>
         /// <param name="file">
         /// The file to read.
@@ -24,7 +24,7 @@ namespace HeaderArrayConverter.IO
         public abstract HeaderArrayFile Read([NotNull] FilePath file);
 
         /// <summary>
-        /// Asynchronously reads <see cref="IHeaderArray"/> collections from file..
+        /// Asynchronously reads <see cref="IHeaderArray"/> collections from file.
         /// </summary>
         /// <param name="file">
         /// The file to read.
@@ -35,7 +35,7 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         [ItemNotNull]
         public abstract Task<HeaderArrayFile> ReadAsync([NotNull] FilePath file);
-
+        
         /// <summary>
         /// Enumerates the <see cref="IHeaderArray"/> collection from file.
         /// </summary>

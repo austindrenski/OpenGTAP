@@ -16,15 +16,18 @@ namespace HeaderArrayConsole
             //string input = $"{directory}\\gsddat.har";
             //string input = $"{directory}\\samdata.har";
 
-            string output = $"{directory}\\test3.harx";
-            
+            string jsonOutput = $"{directory}\\test3.harx";
+            string binaryOutput = $"{directory}\\test3.har";
+
             HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
             Console.WriteLine(arrays);
-          
-            HeaderArrayFile.JsonWriter.Write(output, arrays);
 
-            Console.WriteLine(HeaderArrayFile.JsonReader.Read(output));
+            HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
+
+            HeaderArrayFile.BinaryWriter.Write(binaryOutput, arrays);
+
+            Console.WriteLine(HeaderArrayFile.JsonReader.Read(jsonOutput));
 
             arrays.ValidateSets(Console.Out);
 

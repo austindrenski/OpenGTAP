@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
@@ -13,6 +14,29 @@ namespace HeaderArrayConverter.IO
     public class JsonHeaderArrayWriter : HeaderArrayWriter
     {
         /// <summary>
+        /// Synchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
+        /// </summary>
+        /// <param name="file">
+        /// The output file.
+        /// </param>
+        /// <param name="source">
+        /// The array collection to write.
+        /// </param>
+        public override void Write(string file, IEnumerable<IHeaderArray> source)
+        {
+            if (file is null)
+            {
+                throw new ArgumentNullException(nameof(file));
+            }
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            WriteAsync(file, source).Wait();
+        }
+
+        /// <summary>
         /// Asynchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
         /// </summary>
         /// <param name="file">
@@ -21,11 +45,15 @@ namespace HeaderArrayConverter.IO
         /// <param name="source">
         /// The array collection to write.
         /// </param>
-        public override async Task WriteAsync(string file, params IHeaderArray[] source)
+        public override async Task WriteAsync(string file, IEnumerable<IHeaderArray> source)
         {
             if (file is null)
             {
                 throw new ArgumentNullException(nameof(file));
+            }
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
             }
 
             using (ZipArchive archive = new ZipArchive(new FileStream(file, FileMode.Create), ZipArchiveMode.Create))
@@ -40,25 +68,6 @@ namespace HeaderArrayConverter.IO
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// Synchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
-        /// </summary>
-        /// <param name="file">
-        /// The output file.
-        /// </param>
-        /// <param name="source">
-        /// The array collection to write.
-        /// </param>
-        public override void Write(string file, params IHeaderArray[] source)
-        {
-            if (file is null)
-            {
-                throw new ArgumentNullException(nameof(file));
-            }
-
-            WriteAsync(file, source).Wait();
         }
     }
 }

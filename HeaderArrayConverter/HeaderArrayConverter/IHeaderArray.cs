@@ -20,7 +20,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// An optional description of the array.
         /// </summary>
-        [CanBeNull]
+        [NotNull]
         string Description { get; }
 
         /// <summary>
