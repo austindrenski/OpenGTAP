@@ -165,7 +165,7 @@ namespace HeaderArrayConverter
         {
             throw new NotSupportedException();
         }
-        
+
         /// <summary>
         /// Custom converter from JSON <see cref="IHeaderArray{TValue}"/>.
         /// </summary>
