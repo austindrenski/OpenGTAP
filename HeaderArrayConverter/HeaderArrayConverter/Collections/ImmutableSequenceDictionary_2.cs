@@ -52,26 +52,29 @@ namespace HeaderArrayConverter.Collections
             get
             {
                 KeySequence<TKey> key = new KeySequence<TKey>(keys);
-
-                if (!Sets.Any(x => x.Take(key.Count).SequenceEqual(key)))
-                {
-                    throw new KeyNotFoundException();
-                }
-
-                if (_dictionary.ContainsKey(key))
+                
+                if (key.Count == Sets.FirstOrDefault().Count && _dictionary.ContainsKey(key))
                 {
                     return Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]));
+                }
+
+                if (key.Count == Sets.FirstOrDefault().Count && Sets.Contains(key))
+                {
+                    return Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, default(TValue)));
+                }
+
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    if (!Sets.SelectMany(x => x[i]).Contains(keys[i]))
+                    {
+                        throw new KeyNotFoundException();
+                    }
                 }
 
                 IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> entries =
                     _dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key));
 
-                IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> virtualEntries =
-                    Sets.Where(x => x.Take(key.Count).SequenceEqual(key))
-                        .Select(x => new KeyValuePair<KeySequence<TKey>, TValue>(x, default(TValue)))
-                        .ToArray();
-
-                return Create(Sets, entries.Concat(virtualEntries).Distinct(DistinctKeyComparer));
+                return Create(Sets, entries);
             }
         }
 

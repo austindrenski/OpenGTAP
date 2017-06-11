@@ -170,6 +170,15 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
+        /// Returns the stored value or the default value.
+        /// </summary>
+        public TValue TryGetValue(KeySequence<string> key)
+        {
+            _entries.TryGetValue(key, out TValue value);
+            return value;
+        }
+
+        /// <summary>
         /// Returns an indented JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
         [Pure]

@@ -364,7 +364,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(1);
                     foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
                     {
-                        writer.Write(array[item].SingleOrDefault().Value);
+                        writer.Write(array.TryGetValue(item));
                     }
                 }
                 return stream.ToArray();

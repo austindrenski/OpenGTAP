@@ -35,5 +35,10 @@ namespace HeaderArrayConverter
         /// </returns>
         [NotNull]
         new IImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
+
+        /// <summary>
+        /// Returns the stored value or the default value.
+        /// </summary>
+        TValue TryGetValue(KeySequence<string> key);
     }
 }

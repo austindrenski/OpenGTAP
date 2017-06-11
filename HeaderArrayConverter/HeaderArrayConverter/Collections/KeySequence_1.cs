@@ -308,7 +308,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public override int GetHashCode()
         {
-            return Keys.GetHashCode();
+            return Keys.Aggregate(0, (current, next) => unchecked (current + 17 * next.GetHashCode()));
         }
 
         /// <summary>
