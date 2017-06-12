@@ -42,13 +42,13 @@ namespace HeaderArrayConverter.Collections
         new IImmutableSequenceDictionary<TKey> this[params TKey[] keys] { get; }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
         /// </summary>
         /// <returns>
-        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
         /// </returns>
         [Pure]
         [NotNull]
-        IEnumerator<KeyValuePair<KeySequence<TKey>, object>> GetLogicalEnumerator();
+        IEnumerable<KeyValuePair<KeySequence<TKey>, object>> GetLogicalEnumerable();
     }
 }

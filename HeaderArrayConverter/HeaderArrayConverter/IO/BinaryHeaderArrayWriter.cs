@@ -134,6 +134,10 @@ namespace HeaderArrayConverter.IO
                     yield return WriteReArrayValues(array.As<float>());
                     break;
                 }
+                case "RL":
+                {
+                    break;
+                }
                 default:
                 {
                     throw new NotSupportedException($"Type: {array.Type}");

@@ -165,12 +165,12 @@ namespace HeaderArrayConverter
         public abstract string Serialize(bool indent);
 
         /// <summary>
-        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
         /// </summary>
         /// <returns>
-        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
         /// </returns>
-        IEnumerator<KeyValuePair<KeySequence<string>, object>> IHeaderArray.GetLogicalEnumerator()
+        IEnumerable<KeyValuePair<KeySequence<string>, object>> IHeaderArray.GetLogicalEnumerable()
         {
             throw new NotSupportedException();
         }

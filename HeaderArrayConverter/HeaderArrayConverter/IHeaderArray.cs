@@ -85,12 +85,13 @@ namespace HeaderArrayConverter
         string Serialize(bool indent);
 
         /// <summary>
-        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
         /// </summary>
         /// <returns>
-        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
         /// </returns>
         [Pure]
-        IEnumerator<KeyValuePair<KeySequence<string>, object>> GetLogicalEnumerator();
+        [NotNull]
+        IEnumerable<KeyValuePair<KeySequence<string>, object>> GetLogicalEnumerable();
     }
 }

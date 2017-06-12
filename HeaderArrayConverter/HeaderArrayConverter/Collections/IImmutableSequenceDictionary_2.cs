@@ -40,13 +40,13 @@ namespace HeaderArrayConverter.Collections
         new IEnumerable<TValue> Values { get; }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
         /// </summary>
         /// <returns>
-        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
         /// </returns>
         [Pure]
         [NotNull]
-        new IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerator();
+        new IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerable();
     }
 }

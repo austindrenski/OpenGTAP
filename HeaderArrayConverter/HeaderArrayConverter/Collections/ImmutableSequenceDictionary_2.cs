@@ -227,13 +227,13 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
         /// </summary>
         /// <returns>
-        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
         /// </returns>
         [Pure]
-        public IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerator()
+        public IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerable()
         {
             foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
             {
@@ -243,13 +243,13 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// Returns an enumerable collection iterates through the logical collection as defined by the <see cref="Sets"/>.
         /// </summary>
         /// <returns>
-        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
         /// </returns>
         [Pure]
-        IEnumerator<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerator()
+        IEnumerable<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerable()
         {
             foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
             {
