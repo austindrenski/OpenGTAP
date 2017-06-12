@@ -33,12 +33,22 @@ namespace HeaderArrayConverter.Collections
         /// Gets the sets that define this dictionary.
         /// </summary>
         [NotNull]
-        IImmutableList<KeySequence<TKey>> Sets { get; }
+        IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> Sets { get; }
 
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
         /// </summary>
         [NotNull]
         new IImmutableSequenceDictionary<TKey> this[params TKey[] keys] { get; }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        IEnumerator<KeyValuePair<KeySequence<TKey>, object>> GetLogicalEnumerator();
     }
 }

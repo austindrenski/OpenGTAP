@@ -359,7 +359,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(1);
                     foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
                     {
-                        writer.Write(array.ReturnUnchecked(item));
+                        writer.Write(array.Return(item));
                     }
                 }
                 return stream.ToArray();

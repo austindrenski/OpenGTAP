@@ -114,14 +114,6 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// Returns the stored value or the default value.
-        /// </summary>
-        object IHeaderArray.ReturnUnchecked(KeySequence<string> key)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
         /// Validates that the sets defined throughout the <see cref="HeaderArrayFile"/>. Validation information is logged to <paramref name="output"/>.
         /// </summary>
         /// <returns>
@@ -171,6 +163,17 @@ namespace HeaderArrayConverter
         /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
         public abstract string Serialize(bool indent);
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </returns>
+        IEnumerator<KeyValuePair<KeySequence<string>, object>> IHeaderArray.GetLogicalEnumerator()
+        {
+            throw new NotSupportedException();
+        }
 
         /// <summary>
         /// Returns an enumerator that iterates through a collection.

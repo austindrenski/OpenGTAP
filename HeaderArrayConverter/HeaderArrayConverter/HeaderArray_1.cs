@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using HeaderArrayConverter.Collections;
-using HeaderArrayConverter.Extensions;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -166,7 +165,7 @@ namespace HeaderArrayConverter
             Type = type;
             Dimensions = dimensions.ToImmutableArray();
             Sets = sets;
-            _entries = entries.ToImmutableSequenceDictionary(sets.AsExpandedSet());
+            _entries = entries.ToImmutableSequenceDictionary(sets);
         }
 
         /// <summary>
@@ -174,26 +173,11 @@ namespace HeaderArrayConverter
         /// </summary>
         public TValue Return(KeySequence<string> key)
         {
-            if (key.Count != Sets.Count)
+            if (key.Count != Sets.Count || Sets.Zip(key, (s, k) => s.Value.Contains(k)).Any(x => !x))
             {
                 throw new KeyNotFoundException(key.ToString());
             }
-            for (int i = 0; i < key.Count; i++)
-            {
-                if (!Sets[i].Value.Contains(key[i].SingleOrDefault()))
-                {
-                    throw new KeyNotFoundException(key.ToString());
-                }
-            }
 
-            return ReturnUnchecked(key);
-        }
-
-        /// <summary>
-        /// Returns the stored value or the default value.
-        /// </summary>
-        public TValue ReturnUnchecked(KeySequence<string> key)
-        {
             _entries.TryGetValue(key, out TValue value);
             return value;
         }
@@ -214,6 +198,17 @@ namespace HeaderArrayConverter
         public override string Serialize(bool indent)
         {
             return JsonConvert.SerializeObject(this, indent ? Formatting.Indented : Formatting.None);
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </returns>
+        public IEnumerator<KeyValuePair<KeySequence<string>, TValue>> GetLogicalEnumerator()
+        {
+            return _entries.GetLogicalEnumerator();
         }
 
         /// <summary>

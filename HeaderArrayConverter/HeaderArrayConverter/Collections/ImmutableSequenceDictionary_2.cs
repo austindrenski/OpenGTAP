@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using HeaderArrayConverter.Extensions;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -42,7 +43,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Gets the total number of entries represented by the dictionary.
         /// </summary>
-        public int Total => Math.Max(Sets.Count, Count);
+        public int Total => Math.Max(Sets.Aggregate(1, (current, next) => current * next.Value.Count), _dictionary.Count);
 
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
@@ -53,28 +54,20 @@ namespace HeaderArrayConverter.Collections
             {
                 KeySequence<TKey> key = new KeySequence<TKey>(keys);
                 
-                if (key.Count == Sets.FirstOrDefault().Count && _dictionary.ContainsKey(key))
+                if (_dictionary.ContainsKey(key))
                 {
                     return Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]));
                 }
 
-                if (key.Count == Sets.FirstOrDefault().Count && Sets.Contains(key))
+                if (Sets.Zip(key, (s, k) => s.Value.Contains(k)).Any(x => !x))
                 {
-                    return Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, default(TValue)));
+                    throw new KeyNotFoundException(key.ToString());
                 }
 
-                for (int i = 0; i < keys.Length; i++)
-                {
-                    if (!Sets.SelectMany(x => x[i]).Contains(keys[i]))
-                    {
-                        throw new KeyNotFoundException();
-                    }
-                }
-
-                IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> entries =
-                    _dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key));
-
-                return Create(Sets, entries);
+                return
+                    key.Count == Sets.Count
+                        ? Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, default(TValue)))
+                        : Create(Sets, _dictionary.Where(x => x.Key.Take(key.Count).SequenceEqual(key)));
             }
         }
 
@@ -129,7 +122,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Gets the sets that define this dictionary.
         /// </summary>
-        public IImmutableList<KeySequence<TKey>> Sets { get; }
+        public IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> Sets { get; }
 
         /// <summary>
         /// Constructs an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> in which the insertion order is preserved.
@@ -140,7 +133,7 @@ namespace HeaderArrayConverter.Collections
         /// <param name="source">
         /// The collection from which to create the 
         /// </param>
-        private ImmutableSequenceDictionary([NotNull] IEnumerable<KeySequence<TKey>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        private ImmutableSequenceDictionary([NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
@@ -165,7 +158,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeySequence<TKey>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
@@ -189,7 +182,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeySequence<TKey>> sets, params KeyValuePair<KeySequence<TKey>, TValue>[] source)
+        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets, params KeyValuePair<KeySequence<TKey>, TValue>[] source)
         {
             if (source is null)
             {
@@ -197,17 +190,6 @@ namespace HeaderArrayConverter.Collections
             }
 
             return Create(sets, source as IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>);
-        }
-
-        /// <summary>
-        /// Creates an <see cref="ImmutableSequenceDictionary{TKey, Object}"/> from a <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> .
-        /// </summary>
-        /// <param name="source">
-        /// The source <see cref="ImmutableSequenceDictionary{TKey, TValue}"/>.
-        /// </param>
-        public static explicit operator ImmutableSequenceDictionary<TKey, object>(ImmutableSequenceDictionary<TKey, TValue> source)
-        {
-            return source.ToImmutableSequenceDictionary(x => x.Key, x => x.Value as object, source.Sets);
         }
 
         /// <summary>
@@ -242,6 +224,38 @@ namespace HeaderArrayConverter.Collections
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        public IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerator()
+        {
+            foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
+            {
+                _dictionary.TryGetValue(key, out TValue value);
+                yield return new KeyValuePair<KeySequence<TKey>, TValue>(key, value);
+            }
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        IEnumerator<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerator()
+        {
+            foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
+            {
+                _dictionary.TryGetValue(key, out TValue value);
+                yield return new KeyValuePair<KeySequence<TKey>, object>(key, value);
+            }
         }
 
         /// <summary>
@@ -284,7 +298,7 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         public IImmutableDictionary<KeySequence<TKey>, TValue> Clear()
         {
-            return _dictionary.Any() ? Create(Enumerable.Empty<KeySequence<TKey>>(), Enumerable.Empty<KeyValuePair<KeySequence<TKey>, TValue>>()) : this;
+            return _dictionary.Any() ? Create(Enumerable.Empty<KeyValuePair<string, IImmutableList<TKey>>>(), Enumerable.Empty<KeyValuePair<KeySequence<TKey>, TValue>>()) : this;
         }
 
         /// <summary>

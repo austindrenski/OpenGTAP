@@ -44,9 +44,12 @@ namespace HeaderArrayConverter
         new TValue Return(KeySequence<string> key);
 
         /// <summary>
-        /// Returns the stored value or the default value.
+        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
         /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </returns>
         [Pure]
-        new TValue ReturnUnchecked(KeySequence<string> key);
+        new IEnumerator<KeyValuePair<KeySequence<string>, TValue>> GetLogicalEnumerator();
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
 
@@ -27,7 +28,7 @@ namespace HeaderArrayConverter.Collections
         /// <returns>
         /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<TKey, TValue>([NotNull] this IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source, [NotNull] IEnumerable<KeySequence<TKey>> sets)
+        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<TKey, TValue>([NotNull] this IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source, [NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets)
         {
             if (source is null)
             {
@@ -62,7 +63,7 @@ namespace HeaderArrayConverter.Collections
         /// <returns>
         /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<T, TKey, TValue>([NotNull] this IEnumerable<T> source, Func<T, KeySequence<TKey>> keySelector, Func<T, TValue> valueSelector, [NotNull] IEnumerable<KeySequence<TKey>> sets)
+        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<T, TKey, TValue>([NotNull] this IEnumerable<T> source, Func<T, KeySequence<TKey>> keySelector, Func<T, TValue> valueSelector, [NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets)
         {
             if (source is null)
             {
@@ -100,7 +101,7 @@ namespace HeaderArrayConverter.Collections
         /// <returns>
         /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> containing the distinct items from the enumerable collection.
         /// </returns>
-        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<TLeft, TRight, TKey, TValue>([NotNull] this IEnumerable<(TLeft Left, TRight Right)> source, Func<(TLeft Left, TRight Right), IEnumerable<TKey>> keySelector, Func<(TLeft Left, TRight Right), TValue> valueSelector, [NotNull] IEnumerable<KeySequence<TKey>> sets)
+        public static ImmutableSequenceDictionary<TKey, TValue> ToImmutableSequenceDictionary<TLeft, TRight, TKey, TValue>([NotNull] this IEnumerable<(TLeft Left, TRight Right)> source, Func<(TLeft Left, TRight Right), IEnumerable<TKey>> keySelector, Func<(TLeft Left, TRight Right), TValue> valueSelector, [NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets)
         {
             if (source is null)
             {

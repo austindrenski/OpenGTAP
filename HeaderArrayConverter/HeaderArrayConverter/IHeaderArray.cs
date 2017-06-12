@@ -76,18 +76,21 @@ namespace HeaderArrayConverter
         /// </summary>
         [Pure]
         object Return(KeySequence<string> key);
-
-        /// <summary>
-        /// Returns the stored value or the default value.
-        /// </summary>
-        [Pure]
-        object ReturnUnchecked(KeySequence<string> key);
-
+        
         /// <summary>
         /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
         [Pure]
         [NotNull]
         string Serialize(bool indent);
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the logical collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        IEnumerator<KeyValuePair<KeySequence<string>, object>> GetLogicalEnumerator();
     }
 }
