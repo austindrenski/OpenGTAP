@@ -13,8 +13,8 @@ namespace HeaderArrayConsole
             //string input = $"{directory}\\sets.har";
             //string input = $"{directory}\\basedata.har";
             //string input = $"{directory}\\isep.har";
-            string input = $"{directory}\\gsddat.har";
-            //string input = $"{directory}\\laborfd.sl4";
+            string input = $"{directory}\\laborfd.sl4";
+            //string input = $"{directory}\\laborfd.sol";
             //string input = $"{directory}\\reBAS11.sl4";
 
             string jsonOutput = $"{directory}\\test4.harx";
