@@ -59,7 +59,7 @@ namespace HeaderArrayConverter.Collections
                     return Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]));
                 }
 
-                if (Sets.Zip(key, (s, k) => s.Value.Contains(k)).Any(x => !x))
+                if (key.Count != Sets.Count || Sets.Zip(key, (s, k) => s.Value.Contains(k)).Any(x => !x))
                 {
                     throw new KeyNotFoundException(key.ToString());
                 }

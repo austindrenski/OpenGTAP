@@ -38,18 +38,6 @@ namespace HeaderArrayConverter
         new IImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
 
         /// <summary>
-        /// Returns the stored value or the default value. Throws <see cref="KeyNotFoundException"/> if the key is not valid.
-        /// </summary>
-        [Pure]
-        new TValue Return(KeySequence<string> key);
-
-        /// <summary>
-        /// Returns the stored value or the default value.
-        /// </summary>
-        [Pure]
-        new TValue ReturnUnchecked(KeySequence<string> key);
-
-        /// <summary>
         /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
         /// </summary>
         /// <returns>

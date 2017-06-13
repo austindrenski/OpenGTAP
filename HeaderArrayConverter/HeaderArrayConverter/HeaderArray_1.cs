@@ -169,28 +169,6 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
-        /// Returns the stored value or the default value. Throws <see cref="KeyNotFoundException"/> if the key is not valid.
-        /// </summary>
-        public TValue Return(KeySequence<string> key)
-        {
-            if (key.Count != Sets.Count || Sets.Zip(key, (s, k) => s.Value.Contains(k)).Any(x => !x))
-            {
-                throw new KeyNotFoundException(key.ToString());
-            }
-
-            return ReturnUnchecked(key);
-        }
-
-        /// <summary>
-        /// Returns the stored value or the default value.
-        /// </summary>
-        public TValue ReturnUnchecked(KeySequence<string> key)
-        {
-            _entries.TryGetValue(key, out TValue value);
-            return value;
-        }
-
-        /// <summary>
         /// Returns an indented JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>
         [Pure]
