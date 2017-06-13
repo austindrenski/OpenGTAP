@@ -540,14 +540,29 @@ namespace HeaderArrayConverter.IO
 
             int vectorNumber = BitConverter.ToInt32(data, 24);
 
-            int[] ints = new int[(data.Length - 28 ) / 4];
-
-            for (int i = 0; i < ints.Length; i++)
+            int[] results = new int[totalCount];
+            bool test = true;
+            int counter = 0;
+            while (test)
             {
-                ints[i] = BitConverter.ToInt32(data, 28 + 4 * i);
+                if (counter > 0)
+                {
+                    data = InitializeArray(reader);
+                }
+                int[] ints = new int[(data.Length - 28) / 4];
+
+                for (int i = 0; i < ints.Length; i++)
+                {
+                    ints[i] = BitConverter.ToInt32(data, 28 + 4 * i);
+                }
+
+                Array.Copy(ints, 0, results, counter, ints.Length);
+                counter += ints.Length;
+
+                test = BitConverter.ToInt32(data, 0) != 1;
             }
 
-            return ints;
+            return results;
         }
 
         [NotNull]
@@ -565,14 +580,29 @@ namespace HeaderArrayConverter.IO
 
             int vectorNumber = BitConverter.ToInt32(data, 24);
 
-            float[] floats = new float[(data.Length - 28) / 4];
-
-            for (int i = 0; i < floats.Length; i++)
+            float[] results = new float[totalCount];
+            bool test = true;
+            int counter = 0;
+            while (test)
             {
-                floats[i] = BitConverter.ToSingle(data, 28 + 4 * i);
+                if (counter > 0)
+                {
+                    data = InitializeArray(reader);
+                }
+                float[] floats = new float[(data.Length - 28) / 4];
+
+                for (int i = 0; i < floats.Length; i++)
+                {
+                    floats[i] = BitConverter.ToInt32(data, 28 + 4 * i);
+                }
+
+                Array.Copy(floats, 0, results, counter, floats.Length);
+                counter += floats.Length;
+
+                test = BitConverter.ToInt32(data, 0) != 1;
             }
 
-            return floats;
+            return results;
         }
     }
 }

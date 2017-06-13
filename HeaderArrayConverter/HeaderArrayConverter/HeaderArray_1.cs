@@ -178,6 +178,14 @@ namespace HeaderArrayConverter
                 throw new KeyNotFoundException(key.ToString());
             }
 
+            return ReturnUnchecked(key);
+        }
+
+        /// <summary>
+        /// Returns the stored value or the default value.
+        /// </summary>
+        public TValue ReturnUnchecked(KeySequence<string> key)
+        {
             _entries.TryGetValue(key, out TValue value);
             return value;
         }

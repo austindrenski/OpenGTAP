@@ -76,7 +76,13 @@ namespace HeaderArrayConverter
         /// </summary>
         [Pure]
         object Return(KeySequence<string> key);
-        
+
+        /// <summary>
+        /// Returns the stored value or the default value.
+        /// </summary>
+        [Pure]
+        object ReturnUnchecked(KeySequence<string> key);
+
         /// <summary>
         /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
         /// </summary>

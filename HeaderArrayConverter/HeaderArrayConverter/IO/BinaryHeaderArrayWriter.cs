@@ -373,7 +373,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(1);
                     foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
                     {
-                        writer.Write(array.Return(item));
+                        writer.Write(array.ReturnUnchecked(item));
                     }
                 }
                 return stream.ToArray();
@@ -446,7 +446,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(1);
                     foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
                     {
-                        writer.Write(array.Return(item));
+                        writer.Write(array.ReturnUnchecked(item));
                     }
                 }
                 return stream.ToArray();
@@ -487,7 +487,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(1);
                     foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
                     {
-                        writer.Write(array.Return(item));
+                        writer.Write(array.ReturnUnchecked(item));
                     }
                 }
                 return stream.ToArray();
