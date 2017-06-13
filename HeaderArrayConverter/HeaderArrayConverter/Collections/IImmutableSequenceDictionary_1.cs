@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using JetBrains.Annotations;
 
@@ -50,5 +51,25 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         [NotNull]
         IEnumerable<KeyValuePair<KeySequence<TKey>, object>> GetLogicalEnumerable();
+
+        /// <summary>
+        /// Returns an enumerable collection iterates through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        IEnumerable GetLogicalValuesEnumerable();
+
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        IEnumerable GetLogicalValuesEnumerable([NotNull] IComparer<KeySequence<TKey>> keyComparer);
     }
 }

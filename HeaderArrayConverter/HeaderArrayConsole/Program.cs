@@ -32,7 +32,7 @@ namespace HeaderArrayConsole
 
             //arrays.ValidateSets(Console.Out);
 
-            Console.ReadLine();
+            //Console.ReadLine();
         }
     }
 }

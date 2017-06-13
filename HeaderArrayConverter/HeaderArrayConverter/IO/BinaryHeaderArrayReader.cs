@@ -124,7 +124,17 @@ namespace HeaderArrayConverter.IO
                             (x, i) =>
                                 new KeyValuePair<KeySequence<string>, string>(i.ToString(), x));
 
-                    return new HeaderArray<string>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>().ToImmutableArray());
+                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
+                        new KeyValuePair<string, IImmutableList<string>>[]
+                        {
+                            new KeyValuePair<string, IImmutableList<string>>(
+                                "INDEX",
+                                Enumerable.Range(0, strings.Length)
+                                          .Select(x => x.ToString())
+                                          .ToImmutableArray())
+                        }.ToImmutableArray();
+
+                    return new HeaderArray<string>(header, description, type, dimensions, items, sets);
                 }
                 case "RE":
                 {
@@ -593,7 +603,7 @@ namespace HeaderArrayConverter.IO
 
                 for (int i = 0; i < floats.Length; i++)
                 {
-                    floats[i] = BitConverter.ToInt32(data, 28 + 4 * i);
+                    floats[i] = BitConverter.ToSingle(data, 28 + 4 * i);
                 }
 
                 Array.Copy(floats, 0, results, counter, floats.Length);

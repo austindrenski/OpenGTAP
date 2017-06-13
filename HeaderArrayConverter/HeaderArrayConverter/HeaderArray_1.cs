@@ -220,6 +220,28 @@ namespace HeaderArrayConverter
         }
 
         /// <summary>
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </returns>
+        public IEnumerable<TValue> GetLogicalValuesEnumerable()
+        {
+            return _entries.GetLogicalValuesEnumerable();
+        }
+
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
+        /// </returns>
+        public IEnumerable<TValue> GetLogicalValuesEnumerable(IComparer<KeySequence<string>> keyComparer)
+        {
+            return _entries.GetLogicalValuesEnumerable(keyComparer);
+        }
+
+        /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>

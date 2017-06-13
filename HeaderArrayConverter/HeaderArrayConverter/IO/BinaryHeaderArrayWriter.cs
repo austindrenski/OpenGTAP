@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using HeaderArrayConverter.Collections;
-using HeaderArrayConverter.Extensions;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
@@ -371,9 +369,9 @@ namespace HeaderArrayConverter.IO
                 {
                     writer.Write(Padding);
                     writer.Write(1);
-                    foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
+                    foreach (float item in array.GetLogicalValuesEnumerable())
                     {
-                        writer.Write(array.ReturnUnchecked(item));
+                        writer.Write(item);
                     }
                 }
                 return stream.ToArray();
@@ -403,9 +401,9 @@ namespace HeaderArrayConverter.IO
                     writer.Write(1);
                     writer.Write(array.Total);
                     writer.Write(array.Total);
-                    foreach (KeyValuePair<KeySequence<string>, string> item in array)
+                    foreach (string item in array.GetLogicalValuesEnumerable())
                     {
-                        writer.Write(item.Value.PadRight(recordLength).ToCharArray());
+                        writer.Write((item ?? string.Empty).PadRight(recordLength).ToCharArray());
                     }
                 }
                 return stream.ToArray();
@@ -444,9 +442,9 @@ namespace HeaderArrayConverter.IO
                     }
 
                     writer.Write(1);
-                    foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
+                    foreach (int item in array.GetLogicalValuesEnumerable())
                     {
-                        writer.Write(array.ReturnUnchecked(item));
+                        writer.Write(item);
                     }
                 }
                 return stream.ToArray();
@@ -485,9 +483,9 @@ namespace HeaderArrayConverter.IO
                     }
 
                     writer.Write(1);
-                    foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
+                    foreach (float item in array.GetLogicalValuesEnumerable())
                     {
-                        writer.Write(array.ReturnUnchecked(item));
+                        writer.Write(item);
                     }
                 }
                 return stream.ToArray();

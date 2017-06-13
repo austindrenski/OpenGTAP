@@ -210,7 +210,7 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         public IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetEnumerator()
         {
-            return _dictionary.OrderBy(x => x.Key, KeySequence<TKey>.ReverseComparer).GetEnumerator();
+            return _dictionary.GetEnumerator();
         }
 
         /// <summary>
@@ -256,6 +256,63 @@ namespace HeaderArrayConverter.Collections
                 _dictionary.TryGetValue(key, out TValue value);
                 yield return new KeyValuePair<KeySequence<TKey>, object>(key, value);
             }
+        }
+
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        public IEnumerable<TValue> GetLogicalValuesEnumerable()
+        {
+            foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
+            {
+                _dictionary.TryGetValue(key, out TValue value);
+                yield return value;
+            }
+        }
+
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </returns>
+        [Pure]
+        IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
+        {
+            return GetLogicalValuesEnumerable(keyComparer);
+        }
+
+
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        public IEnumerable<TValue> GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
+        {
+            foreach (KeySequence<TKey> key in Sets.AsExpandedSet().OrderBy(x => x, keyComparer))
+            {
+                _dictionary.TryGetValue(key, out TValue value);
+                yield return value;
+            }
+        }
+
+        /// <summary>
+        /// Returns an enumerable collection iterates through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
+        /// </returns>
+        [Pure]
+        IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable()
+        {
+            return GetLogicalValuesEnumerable();
         }
 
         /// <summary>

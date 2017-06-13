@@ -48,5 +48,25 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         [NotNull]
         new IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerable();
+
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        new IEnumerable<TValue> GetLogicalValuesEnumerable();
+
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        new IEnumerable<TValue> GetLogicalValuesEnumerable([NotNull] IComparer<KeySequence<TKey>> keyComparer);
     }
 }
