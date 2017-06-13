@@ -1,5 +1,5 @@
 # OpenGTAP
-OpenGTAP aims to provide open-source tooling for the GTAP (Global Trade Analysis Project) Model on the .NET Standard Framework.
+OpenGTAP aims to provide open-source tooling for the GTAP (Global Trade Analysis Project) Model on the .NET Framework.
 
 ## The idea
 The GTAP model provides a popular framework for conducting global economic analysis. Currently, the model is written in the GEMPACK (General Equilibrium Modeling PACKage) modeling software. Though powerful, GEMPACK is not freely available, nor does it provide open-source licensing. This project is interested in exploring the potential for an implementation of the standard GTAP model in a modern programming language running on an open-source framework, such as C# and the .NET Standard Framework.
