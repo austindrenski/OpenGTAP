@@ -148,7 +148,59 @@ namespace HeaderArrayConverter.IO
                             (x, i) =>
                                 new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, Enumerable.Empty<KeyValuePair<string, IImmutableList<string>>>().ToImmutableArray());
+                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
+                        new KeyValuePair<string, IImmutableList<string>>[]
+                        {
+                            new KeyValuePair<string, IImmutableList<string>>(
+                                "INDEX",
+                                Enumerable.Range(0, floats.Length)
+                                          .Select(x => x.ToString())
+                                          .ToImmutableArray())
+                        }.ToImmutableArray();
+
+                    return new HeaderArray<float>(header, description, type, dimensions, items, sets);
+                }
+                case "2I":
+                {
+                    int[] ints = Get2IArray(reader);
+
+                    IEnumerable<KeyValuePair<KeySequence<string>, int>> items = 
+                        ints.Select(
+                            (x, i) =>
+                                new KeyValuePair<KeySequence<string>, int>(i.ToString(), x));
+
+                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
+                        new KeyValuePair<string, IImmutableList<string>>[]
+                        {
+                            new KeyValuePair<string, IImmutableList<string>>(
+                                "INDEX",
+                                Enumerable.Range(0, ints.Length)
+                                          .Select(x => x.ToString())
+                                          .ToImmutableArray())
+                        }.ToImmutableArray();
+
+                    return new HeaderArray<int>(header, description, type, dimensions, items, sets);
+                }
+                case "2R":
+                {
+                    float[] floats = Get2RArray(reader);
+
+                    IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
+                        floats.Select(
+                            (x, i) =>
+                                new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
+
+                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
+                        new KeyValuePair<string, IImmutableList<string>>[]
+                        {
+                            new KeyValuePair<string, IImmutableList<string>>(
+                                "INDEX", 
+                                Enumerable.Range(0, floats.Length)
+                                          .Select(x => x.ToString())
+                                          .ToImmutableArray())
+                        }.ToImmutableArray();
+
+                    return new HeaderArray<float>(header, description, type, dimensions, items, sets);
                 }
                 default:
                 {
@@ -471,6 +523,56 @@ namespace HeaderArrayConverter.IO
             }
 
             return strings;
+        }
+
+        [NotNull]
+        private static int[] Get2IArray(BinaryReader reader)
+        {
+            byte[] data = InitializeArray(reader);
+
+            int vectors = BitConverter.ToInt32(data, 0);
+            int totalCount = BitConverter.ToInt32(data, 4);
+            int maxPerVector = BitConverter.ToInt32(data, 8);
+
+            int vectors2 = BitConverter.ToInt32(data, 12);
+            int totalCount2 = BitConverter.ToInt32(data, 16);
+            int maxPerVector2 = BitConverter.ToInt32(data, 20);
+
+            int vectorNumber = BitConverter.ToInt32(data, 24);
+
+            int[] ints = new int[(data.Length - 28 ) / 4];
+
+            for (int i = 0; i < ints.Length; i++)
+            {
+                ints[i] = BitConverter.ToInt32(data, 28 + 4 * i);
+            }
+
+            return ints;
+        }
+
+        [NotNull]
+        private static float[] Get2RArray(BinaryReader reader)
+        {
+            byte[] data = InitializeArray(reader);
+
+            int vectors = BitConverter.ToInt32(data, 0);
+            int totalCount = BitConverter.ToInt32(data, 4);
+            int maxPerVector = BitConverter.ToInt32(data, 8);
+
+            int vectors2 = BitConverter.ToInt32(data, 12);
+            int totalCount2 = BitConverter.ToInt32(data, 16);
+            int maxPerVector2 = BitConverter.ToInt32(data, 20);
+
+            int vectorNumber = BitConverter.ToInt32(data, 24);
+
+            float[] floats = new float[(data.Length - 28) / 4];
+
+            for (int i = 0; i < floats.Length; i++)
+            {
+                floats[i] = BitConverter.ToSingle(data, 28 + 4 * i);
+            }
+
+            return floats;
         }
     }
 }

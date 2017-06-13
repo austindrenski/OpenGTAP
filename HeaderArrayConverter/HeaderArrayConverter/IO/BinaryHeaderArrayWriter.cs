@@ -138,6 +138,16 @@ namespace HeaderArrayConverter.IO
                 {
                     break;
                 }
+                case "2I":
+                {
+                    yield return Write2IArrayValues(array.As<int>());
+                    break;
+                }
+                case "2R":
+                {
+                    yield return Write2RArrayValues(array.As<float>());
+                    break;
+                }
                 default:
                 {
                     throw new NotSupportedException($"Type: {array.Type}");
@@ -396,6 +406,88 @@ namespace HeaderArrayConverter.IO
                     foreach (KeyValuePair<KeySequence<string>, string> item in array)
                     {
                         writer.Write(item.Value.PadRight(recordLength).ToCharArray());
+                    }
+                }
+                return stream.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Writes the contents of an <see cref="IHeaderArray{Int32}"/> with type '2I'.
+        /// </summary>
+        /// <param name="array">
+        /// The <see cref="IHeaderArray"/> to write.
+        /// </param>
+        /// <returns>
+        /// A byte array containing the serialized data.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        private static byte[] Write2IArrayValues([NotNull] IHeaderArray<int> array)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(Padding);
+
+                    writer.Write(1);
+                    foreach (int item in array.Dimensions)
+                    {
+                        writer.Write(item);
+                    }
+
+                    writer.Write(1);
+                    foreach (int item in array.Dimensions)
+                    {
+                        writer.Write(item);
+                    }
+
+                    writer.Write(1);
+                    foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
+                    {
+                        writer.Write(array.Return(item));
+                    }
+                }
+                return stream.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Writes the contents of an <see cref="IHeaderArray{Single}"/> with type '2R'.
+        /// </summary>
+        /// <param name="array">
+        /// The <see cref="IHeaderArray"/> to write.
+        /// </param>
+        /// <returns>
+        /// A byte array containing the serialized data.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        private static byte[] Write2RArrayValues([NotNull] IHeaderArray<float> array)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(Padding);
+
+                    writer.Write(1);
+                    foreach (int item in array.Dimensions)
+                    {
+                        writer.Write(item);
+                    }
+
+                    writer.Write(1);
+                    foreach (int item in array.Dimensions)
+                    {
+                        writer.Write(item);
+                    }
+
+                    writer.Write(1);
+                    foreach (KeySequence<string> item in array.Sets.AsExpandedSet())
+                    {
+                        writer.Write(array.Return(item));
                     }
                 }
                 return stream.ToArray();
