@@ -17,8 +17,8 @@ namespace HeaderArrayConsole
             //string input = $"{directory}\\laborfd.sol";
             string input = $"{directory}\\reBAS11.sl4";
 
-            string jsonOutput = $"{directory}\\test4.harx";
-            string binaryOutput = $"{directory}\\test4.har";
+            string jsonOutput = $"{directory}\\test5.harx";
+            string binaryOutput = $"{directory}\\test5.har";
 
             HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
