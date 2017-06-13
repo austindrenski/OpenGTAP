@@ -143,7 +143,10 @@ namespace HeaderArrayConverter.IO
                 }
                 case "2R":
                 {
-                    yield return Write2RArrayValues(array.As<float>());
+                    foreach (byte[] values in Write2RArrayValues(array.As<float>()))
+                    {
+                        yield return values;
+                    }
                     break;
                 }
                 default:
@@ -462,33 +465,75 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static byte[] Write2RArrayValues([NotNull] IHeaderArray<float> array)
+        private static IEnumerable<byte[]> Write2RArrayValues([NotNull] IHeaderArray<float> array)
         {
-            using (MemoryStream stream = new MemoryStream())
+            const int viewHarLimit = 1_999_991;
+
+            int counter = 0;
+
+            foreach (float[] values in Chunk(array.GetLogicalValuesEnumerable(), viewHarLimit))
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                yield return ProcessNext(values);
+                counter += values.Length;
+            }
+
+            byte[] ProcessNext(IReadOnlyCollection<float> source)
+            {
+                using (MemoryStream stream = new MemoryStream())
                 {
-                    writer.Write(Padding);
-
-                    writer.Write(1);
-                    foreach (int item in array.Dimensions)
+                    using (BinaryWriter writer = new BinaryWriter(stream))
                     {
-                        writer.Write(item);
-                    }
+                        writer.Write(Padding);
 
-                    writer.Write(1);
-                    foreach (int item in array.Dimensions)
-                    {
-                        writer.Write(item);
-                    }
+                        writer.Write(1);
+                        foreach (int item in array.Dimensions)
+                        {
+                            writer.Write(item);
+                        }
 
-                    writer.Write(1);
-                    foreach (float item in array.GetLogicalValuesEnumerable())
-                    {
-                        writer.Write(item);
+                        writer.Write(1 + counter);
+                        writer.Write(counter + source.Count);
+                        writer.Write(1);
+
+                        writer.Write(1);
+                        foreach (float item in source)
+                        {
+                            writer.Write(item);
+                        }
                     }
+                    byte[] values = stream.ToArray();
+
+                    int vectorsRemaining = BitConverter.ToInt32(values, 4);
+                    int totalElements = BitConverter.ToInt32(values, 8);
+                    int somethingElse0 = BitConverter.ToInt32(values, 12);
+
+                    int startIndex = BitConverter.ToInt32(values, 16);
+                    int endIndex = BitConverter.ToInt32(values, 20);
+
+                    int somethingElse1 = BitConverter.ToInt32(values, 24);
+                    int somethingElse2 = BitConverter.ToInt32(values, 28);
+
+                    return values;
                 }
-                return stream.ToArray();
+            }
+
+            IEnumerable<T[]> Chunk<T>(IEnumerable<T> source, int limit)
+            {
+                source = source as T[] ?? source.ToArray();
+
+                int count = (source.Count() / limit) | 1;
+                
+                for (int i = 0; i < count; i++)
+                {
+                    T[] temp = source.Skip(i * limit).Take(limit).ToArray();
+
+                    if (!temp.Any())
+                    {
+                        yield break;
+                    }
+
+                    yield return temp;
+                }
             }
         }
     }
