@@ -471,7 +471,7 @@ namespace HeaderArrayConverter.IO
 
             int counter = 0;
 
-            foreach (float[] values in Chunk(array.GetLogicalValuesEnumerable(), viewHarLimit))
+            foreach (float[] values in Partition(array.GetLogicalValuesEnumerable(), viewHarLimit))
             {
                 yield return ProcessNext(values);
                 counter += values.Length;
@@ -503,29 +503,31 @@ namespace HeaderArrayConverter.IO
                     }
                     byte[] values = stream.ToArray();
 
-                    int vectorsRemaining = BitConverter.ToInt32(values, 4);
-                    int totalElements = BitConverter.ToInt32(values, 8);
-                    int somethingElse0 = BitConverter.ToInt32(values, 12);
+                    //int vectorsRemaining = BitConverter.ToInt32(values, 4);
+                    //int totalElements = BitConverter.ToInt32(values, 8);
+                    //int somethingElse0 = BitConverter.ToInt32(values, 12);
 
-                    int startIndex = BitConverter.ToInt32(values, 16);
-                    int endIndex = BitConverter.ToInt32(values, 20);
+                    //int startIndex = BitConverter.ToInt32(values, 16);
+                    //int endIndex = BitConverter.ToInt32(values, 20);
 
-                    int somethingElse1 = BitConverter.ToInt32(values, 24);
-                    int somethingElse2 = BitConverter.ToInt32(values, 28);
+                    //int somethingElse1 = BitConverter.ToInt32(values, 24);
+                    //int somethingElse2 = BitConverter.ToInt32(values, 28);
 
                     return values;
                 }
             }
 
-            IEnumerable<T[]> Chunk<T>(IEnumerable<T> source, int limit)
+            IEnumerable<T[]> Partition<T>(IEnumerable<T> source, int partitions)
             {
                 source = source as T[] ?? source.ToArray();
 
-                int count = (source.Count() / limit) | 1;
-                
-                for (int i = 0; i < count; i++)
+                int count = (source.Count() / partitions) | 1;
+
+                int vectors = partitions | 1;
+
+                for (int i = 0; i < vectors; i++)
                 {
-                    T[] temp = source.Skip(i * limit).Take(limit).ToArray();
+                    T[] temp = source.Skip(i * count).Take(count).ToArray();
 
                     if (!temp.Any())
                     {

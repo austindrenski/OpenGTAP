@@ -55,6 +55,11 @@ namespace HeaderArrayConverter
         public abstract int Total { get; }
 
         /// <summary>
+        /// Gets additional serialization data needed to persist this <see cref="IHeaderArray"/> to binary.
+        /// </summary>
+        public abstract int SerializedVectors { get; }
+
+        /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
         /// <param name="keys">
@@ -269,7 +274,8 @@ namespace HeaderArrayConverter
                         jObject["Type"].Value<string>(),
                         jObject["Dimensions"].Values<int>(),
                         ParseEntries(jObject["Entries"]),
-                        ParseSets(jObject["Sets"]));
+                        ParseSets(jObject["Sets"]),
+                        jObject["SerializedVectors"].Value<int>());
 
                 IEnumerable<KeyValuePair<KeySequence<string>, T>> ParseEntries(JToken entries)
                 {

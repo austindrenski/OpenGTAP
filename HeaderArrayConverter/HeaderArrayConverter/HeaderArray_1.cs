@@ -62,6 +62,12 @@ namespace HeaderArrayConverter
         public override int Total => _entries.Total;
 
         /// <summary>
+        /// Gets the number of vectors used to store the array data in a binary HAR file.
+        /// </summary>
+        [JsonProperty]
+        public override int SerializedVectors { get; }
+
+        /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
         /// <param name="keys">
@@ -137,7 +143,10 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
+        /// <param name="serializedVectors">
+        /// The number of vectors used to store the array data in a binary HAR file.
+        /// </param>
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets, int serializedVectors)
         {
             if (entries is null)
             {
@@ -160,12 +169,14 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(sets));
             }
 
+
             Header = header;
             Description = description?.Trim('\u0000', '\u0002', '\u0020') ?? string.Empty;
             Type = type;
             Dimensions = dimensions.ToImmutableArray();
             Sets = sets;
             _entries = entries.ToImmutableSequenceDictionary(sets);
+            SerializedVectors = serializedVectors;
         }
 
         /// <summary>

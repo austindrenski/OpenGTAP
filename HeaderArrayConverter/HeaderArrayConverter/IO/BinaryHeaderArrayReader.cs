@@ -134,11 +134,11 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<string>(header, description, type, dimensions, items, sets);
+                    return new HeaderArray<string>(header, description, type, dimensions, items, sets, 1);
                 }
                 case "RE":
                 {
-                    (float[] floats, KeyValuePair<string, IImmutableList<string>>[] sets) = GetReArray(reader, sparse);
+                    (float[] floats, IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets) = GetReArray(reader, sparse);
 
                     IEnumerable<KeySequence<string>> expandedSets =
                         sets.AsExpandedSet()
@@ -147,7 +147,7 @@ namespace HeaderArrayConverter.IO
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         expandedSets.Zip(floats, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, sets.ToImmutableArray());
+                    return new HeaderArray<float>(header, description, type, dimensions, items, sets, 1);
                 }
                 case "RL":
                 {
@@ -168,11 +168,11 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, sets);
+                    return new HeaderArray<float>(header, description, type, dimensions, items, sets, 1);
                 }
                 case "2I":
                 {
-                    int[] ints = Get2IArray(reader);
+                    (int serializedVectors, int[] ints) = Get2IArray(reader);
 
                     IEnumerable<KeyValuePair<KeySequence<string>, int>> items = 
                         ints.Select(
@@ -189,11 +189,11 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<int>(header, description, type, dimensions, items, sets);
+                    return new HeaderArray<int>(header, description, type, dimensions, items, sets, serializedVectors);
                 }
                 case "2R":
                 {
-                    float[] floats = Get2RArray(reader);
+                    (int serializedVectors, float[] floats) = Get2RArray(reader);
 
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         floats.Select(
@@ -210,7 +210,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, sets);
+                    return new HeaderArray<float>(header, description, type, dimensions, items, sets, serializedVectors);
                 }
                 default:
                 {
@@ -288,7 +288,7 @@ namespace HeaderArrayConverter.IO
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (float[] Data, KeyValuePair<string, IImmutableList<string>>[] Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (float[] Data, IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -363,7 +363,7 @@ namespace HeaderArrayConverter.IO
                 };
             }
 
-            return (data, sets);
+            return (data, sets.ToImmutableArray());
         }
 
         [NotNull]
@@ -535,8 +535,7 @@ namespace HeaderArrayConverter.IO
             return strings;
         }
 
-        [NotNull]
-        private static int[] Get2IArray(BinaryReader reader)
+        private static (int SerializedVectors, int[] Values) Get2IArray(BinaryReader reader)
         {
             byte[] data = InitializeArray(reader);
 
@@ -553,8 +552,10 @@ namespace HeaderArrayConverter.IO
             int[] results = new int[totalCount];
             bool test = true;
             int counter = 0;
+            int serializedVectors = 0;
             while (test)
             {
+                serializedVectors++;
                 if (counter > 0)
                 {
                     data = InitializeArray(reader);
@@ -572,11 +573,10 @@ namespace HeaderArrayConverter.IO
                 test = BitConverter.ToInt32(data, 0) != 1;
             }
 
-            return results;
+            return (serializedVectors, results);
         }
 
-        [NotNull]
-        private static float[] Get2RArray(BinaryReader reader)
+        private static (int SerializedVectors, float[] Floats) Get2RArray(BinaryReader reader)
         {
             byte[] data = InitializeArray(reader);
 
@@ -593,8 +593,10 @@ namespace HeaderArrayConverter.IO
             float[] results = new float[totalCount];
             bool test = true;
             int counter = 0;
+            int serializedVectors = 0;
             while (test)
             {
+                serializedVectors++;
                 if (counter > 0)
                 {
                     data = InitializeArray(reader);
@@ -612,7 +614,7 @@ namespace HeaderArrayConverter.IO
                 test = BitConverter.ToInt32(data, 0) != 1;
             }
 
-            return results;
+            return (serializedVectors, results);
         }
     }
 }
