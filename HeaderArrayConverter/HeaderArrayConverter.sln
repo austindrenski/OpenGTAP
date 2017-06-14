@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConverter", "Hea
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConsole", "HeaderArrayConsole\HeaderArrayConsole.csproj", "{09E3EC44-CEBA-4CC3-9E83-AA9C5B84387A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewHARX", "ViewHARX\ViewHARX.csproj", "{37D5EB9B-37D3-4B98-A24A-DC4EA2AA5F03}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{09E3EC44-CEBA-4CC3-9E83-AA9C5B84387A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09E3EC44-CEBA-4CC3-9E83-AA9C5B84387A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09E3EC44-CEBA-4CC3-9E83-AA9C5B84387A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{37D5EB9B-37D3-4B98-A24A-DC4EA2AA5F03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{37D5EB9B-37D3-4B98-A24A-DC4EA2AA5F03}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{37D5EB9B-37D3-4B98-A24A-DC4EA2AA5F03}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{37D5EB9B-37D3-4B98-A24A-DC4EA2AA5F03}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
