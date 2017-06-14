@@ -172,7 +172,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case "2I":
                 {
-                    (int serializedVectors, int[] ints) = Get2IArray(reader);
+                    (int serializedVectors, int[] ints) = Get2_Array(reader, BitConverter.ToInt32);
 
                     IEnumerable<KeyValuePair<KeySequence<string>, int>> items = 
                         ints.Select(
@@ -193,7 +193,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case "2R":
                 {
-                    (int serializedVectors, float[] floats) = Get2RArray(reader);
+                    (int serializedVectors, float[] floats) = Get2_Array(reader, BitConverter.ToSingle);
 
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         floats.Select(
@@ -535,7 +535,22 @@ namespace HeaderArrayConverter.IO
             return strings;
         }
 
-        private static (int SerializedVectors, int[] Values) Get2IArray(BinaryReader reader)
+        /// <summary>
+        /// Returns a <typeparamref name="TValue"/> array and the number of binary vectors from which the array was read.
+        /// </summary>
+        /// <typeparam name="TValue">
+        /// The type of data in the array.
+        /// </typeparam>
+        /// <param name="reader">
+        /// A binary reader positioned immediately before the start of the data array.
+        /// </param>
+        /// <param name="converter">
+        /// A function delegate that returns a <typeparamref name="TValue"/> from a <see cref="Byte"/> array based on an index.
+        /// </param>
+        /// <returns>
+        /// A tuple with a <typeparamref name="TValue"/> array and the number of binary vectors from which the array was read.
+        /// </returns>
+        private static (int SerializedVectors, TValue[] Values) Get2_Array<TValue>(BinaryReader reader, Func<byte[], int, TValue> converter)
         {
             byte[] data = InitializeArray(reader);
 
@@ -549,7 +564,7 @@ namespace HeaderArrayConverter.IO
 
             int vectorNumber = BitConverter.ToInt32(data, 24);
 
-            int[] results = new int[totalCount];
+            TValue[] results = new TValue[totalCount];
             bool test = true;
             int counter = 0;
             int serializedVectors = 0;
@@ -560,52 +575,11 @@ namespace HeaderArrayConverter.IO
                 {
                     data = InitializeArray(reader);
                 }
-                int[] ints = new int[(data.Length - 28) / 4];
-
-                for (int i = 0; i < ints.Length; i++)
-                {
-                    ints[i] = BitConverter.ToInt32(data, 28 + 4 * i);
-                }
-
-                Array.Copy(ints, 0, results, counter, ints.Length);
-                counter += ints.Length;
-
-                test = BitConverter.ToInt32(data, 0) != 1;
-            }
-
-            return (serializedVectors, results);
-        }
-
-        private static (int SerializedVectors, float[] Floats) Get2RArray(BinaryReader reader)
-        {
-            byte[] data = InitializeArray(reader);
-
-            int vectors = BitConverter.ToInt32(data, 0);
-            int totalCount = BitConverter.ToInt32(data, 4);
-            int maxPerVector = BitConverter.ToInt32(data, 8);
-
-            int vectors2 = BitConverter.ToInt32(data, 12);
-            int totalCount2 = BitConverter.ToInt32(data, 16);
-            int maxPerVector2 = BitConverter.ToInt32(data, 20);
-
-            int vectorNumber = BitConverter.ToInt32(data, 24);
-
-            float[] results = new float[totalCount];
-            bool test = true;
-            int counter = 0;
-            int serializedVectors = 0;
-            while (test)
-            {
-                serializedVectors++;
-                if (counter > 0)
-                {
-                    data = InitializeArray(reader);
-                }
-                float[] floats = new float[(data.Length - 28) / 4];
+                TValue[] floats = new TValue[(data.Length - 28) / 4];
 
                 for (int i = 0; i < floats.Length; i++)
                 {
-                    floats[i] = BitConverter.ToSingle(data, 28 + 4 * i);
+                    floats[i] = converter(data, 28 + 4 * i);
                 }
 
                 Array.Copy(floats, 0, results, counter, floats.Length);
