@@ -467,17 +467,15 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IEnumerable<byte[]> Write2RArrayValues([NotNull] IHeaderArray<float> array)
         {
-            const int viewHarLimit = 1_999_991;
-
             int counter = 0;
 
-            foreach (float[] values in Partition(array.GetLogicalValuesEnumerable(), viewHarLimit))
+            foreach ((int vectorIndex, float[] values) in Partition(array.GetLogicalValuesEnumerable(), array.SerializedVectors))
             {
-                yield return ProcessNext(values);
+                yield return ProcessNext(values, vectorIndex);
                 counter += values.Length;
             }
 
-            byte[] ProcessNext(IReadOnlyCollection<float> source)
+            byte[] ProcessNext(IReadOnlyCollection<float> source, int vectorIndex)
             {
                 using (MemoryStream stream = new MemoryStream())
                 {
@@ -485,7 +483,7 @@ namespace HeaderArrayConverter.IO
                     {
                         writer.Write(Padding);
 
-                        writer.Write(1);
+                        writer.Write(vectorIndex);
                         foreach (int item in array.Dimensions)
                         {
                             writer.Write(item);
@@ -517,13 +515,13 @@ namespace HeaderArrayConverter.IO
                 }
             }
 
-            IEnumerable<T[]> Partition<T>(IEnumerable<T> source, int partitions)
+            IEnumerable<(int VectorIndex, T[] Values)> Partition<T>(IEnumerable<T> source, int partitions)
             {
                 source = source as T[] ?? source.ToArray();
 
-                int count = (source.Count() / partitions) | 1;
+                int vectors = partitions > 0 ? partitions : 1;
 
-                int vectors = partitions | 1;
+                int count = source.Count() / vectors + 2;
 
                 for (int i = 0; i < vectors; i++)
                 {
@@ -534,7 +532,7 @@ namespace HeaderArrayConverter.IO
                         yield break;
                     }
 
-                    yield return temp;
+                    yield return (vectors - i, temp);
                 }
             }
         }
