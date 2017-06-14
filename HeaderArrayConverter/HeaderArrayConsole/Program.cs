@@ -16,14 +16,14 @@ namespace HeaderArrayConsole
             //string input = $"{directory}\\laborfd.sol";
             string input = $"{directory}\\reBAS11.sl4";
 
-            //string jsonOutput = $"{directory}\\test6.harx";
+            string jsonOutput = $"{directory}\\test6.harx";
             string binaryOutput = $"{directory}\\test6.har";
 
             HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
             //Console.WriteLine(arrays);
 
-            //HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
+            HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
 
             HeaderArrayFile.BinaryWriter.Write(binaryOutput, arrays);
 
