@@ -182,7 +182,7 @@ namespace HeaderArrayConverter.IO
 
             if (endogenous.Name == "p3cs")
             {
-                Console.WriteLine();
+                Console.WriteLine(endogenous);
             }
 
             return null;

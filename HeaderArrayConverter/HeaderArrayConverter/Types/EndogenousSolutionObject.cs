@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace HeaderArrayConverter.Types
 {
@@ -8,6 +7,7 @@ namespace HeaderArrayConverter.Types
     /// Represents the result values for a variable in a <see cref="SolutionFile"/> where the variable is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
     /// </summary>
     [PublicAPI]
+    [JsonObject]
     public class EndogenousSolutionObject : SolutionDataObject
     {
         /// <summary>
@@ -34,20 +34,11 @@ namespace HeaderArrayConverter.Types
         }
 
         /// <summary>
-        /// Returns a <see cref="EndogenousSolutionObject"/> sequence from a <see cref="SolutionDataObject"/> sequence.
+        /// Returns a JSON representation of the current object.
         /// </summary>
-        /// <param name="source">
-        /// The <see cref="SolutionDataObject"/> sequence from which valid entries are found.
-        /// </param>
-        /// <returns>
-        /// A <see cref="EndogenousSolutionObject"/> sequence.
-        /// </returns>
-        public static IEnumerable<EndogenousSolutionObject> Create(IEnumerable<SolutionDataObject> source)
+        public override string ToString()
         {
-            return
-                source.Where(x => x.VariableType == ModelVariableType.Condensed || x.VariableType == ModelVariableType.Backsolved)
-                      .OrderBy(x => x.VariableIndex)
-                      .Select((x, i) => new EndogenousSolutionObject(x, i));
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
     }
 }

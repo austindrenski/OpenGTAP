@@ -1,5 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace HeaderArrayConverter.Types
 {
@@ -10,6 +11,7 @@ namespace HeaderArrayConverter.Types
     /// Encapsulates values from the headers in a Gempack solution file (SL4) that include the full range of model variables.
     /// </remarks>
     [PublicAPI]
+    [JsonObject]
     public class SolutionDataObject
     {
         /// <summary>
@@ -132,5 +134,13 @@ namespace HeaderArrayConverter.Types
                    solutionDataObject.UnitType,
                    solutionDataObject.ChangeType,
                    solutionDataObject.VariableType) { }
+
+        /// <summary>
+        /// Returns a JSON representation of the current object.
+        /// </summary>
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this, Formatting.Indented);
+        }
     }
 }

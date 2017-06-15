@@ -159,27 +159,27 @@ namespace HeaderArrayConverter.IO
 
                     return new HeaderArray<float>(header, description, type, dimensions, items, sets, 1);
                 }
-                case "RL":
-                {
-                    float[] floats = GetRlArray(reader);
+                //case "RL":
+                //{
+                //    float[] floats = GetRlArray(reader);
 
-                    IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
-                        floats.Select(
-                            (x, i) =>
-                                new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
+                //    IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
+                //        floats.Select(
+                //            (x, i) =>
+                //                new KeyValuePair<KeySequence<string>, float>(i.ToString(), x));
 
-                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
-                        new KeyValuePair<string, IImmutableList<string>>[]
-                        {
-                            new KeyValuePair<string, IImmutableList<string>>(
-                                "INDEX",
-                                Enumerable.Range(0, floats.Length)
-                                          .Select(x => x.ToString())
-                                          .ToImmutableArray())
-                        }.ToImmutableArray();
+                //    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
+                //        new KeyValuePair<string, IImmutableList<string>>[]
+                //        {
+                //            new KeyValuePair<string, IImmutableList<string>>(
+                //                "INDEX",
+                //                Enumerable.Range(0, floats.Length)
+                //                          .Select(x => x.ToString())
+                //                          .ToImmutableArray())
+                //        }.ToImmutableArray();
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, sets, 1);
-                }
+                //    return new HeaderArray<float>(header, description, type, dimensions, items, sets, 1);
+                //}
                 case "2I":
                 {
                     (int serializedVectors, int[] ints) = Get2_Array(reader, BitConverter.ToInt32);

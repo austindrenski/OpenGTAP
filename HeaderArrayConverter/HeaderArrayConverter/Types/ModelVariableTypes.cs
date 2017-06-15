@@ -1,4 +1,6 @@
 ﻿using JetBrains.Annotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace HeaderArrayConverter.Types
 {
@@ -6,6 +8,7 @@ namespace HeaderArrayConverter.Types
     /// Represents how the variable is handled by the model.
     /// </summary>
     [PublicAPI]
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum ModelVariableType
     {
         /// <summary>
