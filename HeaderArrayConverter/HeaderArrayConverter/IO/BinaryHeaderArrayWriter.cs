@@ -132,10 +132,6 @@ namespace HeaderArrayConverter.IO
                     yield return WriteReArrayValues(array.As<float>());
                     break;
                 }
-                case "RL":
-                {
-                    break;
-                }
                 case "2I":
                 {
                     yield return Write2IArrayValues(array.As<int>());

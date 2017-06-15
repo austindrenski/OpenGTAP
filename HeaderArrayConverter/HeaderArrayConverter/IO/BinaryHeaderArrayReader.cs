@@ -28,7 +28,7 @@ namespace HeaderArrayConverter.IO
         /// <summary>
         /// The spacer sequence used in binary HAR files.
         /// </summary>
-        private static readonly uint Spacer = 0xFF_FF_FF_FF;
+        private static readonly int Spacer = unchecked((int) 0xFF_FF_FF_FF);
 
         /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file..
