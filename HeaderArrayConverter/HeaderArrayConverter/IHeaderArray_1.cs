@@ -38,6 +38,18 @@ namespace HeaderArrayConverter
         new IImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
 
         /// <summary>
+        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
+        /// </summary>
+        /// <param name="key">
+        /// The components that define the key whose value is returned.
+        /// </param>
+        /// <returns>
+        /// The value stored by the given key.
+        /// </returns>
+        [NotNull]
+        new TValue this[int key] { get; }
+
+        /// <summary>
         /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
         /// </summary>
         /// <returns>
@@ -56,8 +68,7 @@ namespace HeaderArrayConverter
         [Pure]
         [NotNull]
         new IEnumerable<TValue> GetLogicalValuesEnumerable();
-
-
+        
         /// <summary>
         /// Returns an enumerable that iterates through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
         /// </summary>

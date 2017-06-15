@@ -71,6 +71,17 @@ namespace HeaderArrayConverter
         IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => throw new NotSupportedException();
 
         /// <summary>
+        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
+        /// </summary>
+        /// <param name="key">
+        /// The components that define the key whose value is returned.
+        /// </param>
+        /// <returns>
+        /// The value stored by the given key.
+        /// </returns>
+        object IHeaderArray.this[int key] => throw new NotSupportedException();
+        
+        /// <summary>
         /// Gets an <see cref="IEnumerable"/> for the given keys.
         /// </summary>
         /// <param name="keys">
@@ -107,7 +118,17 @@ namespace HeaderArrayConverter
         /// </returns>
         public IHeaderArray<TResult> As<TResult>()
         {
-            return (IHeaderArray<TResult>)this;
+            switch (typeof(TResult).GetTypeInfo().IsEnum)
+            {
+                case true:
+                {
+                    return (IHeaderArray<TResult>) this.Cast<object>().Select(x => (TResult) Enum.Parse(typeof(TResult), $"{(int)x.ToString().Single()}"));
+                }
+                default:
+                {
+                    return (IHeaderArray<TResult>)this;
+                }
+            }
         }
 
         /// <summary>

@@ -87,8 +87,19 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        public IImmutableSequenceDictionary<string, TValue> this[params string[] keys] => _entries[keys];
-        
+        public IImmutableSequenceDictionary<string, TValue> this[params string[] keys] => this[(KeySequence<string>) keys];
+
+        /// <summary>
+        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
+        /// </summary>
+        /// <param name="key">
+        /// The components that define the key whose value is returned.
+        /// </param>
+        /// <returns>
+        /// The value stored by the given key.
+        /// </returns>
+        public TValue this[int key] => _entries.GetValueOrDefault(key.ToString());
+
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
@@ -98,7 +109,18 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => _entries[keys];
+        IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => this[(KeySequence<string>)keys];
+
+        /// <summary>
+        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
+        /// </summary>
+        /// <param name="key">
+        /// The components that define the key whose value is returned.
+        /// </param>
+        /// <returns>
+        /// The value stored by the given key.
+        /// </returns>
+        object IHeaderArray.this[int key] => this[key.ToString()];
 
         /// <summary>
         /// Gets an <see cref="IEnumerable{T}"/> for the given keys.
