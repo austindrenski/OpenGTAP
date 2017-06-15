@@ -15,10 +15,10 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter.IO
 {
     /// <summary>
-    /// Utilities for reading Header Array (HAR) files in binary format.
+    /// Implements a <see cref="HeaderArrayReader"/> for reading Header Array (HAR) files in binary format.
     /// </summary>
     [PublicAPI]
-    public class BinaryHeaderArrayReader : HeaderArrayReader
+    public sealed class BinaryHeaderArrayReader : HeaderArrayReader
     {
         /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file..

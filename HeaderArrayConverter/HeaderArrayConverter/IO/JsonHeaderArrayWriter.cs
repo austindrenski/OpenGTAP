@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter.IO
 {
     /// <summary>
-    /// Writes <see cref="IHeaderArray"/> collections to a zipped archive of JSON files.
+    /// Implements a <see cref="HeaderArrayWriter"/> for writing Header Array (HARX) files in zipped JSON format.
     /// </summary>
     [PublicAPI]
     public class JsonHeaderArrayWriter : HeaderArrayWriter

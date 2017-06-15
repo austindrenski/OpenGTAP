@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter.IO
 {
     /// <summary>
-    /// Writes Header Array (HAR) files in binary format.
+    /// Implements a <see cref="HeaderArrayWriter"/> for writing Header Array (HAR) files in binary format.
     /// </summary>
     [PublicAPI]
     public class BinaryHeaderArrayWriter : HeaderArrayWriter

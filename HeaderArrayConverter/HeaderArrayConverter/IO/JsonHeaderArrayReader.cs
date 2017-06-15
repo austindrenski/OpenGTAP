@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 namespace HeaderArrayConverter.IO
 {
     /// <summary>
-    /// Reads Header Array (HARX) files in JSON format.
+    /// Implements a <see cref="HeaderArrayReader"/> for reading Header Array (HARX) files in zipped JSON format.
     /// </summary>
     [PublicAPI]
     public class JsonHeaderArrayReader : HeaderArrayReader

@@ -79,7 +79,6 @@ namespace HeaderArrayConverter
             _arrays = arrays.ToImmutableSortedDictionary(x => x.Header, x => x);
         }
 
-
         /// <summary>
         /// Validates that the sets defined throughout the <see cref="HeaderArrayFile"/>. Validation information is logged to <paramref name="output"/>.
         /// </summary>

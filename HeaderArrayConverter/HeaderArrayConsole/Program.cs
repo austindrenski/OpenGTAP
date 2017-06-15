@@ -20,6 +20,9 @@ namespace HeaderArrayConsole
             string jsonOutput = $"{directory}\\test6.harx";
             string binaryOutput = $"{directory}\\test6.har";
 
+
+            HeaderArrayFile solution = SolutionFile.BinaryReader.Read(input);
+
             HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
             //Console.WriteLine(arrays);
