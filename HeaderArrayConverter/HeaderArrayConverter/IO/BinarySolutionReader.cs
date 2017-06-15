@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AD.IO;
 using HeaderArrayConverter.Types;
@@ -111,86 +112,75 @@ namespace HeaderArrayConverter.IO
             
             string[] names = arrayFile["VCNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            string[] variableDescriptions = arrayFile["VCL0"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            string[] descriptions = arrayFile["VCL0"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            ModelChangeType[] changeOrPercentChange = arrayFile["VCT0"].As<ModelChangeType>().GetLogicalValuesEnumerable().ToArray();
+            ModelChangeType[] changeTypes = arrayFile["VCT0"].As<ModelChangeType>().GetLogicalValuesEnumerable().ToArray();
 
-            ModelVariableType[] variableResultType = arrayFile["VCS0"].As<ModelVariableType>().GetLogicalValuesEnumerable().ToArray();
+            ModelVariableType[] variableTypes = arrayFile["VCS0"].As<ModelVariableType>().GetLogicalValuesEnumerable().ToArray();
 
-            string[] unitType = arrayFile["VCLE"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            string[] unitTypes = arrayFile["VCLE"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            int[] numberOfDefiningSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            int[] numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
             
             SolutionDataObject[] solutionObjects = new SolutionDataObject[names.Length];
             for (int i = 0; i < names.Length; i++)
             {
-                SolutionDataObject.Builder builder =
-                    new SolutionDataObject.Builder
-                    {
-                        Name = names[i],
-                        Description = variableDescriptions[i],
-                        VariableIndex = i,
-                        ChangeType = changeOrPercentChange[i],
-                        VariableType = variableResultType[i],
-                        UnitType = unitType[i],
-                        NumberOfSets = numberOfDefiningSets[i]
-                    };
-                
-                solutionObjects[i] = builder.Build();
+                solutionObjects[i] =
+                    new SolutionDataObject(
+                        i,
+                        numberOfSets[i],
+                        names[i],
+                        descriptions[i],
+                        unitTypes[i],
+                        changeTypes[i],
+                        variableTypes[i]);
             }
             
-            foreach (CondensedOrBacksolvedSolutionDataObject item in CondensedOrBacksolvedSolutionDataObject.Create(solutionObjects))
+            foreach ((SolutionDataObject solution, int index) in solutionObjects.Where(x => x.IsEndogenous).Select((x, i) => (x, i)))
             {
-                yield return BuildNextArray(arrayFile, item);
+                yield return BuildNextArray(arrayFile, solution, index);
             }
         }
 
-        private async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, CondensedOrBacksolvedSolutionDataObject condensedOrBacksolvedObject)
+        private async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionDataObject endogenous, int index)
         {
             // VARS - names of variables(condensed+backsolved)
-            string name = arrayFile["VARS"].As<string>()[condensedOrBacksolvedObject.Index];
+            string name = arrayFile["VARS"].As<string>()[index];
 
             // VCLB - VCLB - labelling information for variables(condensed + backsolved)
-            string description = arrayFile["VCLB"].As<string>()[condensedOrBacksolvedObject.Index];
+            string description = arrayFile["VCLB"].As<string>()[index];
 
             // VCTP - BVCTP(numbvc) - p =% -change, c = change[condensed + backsolved var only]
-            ModelChangeType changeType = arrayFile["VCTP"].As<ModelChangeType>()[condensedOrBacksolvedObject.Index];
-
-            // VCLE - Info about levels value of variables lv = levels var, ol = ORIG_LEV
-            string unitType = arrayFile["VCST"].As<string>()[condensedOrBacksolvedObject.Index];
+            ModelChangeType changeType = arrayFile["VCTP"].As<ModelChangeType>()[index];
 
             // VCNA - VCNIND - number of arguments for variables (condensed+backsolved)
-            int numberOfSets = arrayFile["VCNA"].As<int>()[condensedOrBacksolvedObject.Index];
+            int numberOfSets = arrayFile["VCNA"].As<int>()[index];
+
+            if (name != endogenous.Name)
+            {
+                throw DataValidationException.Create(endogenous, x => x.Name, name);
+            }
+            if (description != endogenous.Description)
+            {
+                throw DataValidationException.Create(endogenous, x => x.Description, description);
+            }
+            if (changeType != endogenous.ChangeType)
+            {
+                throw DataValidationException.Create(endogenous, x => x.ChangeType, changeType);
+            }
+            if (numberOfSets != endogenous.NumberOfSets)
+            {
+                throw DataValidationException.Create(endogenous, x => x.NumberOfSets, numberOfSets);
+            }
+
+            // VCLE - Info about levels value of variables lv = levels var, ol = ORIG_LEV
+            string levelType = arrayFile["VCST"].As<string>()[index];
 
             // VNCP - number of components of variables at header VARS
-            int numberOfValues = arrayFile["VNCP"].As<int>()[condensedOrBacksolvedObject.Index];
+            int numberOfValues = arrayFile["VNCP"].As<int>()[index];
 
-            if (name != condensedOrBacksolvedObject.Name)
-            {
-                throw new InvalidOperationException();
-            }
-            if (description != condensedOrBacksolvedObject.Description)
-            {
-                throw new InvalidOperationException();
-            }
-            if (changeType != condensedOrBacksolvedObject.ChangeType)
-            {
-                throw new InvalidOperationException();
-            }
-            if (unitType != condensedOrBacksolvedObject.UnitType)
-            {
-                throw new InvalidOperationException();
-            }
-            if (unitType != condensedOrBacksolvedObject.UnitType)
-            {
-                throw new InvalidOperationException();
-            }
-            if (numberOfSets != condensedOrBacksolvedObject.NumberOfSets)
-            {
-                throw new InvalidOperationException();
-            }
 
-            if (condensedOrBacksolvedObject.Name == "p3cs")
+            if (endogenous.Name == "p3cs")
             {
                 Console.WriteLine();
             }

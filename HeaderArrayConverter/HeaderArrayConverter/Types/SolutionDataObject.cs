@@ -69,6 +69,11 @@ namespace HeaderArrayConverter.Types
         public int NumberOfSets { get; }
 
         /// <summary>
+        /// True if the <see cref="VariableType"/> is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
+        /// </summary>
+        public bool IsEndogenous => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
+
+        /// <summary>
         /// Constructs a <see cref="SolutionDataObject"/> containing the base properties of a variable in a <see cref="SolutionFile"/>.
         /// </summary>
         /// <param name="variableIndex">
@@ -127,79 +132,5 @@ namespace HeaderArrayConverter.Types
                    solutionDataObject.UnitType,
                    solutionDataObject.ChangeType,
                    solutionDataObject.VariableType) { }
-
-        /// <summary>
-        /// Marshals values to build an immutable <see cref="SolutionDataObject"/>.
-        /// </summary>
-        [PublicAPI]
-        public class Builder
-        {
-            /// <summary>
-            /// Gets the name of the variable.
-            /// </summary>
-            /// <remarks>
-            /// This value is derived from the index position on header 'VCNM' and defines the value in the variable 'VCNAM' at index 'NUMVC'.
-            /// </remarks>
-            public string Name { get; set; }
-
-            /// <summary>
-            /// Gets the variable description.
-            /// </summary>
-            /// <remarks>
-            /// This value is derived from the index position on header 'VCL0' and defines the value on header 'VCLB' at index 'NUMVC'.
-            /// </remarks>
-            public string Description { get; set; }
-
-            /// <summary>
-            /// Gets the index number of this variable among all variables. Equivalent to the Gempack parameter 'NUMVC'.
-            /// </summary>
-            /// <remarks>
-            /// This value is derived from the index order on header 'VCNM' and defines the Gempack parameter 'NUMVC'.
-            /// </remarks>
-            public int VariableIndex { get; set; }
-
-            /// <summary>
-            /// Gets the <see cref="ModelChangeType"/> for this object.
-            /// </summary>
-            /// <remarks>
-            /// This value is derived from the index order on header 'VCT0' and defines the value on header 'VCTP' at index 'NUMVC'.
-            /// </remarks>
-            public ModelChangeType ChangeType { get; set; }
-
-            /// <summary>
-            /// Gets the <see cref="ModelVariableType"/> for this object.
-            /// </summary>
-            /// <remarks>
-            /// This value is derived from the index order on header 'VCS0' and defines the value in variable 'VCSTAT' at index 'NUMVC'.
-            /// </remarks>
-            public ModelVariableType VariableType { get; set; }
-
-            /// <summary>
-            /// Gets the unit type of the variable (e.g. ln, lv = levels var, ol = ORIG_LEV).
-            /// </summary>
-            /// <remarks>
-            /// This value is derived from the index order on header 'VCLE'.
-            /// </remarks>
-            public string UnitType { get; set; }
-
-            /// <summary>
-            /// Gets the number of sets defined on this array.
-            /// </summary>
-            /// <remarks>
-            /// This value is derived from the index order on header 'VCNI' and defines the value in variable 'VCNIND' at index 'NUMVC'.
-            /// </remarks>
-            public int NumberOfSets { get; set; }
-
-            /// <summary>
-            /// Constructs a <see cref="SolutionDataObject"/> from the <see cref="Builder"/>. 
-            /// </summary>
-            /// <returns>
-            /// A <see cref="SolutionDataObject"/> containing the properties set by this <see cref="Builder"/>.
-            /// </returns>
-            public SolutionDataObject Build()
-            {
-                return new SolutionDataObject(VariableIndex, NumberOfSets, Name, Description, UnitType, ChangeType, VariableType);
-            }
-        }
     }
 }

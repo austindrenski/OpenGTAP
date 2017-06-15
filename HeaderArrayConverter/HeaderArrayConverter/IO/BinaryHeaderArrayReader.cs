@@ -21,6 +21,16 @@ namespace HeaderArrayConverter.IO
     public sealed class BinaryHeaderArrayReader : HeaderArrayReader
     {
         /// <summary>
+        /// The padding sequence used in binary HAR files.
+        /// </summary>
+        private static readonly int Padding = 0x20_20_20_20;
+
+        /// <summary>
+        /// The spacer sequence used in binary HAR files.
+        /// </summary>
+        private static readonly uint Spacer = 0xFF_FF_FF_FF;
+
+        /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
         /// <param name="file">
@@ -214,7 +224,7 @@ namespace HeaderArrayConverter.IO
                 }
                 default:
                 {
-                    throw new InvalidDataException($"Unknown array type encountered: {type}");
+                    throw new DataValidationException("Type", "1C, RE, RL, 2I, 2R", type);
                 }
             }
         }
@@ -237,16 +247,20 @@ namespace HeaderArrayConverter.IO
             // Read array
             byte[] data = reader.ReadBytes(length);
 
+            int closingLength = reader.ReadInt32();
+
             // Verify array length
-            if (reader.ReadInt32() != length)
+            if (length != closingLength)
             {
-                throw new InvalidDataException("Initiating and terminating lengths do not match.");
+                throw new DataValidationException("Binary length check", length, closingLength);
             }
 
+            int padding = BitConverter.ToInt32(data, 0);
+
             // Verify the padding
-            if (BitConverter.ToInt32(data, 0) != 0x20_20_20_20)
+            if (Padding != padding)
             {
-                throw new InvalidDataException("Failed to find expected padding of '0x20_20_20_20'");
+                throw new DataValidationException("Binary padding check", Padding, padding);
             }
 
             // Skip padding and return
@@ -261,10 +275,12 @@ namespace HeaderArrayConverter.IO
             // Read header
             string header = Encoding.ASCII.GetString(reader.ReadBytes(length));
 
+            int closingLength = reader.ReadInt32();
+
             // Verify the length of the header
-            if (length != reader.ReadInt32())
+            if (length != closingLength)
             {
-                throw new InvalidDataException("Initiating and terminating lengths do not match.");
+                throw new DataValidationException("Binary length check", length, closingLength);
             }
 
             byte[] descriptionBuffer = InitializeArray(reader);
@@ -296,11 +312,13 @@ namespace HeaderArrayConverter.IO
             // number of labels?
             int a = BitConverter.ToInt32(dimensions, 0);
 
-            if (BitConverter.ToInt32(dimensions, 4) != -1)
+            int possibleSpacer0 = BitConverter.ToInt32(dimensions, 4);
+
+            if (Spacer != possibleSpacer0)
             {
                 if (a != 0 && BitConverter.ToInt32(dimensions, 4) != 1)
                 {
-                    throw new InvalidDataException("Expected 0xFF_FF_FF_FF.");
+                    throw new DataValidationException("Binary spacer check", Spacer, possibleSpacer0);
                 }
             }
 
@@ -310,11 +328,13 @@ namespace HeaderArrayConverter.IO
             // Read coefficient
             string coefficient = Encoding.ASCII.GetString(dimensions, 12, 12).Trim();
 
-            if (BitConverter.ToInt32(dimensions, 24) != -1)
+            int possibleSpacer1 = BitConverter.ToInt32(dimensions, 24);
+
+            if (Spacer != possibleSpacer1)
             {
                 if (a != 0 && BitConverter.ToInt32(dimensions, 4) != 1)
                 {
-                    throw new InvalidDataException("Expected 0xFF_FF_FF_FF.");
+                    throw new DataValidationException("Binary spacer check", Spacer, possibleSpacer1);
                 }
             }
 

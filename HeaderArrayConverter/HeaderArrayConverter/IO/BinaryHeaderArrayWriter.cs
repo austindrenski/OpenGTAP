@@ -17,12 +17,12 @@ namespace HeaderArrayConverter.IO
         /// <summary>
         /// The padding sequence used in binary HAR files.
         /// </summary>
-        private const int Padding = 0x20_20_20_20;
+        private static readonly int Padding = 0x20_20_20_20;
 
         /// <summary>
         /// The spacer sequence used in binary HAR files.
         /// </summary>
-        private const uint Spacer = 0xFF_FF_FF_FF;
+        private static readonly uint Spacer = 0xFF_FF_FF_FF;
 
         /// <summary>
         /// Synchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.

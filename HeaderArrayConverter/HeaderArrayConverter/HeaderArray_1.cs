@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -217,6 +218,32 @@ namespace HeaderArrayConverter
         public override string Serialize(bool indent)
         {
             return JsonConvert.SerializeObject(this, indent ? Formatting.Indented : Formatting.None);
+        }
+
+        /// <summary>
+        /// Casts the <see cref="IHeaderArray"/> as an <see cref="IHeaderArray{TResult}"/>.
+        /// </summary>
+        /// <typeparam name="TResult">
+        /// The type of the array.
+        /// </typeparam>
+        /// <returns>
+        /// An <see cref="IHeaderArray{TResult}"/>.
+        /// </returns>
+        public override IHeaderArray<TResult> As<TResult>()
+        {
+            if (!typeof(TResult).GetTypeInfo().IsEnum)
+            {
+                return base.As<TResult>();
+            }
+
+            IEnumerable<KeyValuePair<KeySequence<string>, TResult>> entries =
+                _entries.Select(
+                    x =>
+                        new KeyValuePair<KeySequence<string>, TResult>(
+                            x.Key,
+                            (TResult) Enum.Parse(typeof(TResult), $"{Convert.ToInt32(Convert.ToChar(x.Value))}")));
+
+            return new HeaderArray<TResult>(Header, Description, Type, Dimensions, entries, Sets, SerializedVectors);
         }
 
         /// <summary>

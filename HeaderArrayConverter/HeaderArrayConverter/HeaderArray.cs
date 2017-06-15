@@ -116,19 +116,9 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An <see cref="IHeaderArray{TResult}"/>.
         /// </returns>
-        public IHeaderArray<TResult> As<TResult>()
+        public virtual IHeaderArray<TResult> As<TResult>()
         {
-            switch (typeof(TResult).GetTypeInfo().IsEnum)
-            {
-                case true:
-                {
-                    return (IHeaderArray<TResult>) this.Cast<object>().Select(x => (TResult) Enum.Parse(typeof(TResult), $"{(int)x.ToString().Single()}"));
-                }
-                default:
-                {
-                    return (IHeaderArray<TResult>)this;
-                }
-            }
+            return (IHeaderArray<TResult>)this;
         }
 
         /// <summary>
