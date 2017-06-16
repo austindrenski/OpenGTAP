@@ -108,7 +108,16 @@ namespace HeaderArrayConverter.IO
         private IEnumerable<Task<IHeaderArray>> BuildHeaderArraysAsync(FilePath file)
         {
             HeaderArrayFile arrayFile = BinaryReader.Read(file);
-            
+
+            IEnumerable<SolutionArray> solutionArrays = BuildSolutionArrays(arrayFile);
+
+            return
+                solutionArrays.Where(x => x.IsEndogenous)
+                              .Select((x, i) => BuildNextArray(arrayFile, x, i));
+        }
+
+        private IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
+        {
             string[] names = arrayFile["VCNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
             string[] descriptions = arrayFile["VCL0"].As<string>().GetLogicalValuesEnumerable().ToArray();
@@ -120,7 +129,7 @@ namespace HeaderArrayConverter.IO
             string[] unitTypes = arrayFile["VCLE"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
             int[] numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            
+
             SolutionArray[] solutionArrays = new SolutionArray[names.Length];
             for (int i = 0; i < names.Length; i++)
             {
@@ -135,9 +144,7 @@ namespace HeaderArrayConverter.IO
                         variableTypes[i]);
             }
 
-            return
-                solutionArrays.Where(x => x.IsEndogenous)
-                              .Select((x, i) => BuildNextArray(arrayFile, x, i));
+            return solutionArrays;
         }
 
         private async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
