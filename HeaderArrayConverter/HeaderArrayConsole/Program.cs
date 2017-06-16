@@ -31,10 +31,10 @@ namespace HeaderArrayConsole
 
             Console.Out.WriteLineAsync(arrays.ToString());
 
-            Task writeJ = HeaderArrayFile.JsonWriter.WriteAsync(jsonOutput, arrays);
-
             Task writeB = HeaderArrayFile.BinaryWriter.WriteAsync(binaryOutput, arrays);
 
+            Task writeJ = HeaderArrayFile.JsonWriter.WriteAsync(jsonOutput, arrays);
+            
             //Console.WriteLine(HeaderArrayFile.JsonReader.Read(jsonOutput));
 
             //arrays.ValidateSets(Console.Out);
