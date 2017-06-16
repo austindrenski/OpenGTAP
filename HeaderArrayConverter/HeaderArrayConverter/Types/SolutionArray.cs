@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -72,6 +73,11 @@ namespace HeaderArrayConverter.Types
         public int NumberOfSets { get; }
 
         /// <summary>
+        /// The defining sets for this endogenous array.
+        /// </summary>
+        public IImmutableList<SetInformation> Sets { get; }
+
+        /// <summary>
         /// True if the <see cref="VariableType"/> is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
         /// </summary>
         public bool IsEndogenous => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
@@ -100,7 +106,8 @@ namespace HeaderArrayConverter.Types
         /// <param name="variableType">
         /// The <see cref="ModelVariableType"/> for this object. [VCS0, VCSTAT(NUMVC)].
         /// </param>
-        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType)
+        /// <param name="sets"></param>
+        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType, IImmutableList<SetInformation> sets)
         {
             if (name is null)
             {
@@ -114,6 +121,10 @@ namespace HeaderArrayConverter.Types
             {
                 throw new ArgumentNullException(nameof(unitType));
             }
+            if (sets is null)
+            {
+                throw new ArgumentNullException(nameof(sets));
+            }
 
             Name = name;
             Description = description;
@@ -122,6 +133,7 @@ namespace HeaderArrayConverter.Types
             VariableType = variableType;
             UnitType = unitType;
             NumberOfSets = numberOfSets;
+            Sets = sets;
         }
 
         /// <summary>
@@ -134,7 +146,8 @@ namespace HeaderArrayConverter.Types
                    solutionDataObject.Description,
                    solutionDataObject.UnitType,
                    solutionDataObject.ChangeType,
-                   solutionDataObject.VariableType) { }
+                   solutionDataObject.VariableType,
+                   solutionDataObject.Sets) { }
 
         /// <summary>
         /// Returns a JSON representation of the current object.

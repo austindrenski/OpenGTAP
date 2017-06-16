@@ -111,18 +111,14 @@ namespace HeaderArrayConverter.IO
         {
             HeaderArrayFile arrayFile = BinaryReader.Read(file);
 
-            IImmutableList<SetInformation> setInformation = BuildAllSets(arrayFile);
-
-            IEnumerable<SolutionArray> solutionArrays = BuildSolutionArrays(arrayFile);
-
             IEnumerable<EndogenousArray> endogenousArrays =
-                solutionArrays.Where(x => x.IsEndogenous)
-                              .Select((x, i) => BuildNextArray(arrayFile, x, i).Result);
+                BuildSolutionArrays(arrayFile).Where(
+                                                  x => x.IsEndogenous)
+                                              .Select(
+                                                  (x, i) =>
+                                                      BuildNextArray(arrayFile, x, i).Result);
 
-            IEnumerable<(EndogenousArray Array, IImmutableList<SetInformation> Sets)> matched =
-                MatchVariableWithSets(arrayFile, setInformation, endogenousArrays);
-
-            foreach (var a in matched)
+            foreach (var a in endogenousArrays.Where(x => x.Name == "p3cs"))
             {
                 Console.WriteLine(JsonConvert.SerializeObject(a, Formatting.Indented));
             }
@@ -132,33 +128,72 @@ namespace HeaderArrayConverter.IO
 
         private IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
-            string[] names = arrayFile["VCNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IHeaderArray<ModelChangeType> changeTypes = arrayFile["VCT0"].As<ModelChangeType>();
 
-            string[] descriptions = arrayFile["VCL0"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IHeaderArray<ModelVariableType> variableTypes = arrayFile["VCS0"].As<ModelVariableType>();
 
-            ModelChangeType[] changeTypes = arrayFile["VCT0"].As<ModelChangeType>().GetLogicalValuesEnumerable().ToArray();
+            IImmutableDictionary<string, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
+            
+            return
+                arrayFile["VCNM"].As<string>()
+                                 .Select(
+                                     x =>
+                                         new SolutionArray(
+                                             int.Parse(x.Key.Single()),
+                                             arrayFile["VCNI"].As<int>()[x.Key].Single().Value,
+                                             arrayFile["VCNM"].As<string>()[x.Key].Single().Value,
+                                             arrayFile["VCL0"].As<string>()[x.Key].Single().Value,
+                                             arrayFile["VCLE"].As<string>()[x.Key].Single().Value,
+                                             changeTypes[x.Key].Single().Value,
+                                             variableTypes[x.Key].Single().Value,
+                                             sets[x.Key.Single()]));
+        }
 
-            ModelVariableType[] variableTypes = arrayFile["VCS0"].As<ModelVariableType>().GetLogicalValuesEnumerable().ToArray();
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arrayFile">
+        /// 
+        /// </param>
+        /// <remarks>
+        /// VNCP - Number of components of variables at header VARS
+        /// VCSP - VCSTNP(NUMVC) - pointers into VCSTN array for each variable
+        /// VCAR - VCSTN - arguments for variables(c + b)
+        /// VCNI - VCNIND(numvc) - how many arguments each variable has
+        /// VCSN - VCSTN(NVCSTN) - set numbers arguments range over var1, var2 etc
+        /// STNM - STNAM(NUMST) - names of the sets
+        /// SSZ  - SSZ(NUMST) - sizes of the sets
+        /// STEL - STEL array 
+        /// </remarks>
+        private static IImmutableDictionary<string, IImmutableList<SetInformation>> VariableIndexedCollectionsOfSets(HeaderArrayFile arrayFile)
+        {
+            IImmutableList<SetInformation> setInformation = BuildAllSets(arrayFile);
 
-            string[] unitTypes = arrayFile["VCLE"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            int[] pointerIntoVcstn = arrayFile["VCSP"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
-            int[] numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            int[] setsPerVariable = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
-            SolutionArray[] solutionArrays = new SolutionArray[names.Length];
-            for (int i = 0; i < names.Length; i++)
+            int[] setPositions = arrayFile["VCSN"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            IDictionary<string, IImmutableList<SetInformation>> sets = new Dictionary<string, IImmutableList<SetInformation>>();
+
+            for (int i = 0; i < pointerIntoVcstn.Length; i++)
             {
-                solutionArrays[i] =
-                    new SolutionArray(
-                        i,
-                        numberOfSets[i],
-                        names[i],
-                        descriptions[i],
-                        unitTypes[i],
-                        changeTypes[i],
-                        variableTypes[i]);
+                SetInformation[] arraySetInfo = new SetInformation[setsPerVariable[i]];
+
+                int pointer = pointerIntoVcstn[i] - 1;
+
+                for (int j = 0; j < arraySetInfo.Length; j++)
+                {
+                    int setPosition= setPositions[pointer + j] - 1;
+
+                    arraySetInfo[j] = setInformation[setPosition];
+                }
+
+                sets.Add(i.ToString(), arraySetInfo.ToImmutableArray());
             }
 
-            return solutionArrays;
+            return sets.ToImmutableDictionary();
         }
 
         /// <summary>
@@ -175,7 +210,7 @@ namespace HeaderArrayConverter.IO
         /// STLB(NUMST) - labelling information for the sets
         /// STTP(NUMST) - set types (n=nonintertemporal, i=intertemporal)
         /// SSZ(NUMST) - sizes of the sets
-        /// STEL array (set elements from index position of the name in 'STNM' to value at the index position in 'STEL') 
+        /// STEL array - set elements from index position of the name in 'STNM' to value at the index position in 'STEL'
         /// </remarks>
         private static IImmutableList<SetInformation> BuildAllSets(HeaderArrayFile arrayFile)
         {
@@ -188,18 +223,18 @@ namespace HeaderArrayConverter.IO
             int[] sizes = arrayFile["SSZ "].As<int>().GetLogicalValuesEnumerable().ToArray();
 
             string[] elements = arrayFile["STEL"].As<string>().GetLogicalValuesEnumerable().ToArray();
-            
+
             SetInformation[] setInformation = new SetInformation[names.Length];
 
             int counter = 0;
             for (int i = 0; i < names.Length; i++)
             {
-                setInformation[i] = 
+                setInformation[i] =
                     new SetInformation(
-                        names[i], 
-                        descriptions[i], 
-                        temporal[i], 
-                        sizes[i], 
+                        names[i],
+                        descriptions[i],
+                        temporal[i],
+                        sizes[i],
                         elements.Skip(counter).Take(sizes[i]).ToImmutableArray());
 
                 counter += sizes[i];
@@ -207,71 +242,6 @@ namespace HeaderArrayConverter.IO
 
             return setInformation.ToImmutableArray();
         }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="arrayFile">
-        /// 
-        /// </param>
-        /// <param name="setInformation">
-        /// 
-        /// </param>
-        /// <param name="arrays">
-        /// 
-        /// </param>
-        /// <remarks>
-        /// VNCP - Number of components of variables at header VARS => [321] == 824
-        /// 
-        /// VCSP - VCSTNP(NUMVC) - pointers into VCSTN array for each variable => [355] == 224
-        ///
-        /// VCAR - VCSTN - arguments for variables(c + b) => [223] == 2
-        ///
-        /// VCSN - VCSTN(NVCSTN) - set numbers arguments range over var1, var2 etc => [223] == 4, [224] == 21
-        ///
-        /// STNM - STNAM(NUMST) - names of the sets => [3] == COM, [20] == SOURCE
-        ///
-        /// SSZ - SSZ(NUMST) - sizes of the sets => [3] == 412, [20] == 2
-        ///
-        /// STEL - STEL array =>
-        ///    SSZ: [0] == 27, [1]==27, [2]==2 =>
-        /// STEL[27 + 27 + 2]==[56...467]==(OilSeedFarm, ..., WatIntl)
-        ///
-        /// (A) Using NUMBVC get the count of total values in variable by VNCP[NUMBVC]
-        /// (B) Using NUMVC get the pointer to VCSTN by VCSP[NUMVC]
-        /// (C) Using((B) - 1) and get the number of arguments by VCAR[((B) - 1)]
-        /// (D) Using(C) get((B) - 1) entries from VCSN[(C)...((C) + ((B) - 1))]
-        /// (E) Using the vector((D):-1) get the set names by STNM[((D: -1)]
-        /// (F) Using the vector((D):-1) get the set sizes by SSZ_[((D: -1)]
-        /// (G) Do all of the above for all sets, then take the global mapping info set. Then index into STEL[previous_sum...(previous_sum + (F) - 1)]
-        /// </remarks>
-        private static IEnumerable<(EndogenousArray Array, IImmutableList<SetInformation> Sets)> MatchVariableWithSets(HeaderArrayFile arrayFile, IImmutableList<SetInformation> setInformation, IEnumerable<EndogenousArray> arrays)
-        {
-            //int[] numberOfValues = arrayFile["VNCP"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            int[] pointerIntoVcstn = arrayFile["VCSP"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            //int[] numberOfArguments = arrayFile["VCAR"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            int[] setPositions = arrayFile["VCSN"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            foreach (EndogenousArray array in arrays)
-            {
-                SetInformation[] arraySetInfo = new SetInformation[array.NumberOfSets];
-
-                int pointer = pointerIntoVcstn[array.VariableIndex] - 1;
-
-                for (int i = 0; i < array.NumberOfSets; i++)
-                {
-                    int setPosition= setPositions[pointer + i];
-
-                    arraySetInfo[i] = setInformation[setPosition];
-                }
-                yield return (array, arraySetInfo.ToImmutableArray());
-            }
-        }
-
 
         private static async Task<EndogenousArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
         {
