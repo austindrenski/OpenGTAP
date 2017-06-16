@@ -22,7 +22,7 @@ namespace HeaderArrayConverter.IO
         /// <param name="actual">
         /// The value that was received.
         /// </param>
-        public DataValidationException(string name, object expected, object actual) : base($"Name: {name}; Expected '{expected}'; Actual: {actual}.") { }
+        public DataValidationException(string name, object expected, object actual) : base($"Property: {name}; Expected '{expected}'; Actual: {actual}.") { }
 
         /// <summary>
         /// Constructs a validation error for <paramref name="propertyAccess"/> in which the <paramref name="source"/> value does not align with the <paramref name="actual"/> value.

@@ -4,9 +4,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using AD.IO;
+using HeaderArrayConverter.Collections;
+using HeaderArrayConverter.Extensions;
 using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 
 namespace HeaderArrayConverter.IO
 {
@@ -110,20 +111,14 @@ namespace HeaderArrayConverter.IO
         private IEnumerable<Task<IHeaderArray>> BuildHeaderArraysAsync(FilePath file)
         {
             HeaderArrayFile arrayFile = BinaryReader.Read(file);
-
-            IEnumerable<EndogenousArray> endogenousArrays =
+            
+            return
                 BuildSolutionArrays(arrayFile).Where(
                                                   x => x.IsEndogenous)
+                                              .OrderBy(
+                                                  x => x.VariableIndex)
                                               .Select(
-                                                  (x, i) =>
-                                                      BuildNextArray(arrayFile, x, i).Result);
-
-            foreach (var a in endogenousArrays.Where(x => x.Name == "p3cs"))
-            {
-                Console.WriteLine(JsonConvert.SerializeObject(a, Formatting.Indented));
-            }
-
-            return null;
+                                                  (x, i) => BuildNextArray(arrayFile, x, i));
         }
 
         private IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
@@ -132,21 +127,21 @@ namespace HeaderArrayConverter.IO
 
             IHeaderArray<ModelVariableType> variableTypes = arrayFile["VCS0"].As<ModelVariableType>();
 
-            IImmutableDictionary<string, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
-            
+            IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
+
             return
                 arrayFile["VCNM"].As<string>()
                                  .Select(
                                      x =>
                                          new SolutionArray(
                                              int.Parse(x.Key.Single()),
-                                             arrayFile["VCNI"].As<int>()[x.Key].Single().Value,
-                                             arrayFile["VCNM"].As<string>()[x.Key].Single().Value,
-                                             arrayFile["VCL0"].As<string>()[x.Key].Single().Value,
-                                             arrayFile["VCLE"].As<string>()[x.Key].Single().Value,
-                                             changeTypes[x.Key].Single().Value,
-                                             variableTypes[x.Key].Single().Value,
-                                             sets[x.Key.Single()]));
+                                             arrayFile["VCNI"].As<int>()[x.Key].SingleOrDefault().Value,
+                                             arrayFile["VCNM"].As<string>()[x.Key].SingleOrDefault().Value,
+                                             arrayFile["VCL0"].As<string>()[x.Key].SingleOrDefault().Value,
+                                             arrayFile["VCLE"].As<string>()[x.Key].SingleOrDefault().Value,
+                                             changeTypes[x.Key].SingleOrDefault().Value,
+                                             variableTypes[x.Key].SingleOrDefault().Value,
+                                             sets[x.Key]));
         }
 
         /// <summary>
@@ -156,16 +151,11 @@ namespace HeaderArrayConverter.IO
         /// 
         /// </param>
         /// <remarks>
-        /// VNCP - Number of components of variables at header VARS
         /// VCSP - VCSTNP(NUMVC) - pointers into VCSTN array for each variable
-        /// VCAR - VCSTN - arguments for variables(c + b)
-        /// VCNI - VCNIND(numvc) - how many arguments each variable has
+        /// VCNI - VCNIND(NUMVC) - how many arguments each variable has
         /// VCSN - VCSTN(NVCSTN) - set numbers arguments range over var1, var2 etc
-        /// STNM - STNAM(NUMST) - names of the sets
-        /// SSZ  - SSZ(NUMST) - sizes of the sets
-        /// STEL - STEL array 
         /// </remarks>
-        private static IImmutableDictionary<string, IImmutableList<SetInformation>> VariableIndexedCollectionsOfSets(HeaderArrayFile arrayFile)
+        private static IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> VariableIndexedCollectionsOfSets(HeaderArrayFile arrayFile)
         {
             IImmutableList<SetInformation> setInformation = BuildAllSets(arrayFile);
 
@@ -175,7 +165,7 @@ namespace HeaderArrayConverter.IO
 
             int[] setPositions = arrayFile["VCSN"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
-            IDictionary<string, IImmutableList<SetInformation>> sets = new Dictionary<string, IImmutableList<SetInformation>>();
+            IDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = new Dictionary<KeySequence<string>, IImmutableList<SetInformation>>();
 
             for (int i = 0; i < pointerIntoVcstn.Length; i++)
             {
@@ -243,7 +233,7 @@ namespace HeaderArrayConverter.IO
             return setInformation.ToImmutableArray();
         }
 
-        private static async Task<EndogenousArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
+        private static async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray array, int index)
         {
             // VARS - names of variables(condensed+backsolved)
             string name = arrayFile["VARS"].As<string>()[index];
@@ -257,24 +247,44 @@ namespace HeaderArrayConverter.IO
             // VCNA - VCNIND - number of arguments for variables (condensed+backsolved)
             int numberOfSets = arrayFile["VCNA"].As<int>()[index];
 
-            if (name != endogenous.Name)
+            if (name != array.Name)
             {
-                throw DataValidationException.Create(endogenous, x => x.Name, name);
+                throw DataValidationException.Create(array, x => x.Name, name);
             }
-            if (description != endogenous.Description)
+            if (description != array.Description)
             {
-                throw DataValidationException.Create(endogenous, x => x.Description, description);
+                throw DataValidationException.Create(array, x => x.Description, description);
             }
-            if (changeType != endogenous.ChangeType)
+            if (changeType != array.ChangeType)
             {
-                throw DataValidationException.Create(endogenous, x => x.ChangeType, changeType);
+                throw DataValidationException.Create(array, x => x.ChangeType, changeType);
             }
-            if (numberOfSets != endogenous.NumberOfSets)
+            if (numberOfSets != array.NumberOfSets)
             {
-                throw DataValidationException.Create(endogenous, x => x.NumberOfSets, numberOfSets);
+                throw DataValidationException.Create(array, x => x.NumberOfSets, numberOfSets);
             }
-            
-            return await Task.FromResult(new EndogenousArray(endogenous, index));
+
+            ImmutableArray<KeyValuePair<string, IImmutableList<string>>> set =
+                array.Sets
+                     .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
+                     .ToImmutableArray();
+
+            ImmutableArray<KeyValuePair<KeySequence<string>, float>> entries =
+                set.AsExpandedSet()
+                   .Select(x => new KeyValuePair<KeySequence<string>, float>(x, 0))
+                   .ToImmutableArray();
+
+            HeaderArray<float> result =
+                new HeaderArray<float>(
+                    array.Name,
+                    array.Description,
+                    HeaderArrayType.RE,
+                    entries,
+                    1,
+                    array.Sets.Select(x => x.Count).ToImmutableArray(),
+                    set);
+
+            return await Task.FromResult((IHeaderArray)result);
         }
     }
 }
