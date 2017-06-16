@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AD.IO;
 using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace HeaderArrayConverter.IO
 {
@@ -110,11 +111,23 @@ namespace HeaderArrayConverter.IO
         {
             HeaderArrayFile arrayFile = BinaryReader.Read(file);
 
+            IImmutableList<SetInformation> setInformation = BuildAllSets(arrayFile);
+
             IEnumerable<SolutionArray> solutionArrays = BuildSolutionArrays(arrayFile);
 
-            return
+            IEnumerable<EndogenousArray> endogenousArrays =
                 solutionArrays.Where(x => x.IsEndogenous)
-                              .Select((x, i) => BuildNextArray(arrayFile, x, i));
+                              .Select((x, i) => BuildNextArray(arrayFile, x, i).Result);
+
+            IEnumerable<(EndogenousArray Array, IImmutableList<SetInformation> Sets)> matched =
+                MatchVariableWithSets(arrayFile, setInformation, endogenousArrays);
+
+            foreach (var a in matched)
+            {
+                Console.WriteLine(JsonConvert.SerializeObject(a, Formatting.Indented));
+            }
+
+            return null;
         }
 
         private IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
@@ -148,24 +161,119 @@ namespace HeaderArrayConverter.IO
             return solutionArrays;
         }
 
-        private static IImmutableList<KeyValuePair<string, IImmutableList<string>>> BuildSets(HeaderArrayFile arrayFile)
+        /// <summary>
+        /// Constructs a <see cref="SetInformation"/> sequence from arrays in the <see cref="HeaderArrayFile"/>.
+        /// </summary>
+        /// <param name="arrayFile">
+        /// The file from which set information is found.
+        /// </param>
+        /// <returns>
+        /// A <see cref="SetInformation"/> sequence (ordered).
+        /// </returns>
+        /// <remarks>
+        /// STNAM(NUMST) - names of the sets
+        /// STLB(NUMST) - labelling information for the sets
+        /// STTP(NUMST) - set types (n=nonintertemporal, i=intertemporal)
+        /// SSZ(NUMST) - sizes of the sets
+        /// STEL array (set elements from index position of the name in 'STNM' to value at the index position in 'STEL') 
+        /// </remarks>
+        private static IImmutableList<SetInformation> BuildAllSets(HeaderArrayFile arrayFile)
         {
-            // STNAM(NUMST) - names of the sets
-            IHeaderArray<string> names = arrayFile["STNM"].As<string>();
+            string[] names = arrayFile["STNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            // STLB(NUMST) - labelling information for the sets
-            IHeaderArray<string> descriptions = arrayFile["STLB"].As<string>();
+            string[] descriptions = arrayFile["STLB"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            // STEL array
-            IHeaderArray<string> elements = arrayFile["STEL"].As<string>();
+            bool[] temporal = arrayFile["STTP"].As<string>().GetLogicalValuesEnumerable().Select(x => x == "i").ToArray();
 
-            // SSZ(NUMST) - sizes of the sets
-            IHeaderArray<int> sizes = arrayFile["SSZ "].As<int>();
+            int[] sizes = arrayFile["SSZ "].As<int>().GetLogicalValuesEnumerable().ToArray();
 
-            return null;
+            string[] elements = arrayFile["STEL"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            
+            SetInformation[] setInformation = new SetInformation[names.Length];
+
+            int counter = 0;
+            for (int i = 0; i < names.Length; i++)
+            {
+                setInformation[i] = 
+                    new SetInformation(
+                        names[i], 
+                        descriptions[i], 
+                        temporal[i], 
+                        sizes[i], 
+                        elements.Skip(counter).Take(sizes[i]).ToImmutableArray());
+
+                counter += sizes[i];
+            }
+
+            return setInformation.ToImmutableArray();
         }
 
-        private static async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arrayFile">
+        /// 
+        /// </param>
+        /// <param name="setInformation">
+        /// 
+        /// </param>
+        /// <param name="arrays">
+        /// 
+        /// </param>
+        /// <remarks>
+        /// VNCP - Number of components of variables at header VARS => [321] == 824
+        /// 
+        /// VCSP - VCSTNP(NUMVC) - pointers into VCSTN array for each variable => [355] == 224
+        ///
+        /// VCAR - VCSTN - arguments for variables(c + b) => [223] == 2
+        ///
+        /// VCSN - VCSTN(NVCSTN) - set numbers arguments range over var1, var2 etc => [223] == 4, [224] == 21
+        ///
+        /// STNM - STNAM(NUMST) - names of the sets => [3] == COM, [20] == SOURCE
+        ///
+        /// SSZ - SSZ(NUMST) - sizes of the sets => [3] == 412, [20] == 2
+        ///
+        /// STEL - STEL array =>
+        ///    SSZ: [0] == 27, [1]==27, [2]==2 =>
+        /// STEL[27 + 27 + 2]==[56...467]==(OilSeedFarm, ..., WatIntl)
+        ///
+        /// (A) Using NUMBVC get the count of total values in variable by VNCP[NUMBVC]
+        /// (B) Using NUMVC get the pointer to VCSTN by VCSP[NUMVC]
+        /// (C) Using((B) - 1) and get the number of arguments by VCAR[((B) - 1)]
+        /// (D) Using(C) get((B) - 1) entries from VCSN[(C)...((C) + ((B) - 1))]
+        /// (E) Using the vector((D):-1) get the set names by STNM[((D: -1)]
+        /// (F) Using the vector((D):-1) get the set sizes by SSZ_[((D: -1)]
+        /// (G) Do all of the above for all sets, then take the global mapping info set. Then index into STEL[previous_sum...(previous_sum + (F) - 1)]
+        /// </remarks>
+        private static IEnumerable<(EndogenousArray Array, IImmutableList<SetInformation> Sets)> MatchVariableWithSets(HeaderArrayFile arrayFile, IImmutableList<SetInformation> setInformation, IEnumerable<EndogenousArray> arrays)
+        {
+            //int[] numberOfValues = arrayFile["VNCP"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            int[] pointerIntoVcstn = arrayFile["VCSP"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            //int[] numberOfArguments = arrayFile["VCAR"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            int[] setPositions = arrayFile["VCSN"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            foreach (EndogenousArray array in arrays)
+            {
+                SetInformation[] arraySetInfo = new SetInformation[array.NumberOfSets];
+
+                int pointer = pointerIntoVcstn[array.VariableIndex] - 1;
+
+                for (int i = 0; i < array.NumberOfSets; i++)
+                {
+                    int setPosition= setPositions[pointer + i];
+
+                    arraySetInfo[i] = setInformation[setPosition];
+                }
+                yield return (array, arraySetInfo.ToImmutableArray());
+            }
+        }
+
+
+        private static async Task<EndogenousArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
         {
             // VARS - names of variables(condensed+backsolved)
             string name = arrayFile["VARS"].As<string>()[index];
@@ -195,21 +303,8 @@ namespace HeaderArrayConverter.IO
             {
                 throw DataValidationException.Create(endogenous, x => x.NumberOfSets, numberOfSets);
             }
-
-            // VNCP - number of components of variables at header VARS
-            int numberOfValues = arrayFile["VNCP"].As<int>()[index];
-
-            // VCSP - VCSTNP(NUMVC) - pointers into VCSTN array for each variable
-            int pointerIntoVcstn = arrayFile["VCSP"].As<int>()[endogenous.VariableIndex];
-
             
-            if (endogenous.Name == "p3cs")
-            {
-                Console.WriteLine(endogenous);
-            }
-
-            await Task.CompletedTask;
-            return arrayFile.First();
+            return await Task.FromResult(new EndogenousArray(endogenous, index));
         }
     }
 }
