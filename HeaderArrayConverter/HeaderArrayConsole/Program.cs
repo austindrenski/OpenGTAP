@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using HeaderArrayConverter;
 
 namespace HeaderArrayConsole
@@ -28,17 +29,19 @@ namespace HeaderArrayConsole
 
             //HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
-            Console.WriteLine(arrays);
+            Console.Out.WriteLineAsync(arrays.ToString());
 
-            //HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
+            Task writeJ = HeaderArrayFile.JsonWriter.WriteAsync(jsonOutput, arrays);
 
-            //HeaderArrayFile.BinaryWriter.Write(binaryOutput, arrays);
+            Task writeB = HeaderArrayFile.BinaryWriter.WriteAsync(binaryOutput, arrays);
 
             //Console.WriteLine(HeaderArrayFile.JsonReader.Read(jsonOutput));
 
             //arrays.ValidateSets(Console.Out);
 
-            //Console.ReadLine();
+            Task.WaitAll(writeJ, writeB);
+            Console.Beep(3, 200);
+            Console.ReadLine();
         }
     }
 }

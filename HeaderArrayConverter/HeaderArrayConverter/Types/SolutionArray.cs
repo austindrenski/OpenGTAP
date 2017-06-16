@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -81,6 +82,11 @@ namespace HeaderArrayConverter.Types
         /// True if the <see cref="VariableType"/> is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
         /// </summary>
         public bool IsEndogenous => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
+
+        /// <summary>
+        /// Returns the logical count of elements in this array.
+        /// </summary>
+        public int Count => Sets.Aggregate(1, (current, next) => current * next.Count);
 
         /// <summary>
         /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a <see cref="SolutionFile"/>.

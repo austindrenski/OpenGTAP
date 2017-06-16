@@ -121,6 +121,8 @@ namespace HeaderArrayConverter.IO
                                                   (x, i) => BuildNextArray(arrayFile, x, i));
         }
 
+        [Pure]
+        [NotNull]
         private IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
             IHeaderArray<ModelChangeType> changeTypes = arrayFile["VCT0"].As<ModelChangeType>();
@@ -155,6 +157,8 @@ namespace HeaderArrayConverter.IO
         /// VCNI - VCNIND(NUMVC) - how many arguments each variable has
         /// VCSN - VCSTN(NVCSTN) - set numbers arguments range over var1, var2 etc
         /// </remarks>
+        [Pure]
+        [NotNull]
         private static IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> VariableIndexedCollectionsOfSets(HeaderArrayFile arrayFile)
         {
             IImmutableList<SetInformation> setInformation = BuildAllSets(arrayFile);
@@ -202,6 +206,8 @@ namespace HeaderArrayConverter.IO
         /// SSZ(NUMST) - sizes of the sets
         /// STEL array - set elements from index position of the name in 'STNM' to value at the index position in 'STEL'
         /// </remarks>
+        [Pure]
+        [NotNull]
         private static IImmutableList<SetInformation> BuildAllSets(HeaderArrayFile arrayFile)
         {
             string[] names = arrayFile["STNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
@@ -233,18 +239,87 @@ namespace HeaderArrayConverter.IO
             return setInformation.ToImmutableArray();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="arrayFile">
+        /// 
+        /// </param>
+        /// <param name="array">
+        /// 
+        /// </param>
+        /// <param name="index">
+        /// 
+        /// </param>
+        /// <returns>
+        /// 
+        /// </returns>
+        /// <remarks>
+        /// PCUM - Start pos of results for vars [header VARS] in cum've or subtot sols
+        /// CUMS - data
+        /// </remarks>
+        [Pure]
+        [NotNull]
         private static async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray array, int index)
         {
-            // VARS - names of variables(condensed+backsolved)
+            int pointerToCumalitve = arrayFile["PCUM"].As<int>()[index] - 1;
+
+            float[] values =
+                arrayFile["CUMS"].As<float>()
+                                 .GetLogicalValuesEnumerable()
+                                 .Skip(pointerToCumalitve)
+                                 .Take(array.Count)
+                                 .ToArray();
+
+            IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
+                array.Sets
+                     .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
+                     .ToImmutableArray();
+
+            IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
+                set.AsExpandedSet()
+                   .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
+                   .ToImmutableArray();
+
+            HeaderArray<float> result =
+                new HeaderArray<float>(
+                    array.Name,
+                    array.Description,
+                    HeaderArrayType.RE,
+                    entries,
+                    1,
+                    array.Sets.Select(x => x.Count).ToImmutableArray(),
+                    set);
+
+            return await Task.FromResult((IHeaderArray)result);
+        }
+
+        /// <summary>
+        /// Performs data validation by cross-checking current values with duplications elsewhere in the binary SL4 format.
+        /// </summary>
+        /// <param name="arrayFile">
+        /// The full SL4 data.
+        /// </param>
+        /// <param name="array">
+        /// The array to validate.
+        /// </param>
+        /// <param name="index">
+        /// The index of this array among endogenous variables.
+        /// </param>
+        /// <remarks>
+        /// VARS - names of variables(condensed+backsolved)
+        /// VCLB - VCLB - labelling information for variables(condensed + backsolved)
+        /// VCTP - BVCTP(NUMBVC) - p =% -change, c = change[condensed + backsolved var only]
+        /// VCNA - VCNIND - number of arguments for variables (condensed+backsolved) 
+        /// </remarks>
+        private static void CrossCheck(HeaderArrayFile arrayFile, SolutionArray array, int index)
+        {
             string name = arrayFile["VARS"].As<string>()[index];
 
-            // VCLB - VCLB - labelling information for variables(condensed + backsolved)
             string description = arrayFile["VCLB"].As<string>()[index];
 
-            // VCTP - BVCTP(numbvc) - p =% -change, c = change[condensed + backsolved var only]
             ModelChangeType changeType = arrayFile["VCTP"].As<ModelChangeType>()[index];
 
-            // VCNA - VCNIND - number of arguments for variables (condensed+backsolved)
             int numberOfSets = arrayFile["VCNA"].As<int>()[index];
 
             if (name != array.Name)
@@ -263,28 +338,6 @@ namespace HeaderArrayConverter.IO
             {
                 throw DataValidationException.Create(array, x => x.NumberOfSets, numberOfSets);
             }
-
-            ImmutableArray<KeyValuePair<string, IImmutableList<string>>> set =
-                array.Sets
-                     .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
-                     .ToImmutableArray();
-
-            ImmutableArray<KeyValuePair<KeySequence<string>, float>> entries =
-                set.AsExpandedSet()
-                   .Select(x => new KeyValuePair<KeySequence<string>, float>(x, 0))
-                   .ToImmutableArray();
-
-            HeaderArray<float> result =
-                new HeaderArray<float>(
-                    array.Name,
-                    array.Description,
-                    HeaderArrayType.RE,
-                    entries,
-                    1,
-                    array.Sets.Select(x => x.Count).ToImmutableArray(),
-                    set);
-
-            return await Task.FromResult((IHeaderArray)result);
         }
     }
 }
