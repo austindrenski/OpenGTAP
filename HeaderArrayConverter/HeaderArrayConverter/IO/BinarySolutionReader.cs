@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using AD.IO;
@@ -147,7 +148,24 @@ namespace HeaderArrayConverter.IO
             return solutionArrays;
         }
 
-        private async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
+        private static IImmutableList<KeyValuePair<string, IImmutableList<string>>> BuildSets(HeaderArrayFile arrayFile)
+        {
+            // STNAM(NUMST) - names of the sets
+            IHeaderArray<string> names = arrayFile["STNM"].As<string>();
+
+            // STLB(NUMST) - labelling information for the sets
+            IHeaderArray<string> descriptions = arrayFile["STLB"].As<string>();
+
+            // STEL array
+            IHeaderArray<string> elements = arrayFile["STEL"].As<string>();
+
+            // SSZ(NUMST) - sizes of the sets
+            IHeaderArray<int> sizes = arrayFile["SSZ "].As<int>();
+
+            return null;
+        }
+
+        private static async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
         {
             // VARS - names of variables(condensed+backsolved)
             string name = arrayFile["VARS"].As<string>()[index];
