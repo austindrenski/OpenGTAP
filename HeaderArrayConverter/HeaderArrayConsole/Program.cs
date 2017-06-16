@@ -29,7 +29,7 @@ namespace HeaderArrayConsole
 
             //HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
-            Console.Out.WriteLineAsync(arrays.ToString());
+            Task writeC = Task.FromResult(Console.Out.WriteLineAsync(arrays.ToString()));
 
             Task writeB = HeaderArrayFile.BinaryWriter.WriteAsync(binaryOutput, arrays);
 
@@ -39,7 +39,7 @@ namespace HeaderArrayConsole
 
             //arrays.ValidateSets(Console.Out);
 
-            Task.WaitAll(writeJ, writeB);
+            Task.WaitAll(writeC, writeJ, writeB);
             Console.Beep(3, 200);
             Console.ReadLine();
         }
