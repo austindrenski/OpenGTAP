@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using HeaderArrayConverter;
 
 namespace HeaderArrayConsole
@@ -24,22 +23,28 @@ namespace HeaderArrayConsole
 
             string jsonOutput = $"{directory}\\test6.harx";
             string binaryOutput = $"{directory}\\test6.har";
-            
-            HeaderArrayFile arrays = SolutionFile.BinaryReader.Read(input);
 
+            //Console.WriteLine($"Reading {nameof(input)} with {nameof(HeaderArrayFile.BinaryReader)}.");
             //HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
-            Task writeC = Task.FromResult(Console.Out.WriteLineAsync(arrays.ToString()));
+            Console.WriteLine($"Reading {nameof(input)} with {nameof(SolutionFile.BinaryReader)}.");
+            HeaderArrayFile arrays = SolutionFile.BinaryReader.Read(input);
 
-            Task writeB = HeaderArrayFile.BinaryWriter.WriteAsync(binaryOutput, arrays);
+            //Console.WriteLine($"Writing {nameof(arrays)} to {nameof(Console)}.");
+            //Console.WriteLine(arrays)
 
-            Task writeJ = HeaderArrayFile.JsonWriter.WriteAsync(jsonOutput, arrays);
-            
+            Console.WriteLine($"Writing {nameof(arrays)} to {nameof(jsonOutput)}.");
+            HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
+
+            Console.WriteLine($"Writing {nameof(arrays)} to {nameof(binaryOutput)}.");
+            HeaderArrayFile.BinaryWriter.Write(binaryOutput, arrays);
+
+            //Console.WriteLine($"Reading {nameof(jsonOutput)} with {nameof(HeaderArrayFile.JsonReader)} and writing to {nameof(Console)}.");
             //Console.WriteLine(HeaderArrayFile.JsonReader.Read(jsonOutput));
 
+            //Console.WriteLine($"Running {nameof(HeaderArray.ValidateSets)} on {nameof(arrays)}.");
             //arrays.ValidateSets(Console.Out);
 
-            Task.WaitAll(writeC, writeJ, writeB);
             Console.Beep(3, 200);
             Console.ReadLine();
         }
