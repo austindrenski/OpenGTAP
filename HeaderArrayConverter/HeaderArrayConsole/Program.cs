@@ -23,23 +23,22 @@ namespace HeaderArrayConsole
 
             string jsonOutput = $"{directory}\\test6.harx";
             string binaryOutput = $"{directory}\\test6.har";
+            
+            HeaderArrayFile arrays = SolutionFile.BinaryReader.Read(input);
 
-
-            //HeaderArrayFile solution = SolutionFile.BinaryReader.Read(input);
-
-            HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
+            //HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
             Console.WriteLine(arrays);
 
-            HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
+            //HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
 
-            HeaderArrayFile.BinaryWriter.Write(binaryOutput, arrays);
+            //HeaderArrayFile.BinaryWriter.Write(binaryOutput, arrays);
 
-            Console.WriteLine(HeaderArrayFile.JsonReader.Read(jsonOutput));
+            //Console.WriteLine(HeaderArrayFile.JsonReader.Read(jsonOutput));
 
             //arrays.ValidateSets(Console.Out);
 
-            Console.ReadLine();
+            //Console.ReadLine();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace HeaderArrayConverter.Types
     /// </summary>
     [PublicAPI]
     [JsonObject]
-    public class EndogenousSolutionObject : SolutionDataObject
+    public class EndogenousArray : SolutionArray
     {
         /// <summary>
         /// Gets the index among variables that are <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>. 
@@ -20,15 +20,15 @@ namespace HeaderArrayConverter.Types
         public int Index { get; }
 
         /// <summary>
-        /// Constructs a <see cref="EndogenousSolutionObject"/> from a base <see cref="SolutionDataObject"/> where the variable is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
+        /// Constructs a <see cref="EndogenousArray"/> from a base <see cref="SolutionArray"/> where the variable is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
         /// </summary>
-        /// <param name="solutionDataObject">
+        /// <param name="solutionArray">
         /// The base definition.
         /// </param>
         /// <param name="index">
         /// The index position of the variable among variables that are <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
         /// </param>
-        public EndogenousSolutionObject(SolutionDataObject solutionDataObject, int index) : base(solutionDataObject)
+        public EndogenousArray(SolutionArray solutionArray, int index) : base(solutionArray)
         {
             Index = index;
         }

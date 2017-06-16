@@ -349,10 +349,10 @@ namespace HeaderArrayConverter
                         jObject["Header"].Value<string>(),
                         jObject["Description"].Value<string>(),
                         type,
-                        jObject["Dimensions"].Values<int>(),
                         ParseEntries(jObject["Entries"]),
-                        ParseSets(jObject["Sets"]),
-                        jObject["SerializedVectors"].Value<int>());
+                        jObject["SerializedVectors"].Value<int>(),
+                        jObject["Dimensions"].Values<int>().ToImmutableArray(),
+                        ParseSets(jObject["Sets"]));
 
                 IEnumerable<KeyValuePair<KeySequence<string>, TValue>> ParseEntries(JToken entries)
                 {

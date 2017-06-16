@@ -12,7 +12,7 @@ namespace HeaderArrayConverter.Types
     /// </remarks>
     [PublicAPI]
     [JsonObject]
-    public class SolutionDataObject
+    public class SolutionArray
     {
         /// <summary>
         /// Gets the name of the variable.
@@ -43,6 +43,7 @@ namespace HeaderArrayConverter.Types
         /// </summary>
         /// <remarks>
         /// This value is derived from the index order on header 'VCT0' and defines the value on header 'VCTP' at index 'NUMVC'.
+        /// This is also the value on header 'BVCTP' at index 'NUMBVC'.
         /// </remarks>
         public ModelChangeType ChangeType { get; }
 
@@ -76,7 +77,7 @@ namespace HeaderArrayConverter.Types
         public bool IsEndogenous => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
 
         /// <summary>
-        /// Constructs a <see cref="SolutionDataObject"/> containing the base properties of a variable in a <see cref="SolutionFile"/>.
+        /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a <see cref="SolutionFile"/>.
         /// </summary>
         /// <param name="variableIndex">
         /// The index number of this variable among all variables. [VCNM, NUMVC].
@@ -99,7 +100,7 @@ namespace HeaderArrayConverter.Types
         /// <param name="variableType">
         /// The <see cref="ModelVariableType"/> for this object. [VCS0, VCSTAT(NUMVC)].
         /// </param>
-        public SolutionDataObject(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType)
+        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType)
         {
             if (name is null)
             {
@@ -124,9 +125,9 @@ namespace HeaderArrayConverter.Types
         }
 
         /// <summary>
-        /// Constructs a <see cref="SolutionDataObject"/> containing the base properties of a variable in a <see cref="SolutionFile"/> from an existing <see cref="SolutionDataObject"/>.
+        /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a <see cref="SolutionFile"/> from an existing <see cref="SolutionArray"/>.
         /// </summary>
-        public SolutionDataObject(SolutionDataObject solutionDataObject)
+        public SolutionArray(SolutionArray solutionDataObject)
             : this(solutionDataObject.VariableIndex,
                    solutionDataObject.NumberOfSets,
                    solutionDataObject.Name,

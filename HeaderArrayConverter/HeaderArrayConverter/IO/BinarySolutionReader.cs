@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AD.IO;
 using HeaderArrayConverter.Types;
@@ -122,11 +121,11 @@ namespace HeaderArrayConverter.IO
 
             int[] numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
             
-            SolutionDataObject[] solutionObjects = new SolutionDataObject[names.Length];
+            SolutionArray[] solutionArrays = new SolutionArray[names.Length];
             for (int i = 0; i < names.Length; i++)
             {
-                solutionObjects[i] =
-                    new SolutionDataObject(
+                solutionArrays[i] =
+                    new SolutionArray(
                         i,
                         numberOfSets[i],
                         names[i],
@@ -135,14 +134,13 @@ namespace HeaderArrayConverter.IO
                         changeTypes[i],
                         variableTypes[i]);
             }
-            
-            foreach ((SolutionDataObject solution, int index) in solutionObjects.Where(x => x.IsEndogenous).Select((x, i) => (x, i)))
-            {
-                yield return BuildNextArray(arrayFile, solution, index);
-            }
+
+            return
+                solutionArrays.Where(x => x.IsEndogenous)
+                              .Select((x, i) => BuildNextArray(arrayFile, x, i));
         }
 
-        private async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionDataObject endogenous, int index)
+        private async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray endogenous, int index)
         {
             // VARS - names of variables(condensed+backsolved)
             string name = arrayFile["VARS"].As<string>()[index];
@@ -173,19 +171,20 @@ namespace HeaderArrayConverter.IO
                 throw DataValidationException.Create(endogenous, x => x.NumberOfSets, numberOfSets);
             }
 
-            // VCLE - Info about levels value of variables lv = levels var, ol = ORIG_LEV
-            string levelType = arrayFile["VCST"].As<string>()[index];
-
             // VNCP - number of components of variables at header VARS
             int numberOfValues = arrayFile["VNCP"].As<int>()[index];
 
+            // VCSP - VCSTNP(NUMVC) - pointers into VCSTN array for each variable
+            int pointerIntoVcstn = arrayFile["VCSP"].As<int>()[endogenous.VariableIndex];
 
+            
             if (endogenous.Name == "p3cs")
             {
                 Console.WriteLine(endogenous);
             }
 
-            return null;
+            await Task.CompletedTask;
+            return arrayFile.First();
         }
     }
 }

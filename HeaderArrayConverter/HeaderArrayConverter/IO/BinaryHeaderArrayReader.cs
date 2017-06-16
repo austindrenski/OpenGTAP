@@ -122,7 +122,7 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IHeaderArray ReadNext(BinaryReader reader)
         {
-            (string description, string header, bool sparse, HeaderArrayType type, int[] dimensions) = GetDescription(reader);
+            (string description, string header, bool sparse, HeaderArrayType type, IImmutableList<int> dimensions) = GetDescription(reader);
 
             switch (type)
             {
@@ -145,7 +145,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<string>(header, description, type, dimensions, items, sets, 1);
+                    return new HeaderArray<string>(header, description, type, items, 1, dimensions, sets);
                 }
                 case HeaderArrayType.RE:
                 {
@@ -158,7 +158,7 @@ namespace HeaderArrayConverter.IO
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         expandedSets.Zip(floats, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, sets, 1);
+                    return new HeaderArray<float>(header, description, type, items, 1, dimensions, sets);
                 }
                 case HeaderArrayType.I2:
                 {
@@ -179,7 +179,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<int>(header, description, type, dimensions, items, sets, serializedVectors);
+                    return new HeaderArray<int>(header, description, type, items, serializedVectors, dimensions, sets);
                 }
                 case HeaderArrayType.R2:
                 {
@@ -200,7 +200,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<float>(header, description, type, dimensions, items, sets, serializedVectors);
+                    return new HeaderArray<float>(header, description, type, items, serializedVectors, dimensions, sets);
                 }
                 default:
                 {
@@ -247,7 +247,7 @@ namespace HeaderArrayConverter.IO
             return data.Skip(4).ToArray();
         }
 
-        private static (string Description, string Header, bool Sparse, HeaderArrayType Type, int[] Dimensions) GetDescription(BinaryReader reader)
+        private static (string Description, string Header, bool Sparse, HeaderArrayType Type, IImmutableList<int> Dimensions) GetDescription(BinaryReader reader)
         {
             // Read length of the header
             int length = reader.ReadInt32();
@@ -272,7 +272,7 @@ namespace HeaderArrayConverter.IO
             bool sparse = Encoding.ASCII.GetString(descriptionBuffer, 2, 4) != "FULL";
 
             // Read longer name description with limit of 70 characters
-            string description = Encoding.ASCII.GetString(descriptionBuffer, 6, 70);
+            string description = Encoding.ASCII.GetString(descriptionBuffer, 6, 70).Trim('\u0000', '\u0002', '\u0020');
 
             int[] dimensions = new int[BitConverter.ToInt32(descriptionBuffer, 76)];
 
@@ -281,7 +281,7 @@ namespace HeaderArrayConverter.IO
                 dimensions[i] = BitConverter.ToInt32(descriptionBuffer, 80 + 4 * i);
             }
 
-            return (description, header, sparse, type, dimensions);
+            return (description, header, sparse, type, dimensions.ToImmutableArray());
         }
 
         private static (float[] Data, IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets) GetReArray(BinaryReader reader, bool sparse)

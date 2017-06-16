@@ -158,19 +158,19 @@ namespace HeaderArrayConverter
         /// <param name="type">
         /// The type of element stored in the array.
         /// </param>
-        /// <param name="dimensions">
-        /// The dimensions of the array.
-        /// </param>
         /// <param name="entries">
         /// The data in the array.
-        /// </param>
-        /// <param name="sets">
-        /// The sets defined on the array.
         /// </param>
         /// <param name="serializedVectors">
         /// The number of vectors used to store the array data in a binary HAR file.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets, int serializedVectors)
+        /// <param name="dimensions">
+        /// The dimensions of the array.
+        /// </param>
+        /// <param name="sets">
+        /// The sets defined on the array.
+        /// </param>
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, int serializedVectors, [NotNull] IImmutableList<int> dimensions, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
         {
             if (entries is null)
             {
@@ -188,10 +188,9 @@ namespace HeaderArrayConverter
             {
                 throw new ArgumentNullException(nameof(sets));
             }
-
-
+            
             Header = header;
-            Description = description?.Trim('\u0000', '\u0002', '\u0020') ?? string.Empty;
+            Description = description ?? string.Empty;
             Type = type;
             Dimensions = dimensions.ToImmutableArray();
             Sets = sets;
@@ -240,7 +239,7 @@ namespace HeaderArrayConverter
                             x.Key,
                             (TResult) Enum.Parse(typeof(TResult), $"{Convert.ToInt32(Convert.ToChar(x.Value))}")));
 
-            return new HeaderArray<TResult>(Header, Description, Type, Dimensions, entries, Sets, SerializedVectors);
+            return new HeaderArray<TResult>(Header, Description, Type, entries, SerializedVectors, Dimensions, Sets);
         }
 
         /// <summary>
