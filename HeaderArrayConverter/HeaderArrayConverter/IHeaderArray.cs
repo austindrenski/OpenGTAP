@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using HeaderArrayConverter.Collections;
+using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -27,8 +28,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The type of the array.
         /// </summary>
-        [NotNull]
-        string Type { get; }
+        HeaderArrayType Type { get; }
 
         /// <summary>
         /// The dimensions of the array.

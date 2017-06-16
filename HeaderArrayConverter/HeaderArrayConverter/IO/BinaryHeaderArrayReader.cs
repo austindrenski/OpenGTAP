@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AD.IO;
 using HeaderArrayConverter.Collections;
 using HeaderArrayConverter.Extensions;
+using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 
 // ReSharper disable UnusedVariable
@@ -121,11 +122,11 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IHeaderArray ReadNext(BinaryReader reader)
         {
-            (string description, string header, bool sparse, string type, int[] dimensions) = GetDescription(reader);
+            (string description, string header, bool sparse, HeaderArrayType type, int[] dimensions) = GetDescription(reader);
 
             switch (type)
             {
-                case "1C":
+                case HeaderArrayType.C1:
                 {
                     string[] strings = GetStringArray(reader);
 
@@ -146,7 +147,7 @@ namespace HeaderArrayConverter.IO
 
                     return new HeaderArray<string>(header, description, type, dimensions, items, sets, 1);
                 }
-                case "RE":
+                case HeaderArrayType.RE:
                 {
                     (float[] floats, IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets) = GetReArray(reader, sparse);
 
@@ -159,7 +160,7 @@ namespace HeaderArrayConverter.IO
 
                     return new HeaderArray<float>(header, description, type, dimensions, items, sets, 1);
                 }
-                case "2I":
+                case HeaderArrayType.I2:
                 {
                     (int serializedVectors, int[] ints) = Get2_Array(reader, BitConverter.ToInt32);
 
@@ -180,7 +181,7 @@ namespace HeaderArrayConverter.IO
 
                     return new HeaderArray<int>(header, description, type, dimensions, items, sets, serializedVectors);
                 }
-                case "2R":
+                case HeaderArrayType.R2:
                 {
                     (int serializedVectors, float[] floats) = Get2_Array(reader, BitConverter.ToSingle);
 
@@ -203,7 +204,7 @@ namespace HeaderArrayConverter.IO
                 }
                 default:
                 {
-                    throw new DataValidationException("Type", "1C, RE, RL, 2I, 2R", type);
+                    throw new DataValidationException("Type", "1C, RE, 2I, 2R", type);
                 }
             }
         }
@@ -246,7 +247,7 @@ namespace HeaderArrayConverter.IO
             return data.Skip(4).ToArray();
         }
 
-        private static (string Description, string Header, bool Sparse, string Type, int[] Dimensions) GetDescription(BinaryReader reader)
+        private static (string Description, string Header, bool Sparse, HeaderArrayType Type, int[] Dimensions) GetDescription(BinaryReader reader)
         {
             // Read length of the header
             int length = reader.ReadInt32();
@@ -265,7 +266,7 @@ namespace HeaderArrayConverter.IO
             byte[] descriptionBuffer = InitializeArray(reader);
 
             // Read type => '1C', 'RE', etc
-            string type = Encoding.ASCII.GetString(descriptionBuffer, 0, 2);
+            HeaderArrayType type = (HeaderArrayType) BitConverter.ToInt16(descriptionBuffer, 0);
 
             // Read length type => 'FULL'
             bool sparse = Encoding.ASCII.GetString(descriptionBuffer, 2, 4) != "FULL";

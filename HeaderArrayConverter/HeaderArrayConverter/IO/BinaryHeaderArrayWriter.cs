@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
@@ -115,12 +116,12 @@ namespace HeaderArrayConverter.IO
 
             switch (array.Type)
             {
-                case "1C":
+                case HeaderArrayType.C1:
                 {
                     yield return Write1CArrayValues(array.As<string>());
                     break;
                 }
-                case "RE":
+                case HeaderArrayType.RE:
                 {
                     yield return WriteSetNames(array);
                     foreach (byte[] setEntries in WriteSetEntries(array))
@@ -132,12 +133,12 @@ namespace HeaderArrayConverter.IO
                     yield return WriteReArrayValues(array.As<float>());
                     break;
                 }
-                case "2I":
+                case HeaderArrayType.I2:
                 {
                     yield return Write2IArrayValues(array.As<int>());
                     break;
                 }
-                case "2R":
+                case HeaderArrayType.R2:
                 {
                     foreach (byte[] values in Write2RArrayValues(array.As<float>()))
                     {
@@ -193,7 +194,7 @@ namespace HeaderArrayConverter.IO
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(Padding);
-                    writer.Write(array.Type.ToCharArray());
+                    writer.Write((short)array.Type);
                     writer.Write("FULL".ToCharArray());
                     writer.Write(array.Description.PadRight(70).ToCharArray());
                     writer.Write(array.Dimensions.Count);

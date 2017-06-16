@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using HeaderArrayConverter.Collections;
+using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
@@ -43,7 +44,7 @@ namespace HeaderArrayConverter
         /// The type of element stored in the array.
         /// </summary>
         [JsonProperty]
-        public override  string Type { get; }
+        public override HeaderArrayType Type { get; }
 
         /// <summary>
         /// The dimensions of the array.
@@ -169,7 +170,7 @@ namespace HeaderArrayConverter
         /// <param name="serializedVectors">
         /// The number of vectors used to store the array data in a binary HAR file.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, [NotNull] string type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets, int serializedVectors)
+        public HeaderArray([NotNull] string header, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets, int serializedVectors)
         {
             if (entries is null)
             {
@@ -178,10 +179,6 @@ namespace HeaderArrayConverter
             if (header is null)
             {
                 throw new ArgumentNullException(nameof(header));
-            }
-            if (type is null)
-            {
-                throw new ArgumentNullException(nameof(type));
             }
             if (dimensions is null)
             {

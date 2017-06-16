@@ -5,7 +5,10 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using HeaderArrayConverter.Collections;
+using HeaderArrayConverter.IO;
+using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -37,7 +40,8 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The type of the array.
         /// </summary>
-        public abstract string Type { get; }
+        //[JsonConverter(typeof(StringEnumConverter))]
+        public abstract HeaderArrayType Type { get; }
 
         /// <summary>
         /// The dimensions of the array.
@@ -221,6 +225,36 @@ namespace HeaderArrayConverter
         private sealed class HeaderArrayJsonConverter : JsonConverter
         {
             /// <summary>
+            /// Maps between valid the type values and valid enum names.
+            /// </summary>
+            private static IDictionary<string, HeaderArrayType> Map { get; }
+
+            /// <summary>
+            /// Static constructor to initialize resources for conversion.
+            /// </summary>
+            static HeaderArrayJsonConverter()
+            {
+                Map =
+                    Enum.GetValues(typeof(HeaderArrayType))
+                        .Cast<HeaderArrayType>()
+                        .Select(x => (key: GetEnumMemberAttributeValue(x), value: x))
+                        .ToImmutableDictionary(
+                            x => x.key,
+                            x => x.value);
+
+                string GetEnumMemberAttributeValue(HeaderArrayType value)
+                {
+                    return
+                        value.GetType()
+                             .GetTypeInfo()
+                             .GetMember(value.ToString())
+                             .FirstOrDefault()
+                             .GetCustomAttribute<EnumMemberAttribute>()
+                             .Value;
+                }
+            }
+
+            /// <summary>
             /// True if the type implements <see cref="IHeaderArray"/>; otherwise false.
             /// </summary>
             /// <param name="objectType">
@@ -253,10 +287,28 @@ namespace HeaderArrayConverter
             {
                 JObject jObject = JObject.Load(reader);
 
-                return
-                    jObject["Type"].Value<string>() == "1C"
-                        ? Create<string>(jObject)
-                        : Create<float>(jObject);
+                HeaderArrayType type = Map[jObject["Type"].Value<string>()];
+
+                switch (type)
+                {
+                    case HeaderArrayType.RE:
+                    case HeaderArrayType.R2:
+                    {
+                        return Create<float>(jObject, type);
+                    }
+                    case HeaderArrayType.I2:
+                    {
+                        return Create<int>(jObject, type);
+                    }
+                    case HeaderArrayType.C1:
+                    {
+                        return Create<string>(jObject, type);
+                    }
+                    default:
+                    {
+                        throw new DataValidationException(nameof(HeaderArrayType), Map, type);
+                    }
+                }
             }
 
             /// <summary>
@@ -276,25 +328,39 @@ namespace HeaderArrayConverter
                 throw new NotSupportedException();
             }
 
-            private static IHeaderArray Create<T>(JObject jObject)
+            /// <summary>
+            /// Creates an <see cref="IHeaderArray{TValue}"/> and returns it as an <see cref="IHeaderArray"/>.
+            /// </summary>
+            /// <typeparam name="TValue">
+            /// The value of the items in the array.
+            /// </typeparam>
+            /// <param name="jObject">
+            /// The JSON object representing the array.
+            /// </param>
+            /// <param name="type">
+            /// The <see cref="HeaderArrayType"/> of this array.
+            /// </param>
+            [Pure]
+            [NotNull]
+            private static IHeaderArray Create<TValue>(JObject jObject, HeaderArrayType type)
             {
                 return
-                    new HeaderArray<T>(
+                    new HeaderArray<TValue>(
                         jObject["Header"].Value<string>(),
                         jObject["Description"].Value<string>(),
-                        jObject["Type"].Value<string>(),
+                        type,
                         jObject["Dimensions"].Values<int>(),
                         ParseEntries(jObject["Entries"]),
                         ParseSets(jObject["Sets"]),
                         jObject["SerializedVectors"].Value<int>());
 
-                IEnumerable<KeyValuePair<KeySequence<string>, T>> ParseEntries(JToken entries)
+                IEnumerable<KeyValuePair<KeySequence<string>, TValue>> ParseEntries(JToken entries)
                 {
                     return
-                        JsonConvert.DeserializeObject<IDictionary<string, T>>(entries.ToString())
+                        JsonConvert.DeserializeObject<IDictionary<string, TValue>>(entries.ToString())
                                    .Select(
                                        x =>
-                                           new KeyValuePair<KeySequence<string>, T>(
+                                           new KeyValuePair<KeySequence<string>, TValue>(
                                                KeySequence<string>.Parse(x.Key),
                                                x.Value));
                 }
@@ -307,7 +373,9 @@ namespace HeaderArrayConverter
                                 x =>
                                     new KeyValuePair<string, IImmutableList<string>>(
                                         x.Value<string>("Key"),
-                                        x.Value<JArray>("Value").Values<string>().ToImmutableArray()))
+                                        x.Value<JArray>("Value")
+                                         .Values<string>()
+                                         .ToImmutableArray()))
                             .ToImmutableArray();
                 }
             }

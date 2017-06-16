@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System.Runtime.Serialization;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace HeaderArrayConverter.Types
 {
@@ -7,35 +9,31 @@ namespace HeaderArrayConverter.Types
     /// Represents the type of a Header Array when persisted to a binary HAR file.
     /// </summary>
     [PublicAPI]
-    public enum HeaderArrayBinaryType : short
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum HeaderArrayType : short
     {
         /// <summary>
         /// Represents an array of strings.
         /// </summary>
-        [DisplayName("1C")]
-        
-        C1 = 0x31_43,
+        [EnumMember(Value = "1C")]
+        C1 = 0x43_31,
 
         /// <summary>
         /// Represents an array of <see cref="float"/> values and item labels.
         /// </summary>
-        RE = 0x52_45,
+        [EnumMember(Value = "RE")]
+        RE = 0x45_52,
 
         /// <summary>
         /// Represents an array of <see cref="float"/> values.
         /// </summary>
-        RL = 'R' + 'L',
-
-        /// <summary>
-        /// Represents an array of <see cref="float"/> values.
-        /// </summary>
-        [DisplayName("2R")]
-        R2 = 0x32_52,
+        [EnumMember(Value = "2R")]
+        R2 = 0x52_32,
 
         /// <summary>
         /// Represents an array of <see cref="int"/> values.
         /// </summary>
-        [DisplayName("2I")]
-        I2 = 0x32_49
+        [EnumMember(Value = "2I")]
+        I2 = 0x49_32
     }
 }
