@@ -24,28 +24,27 @@ namespace HeaderArrayConsole
             string jsonOutput = $"{directory}\\test6.harx";
             string binaryOutput = $"{directory}\\test6.har";
 
-            //Console.WriteLine($"Reading {nameof(input)} with {nameof(HeaderArrayFile.BinaryReader)}.");
+            //Console.Out.WriteLineAsync($"Reading {nameof(input)} with {nameof(HeaderArrayFile.BinaryReader)}.");
             //HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
-            Console.WriteLine($"Reading {nameof(input)} with {nameof(SolutionFile.BinaryReader)}.");
+            Console.Out.WriteLineAsync($"Reading {nameof(input)} with {nameof(SolutionFile.BinaryReader)}.");
             HeaderArrayFile arrays = SolutionFile.BinaryReader.Read(input);
 
-            //Console.WriteLine($"Writing {nameof(arrays)} to {nameof(Console)}.");
+            //Console.Out.WriteLineAsync($"Writing {nameof(arrays)} to {nameof(Console)}.");
             //Console.WriteLine(arrays)
 
-            Console.WriteLine($"Writing {nameof(arrays)} to {nameof(jsonOutput)}.");
+            Console.Out.WriteLineAsync($"Writing {nameof(arrays)} to {nameof(jsonOutput)}.");
             HeaderArrayFile.JsonWriter.Write(jsonOutput, arrays);
 
-            Console.WriteLine($"Writing {nameof(arrays)} to {nameof(binaryOutput)}.");
+            Console.Out.WriteLineAsync($"Writing {nameof(arrays)} to {nameof(binaryOutput)}.");
             HeaderArrayFile.BinaryWriter.Write(binaryOutput, arrays);
 
-            //Console.WriteLine($"Reading {nameof(jsonOutput)} with {nameof(HeaderArrayFile.JsonReader)} and writing to {nameof(Console)}.");
+            //Console.Out.WriteLineAsync($"Reading {nameof(jsonOutput)} with {nameof(HeaderArrayFile.JsonReader)} and writing to {nameof(Console)}.");
             //Console.WriteLine(HeaderArrayFile.JsonReader.Read(jsonOutput));
 
-            //Console.WriteLine($"Running {nameof(HeaderArray.ValidateSets)} on {nameof(arrays)}.");
+            //Console.Out.WriteLineAsync($"Running {nameof(HeaderArray.ValidateSets)} on {nameof(arrays)}.");
             //arrays.ValidateSets(Console.Out);
 
-            Console.Beep(3, 200);
             Console.ReadLine();
         }
     }

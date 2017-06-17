@@ -73,10 +73,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            foreach (Task<IHeaderArray> array in ReadArraysAsync(file))
-            {
-                yield return array.Result;
-            }
+            return ReadArraysAsync(file).Select(x => x.Result);
         }
 
         /// <summary>
@@ -95,7 +92,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return BuildHeaderArraysAsync(file);
+            return BuildHeaderArrays(file).Select(Task.FromResult);
         }
 
         /// <summary>
@@ -108,22 +105,60 @@ namespace HeaderArrayConverter.IO
         /// An enumerable collection of tasks that when completed return an <see cref="IHeaderArray"/> from file.
         /// </returns>
         [NotNull]
-        private IEnumerable<Task<IHeaderArray>> BuildHeaderArraysAsync(FilePath file)
+        private IEnumerable<IHeaderArray> BuildHeaderArrays(FilePath file)
         {
             HeaderArrayFile arrayFile = BinaryReader.Read(file);
             
+            int[] pointersToCumulative = arrayFile["PCUM"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
+
             return
-                BuildSolutionArrays(arrayFile).Where(
-                                                  x => x.IsEndogenous)
-                                              .OrderBy(
-                                                  x => x.VariableIndex)
-                                              .Select(
-                                                  (x, i) => BuildNextArray(arrayFile, x, i));
+                BuildSolutionArrays(arrayFile).Where(x => x.IsEndogenous)
+                                              .OrderBy(x => x.VariableIndex)
+                                              .AsParallel()
+                                              .AsOrdered()
+                                              .Select(BuildNextArray);
+
+            IHeaderArray BuildNextArray(SolutionArray array, int index)
+            {
+                int pointer = pointersToCumulative[index] - 1;
+
+                float[] values = new float[array.Count];
+                if (pointer != -1)
+                {
+                    Array.Copy(cumulativeResults, pointer, values, 0, array.Count);
+                }
+                
+                IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
+                    array.Sets
+                         .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
+                         .ToImmutableArray();
+
+                IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
+                    set.AsExpandedSet()
+                       .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
+                       .ToImmutableArray();
+
+                HeaderArray<float> result =
+                    new HeaderArray<float>(
+                        array.Name,
+                        array.Description,
+                        HeaderArrayType.RE,
+                        entries,
+                        1,
+                        array.Sets.Select(x => x.Count).ToImmutableArray(),
+                        set);
+
+                Console.Out.WriteLineAsync(array.Name);
+
+                return result;
+            }
         }
 
         [Pure]
         [NotNull]
-        private IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
+        private static IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
             IHeaderArray<ModelChangeType> changeTypes = arrayFile["VCT0"].As<ModelChangeType>();
 
@@ -260,16 +295,19 @@ namespace HeaderArrayConverter.IO
         /// </remarks>
         [Pure]
         [NotNull]
-        private static async Task<IHeaderArray> BuildNextArray(HeaderArrayFile arrayFile, SolutionArray array, int index)
+        private static IHeaderArray BuildNextArray(HeaderArrayFile arrayFile, SolutionArray array, int index)
         {
             int pointerToCumalitve = arrayFile["PCUM"].As<int>()[index] - 1;
 
             float[] values =
-                arrayFile["CUMS"].As<float>()
-                                 .GetLogicalValuesEnumerable()
-                                 .Skip(pointerToCumalitve)
-                                 .Take(array.Count)
-                                 .ToArray();
+                pointerToCumalitve < 0
+                    ? Enumerable.Repeat(default(float), array.Count)
+                                .ToArray()
+                    : arrayFile["CUMS"].As<float>()
+                                       .GetLogicalValuesEnumerable()
+                                       .Skip(pointerToCumalitve)
+                                       .Take(array.Count)
+                                       .ToArray();
 
             IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                 array.Sets
@@ -291,7 +329,9 @@ namespace HeaderArrayConverter.IO
                     array.Sets.Select(x => x.Count).ToImmutableArray(),
                     set);
 
-            return await Task.FromResult((IHeaderArray)result);
+            Console.WriteLine(array.Name);
+
+            return result;
         }
 
         /// <summary>

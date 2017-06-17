@@ -34,7 +34,7 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         [JsonProperty]
         private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _dictionary;
-
+        
         /// <summary>
         /// Gets the number of entries stored in the dictionary.
         /// </summary>
@@ -141,6 +141,7 @@ namespace HeaderArrayConverter.Collections
             }
 
             Sets = sets.ToImmutableArray();
+
             _dictionary = source.Where(x => !x.Value.Equals(default(TValue))).ToImmutableDictionary();
         }
 
@@ -285,7 +286,6 @@ namespace HeaderArrayConverter.Collections
         {
             return GetLogicalValuesEnumerable(keyComparer);
         }
-
 
         /// <summary>
         /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="Sets"/>.

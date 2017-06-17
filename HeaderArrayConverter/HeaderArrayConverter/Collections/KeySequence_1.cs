@@ -23,11 +23,6 @@ namespace HeaderArrayConverter.Collections
         private readonly IImmutableList<TKey> _keys;
 
         /// <summary>
-        /// The cached hash code for this key sequence.
-        /// </summary>
-        private readonly int _hashCode;
-
-        /// <summary>
         /// The sequence values or an empty sequence.
         /// </summary>
         [NotNull]
@@ -42,7 +37,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
         /// </summary>
-        public static KeySequence<TKey> Empty { get; } = new KeySequence<TKey>(new TKey[0]);
+        public static KeySequence<TKey> Empty { get; } = new KeySequence<TKey>(EmptyArray);
 
         /// <summary>
         /// Compares sequences with <see cref="StringComparison.OrdinalIgnoreCase"/> semantics.
@@ -69,9 +64,9 @@ namespace HeaderArrayConverter.Collections
         {
             get
             {
-                foreach (int i in index)
+                for (int i = 0; i < index.Length; i++)
                 {
-                    yield return Keys[i];
+                    yield return Keys[index[i]];
                 }
             }
         }
@@ -90,7 +85,6 @@ namespace HeaderArrayConverter.Collections
             }
 
             _keys = keys.ToImmutableArray();
-            _hashCode = _keys.Aggregate(0, (current, next) => unchecked(current + 391 * next.GetHashCode()));
         }
 
         /// <summary>
@@ -131,7 +125,7 @@ namespace HeaderArrayConverter.Collections
         /// </param>
         public static implicit operator KeySequence<TKey>(KeySequence<object> value)
         {
-            return new KeySequence<TKey>((IEnumerable<TKey>)value.Keys);
+            return new KeySequence<TKey>(value.Keys.Cast<TKey>());
         }
 
         /// <summary>
@@ -215,7 +209,10 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         public IEnumerator<TKey> GetEnumerator()
         {
-            return Keys.GetEnumerator();
+            for (int i = 0; i < Keys.Count; i++)
+            {
+                yield return Keys[i];
+            }
         }
 
         /// <summary>
@@ -240,7 +237,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public bool Equals(KeySequence<TKey> other)
         {
-            return _hashCode == other._hashCode && Keys.SequenceEqual(other);
+            return GetHashCode() == other.GetHashCode() && Keys.SequenceEqual(other);
         }
 
         /// <summary>
@@ -254,7 +251,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public bool Equals(TKey other)
         {
-            return Keys.Count == 1 && Keys.FirstOrDefault().Equals(other);
+            return Keys.Count == 1 && Keys[0].Equals(other);
         }
 
         /// <summary>
@@ -314,7 +311,15 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public override int GetHashCode()
         {
-            return _hashCode;
+            int hashCode = 0;
+            for (int i = 0; i < Keys.Count; i++)
+            {
+                unchecked
+                {
+                    hashCode += 391 * Keys[i].GetHashCode();
+                }
+            }
+            return hashCode;
         }
 
         /// <summary>
