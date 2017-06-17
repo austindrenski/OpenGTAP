@@ -17,6 +17,10 @@ namespace HeaderArrayConverter.IO
     [PublicAPI]
     public class BinarySolutionReader : HeaderArrayReader
     {
+        /// <summary>
+        /// A <see cref="BinaryHeaderArrayReader"/> that reads the SL4 file in literal format.
+        /// </summary>
+        [NotNull]
         private static HeaderArrayReader BinaryReader { get; } = new BinaryHeaderArrayReader();
 
         /// <summary>
@@ -120,6 +124,7 @@ namespace HeaderArrayConverter.IO
                                               .AsOrdered()
                                               .Select(BuildNextArray);
 
+            // Local method here to limit passing arrays as parameters.
             IHeaderArray BuildNextArray(SolutionArray array, int index)
             {
                 int pointer = pointersToCumulative[index] - 1;
@@ -272,112 +277,6 @@ namespace HeaderArrayConverter.IO
             }
 
             return setInformation.ToImmutableArray();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="arrayFile">
-        /// 
-        /// </param>
-        /// <param name="array">
-        /// 
-        /// </param>
-        /// <param name="index">
-        /// 
-        /// </param>
-        /// <returns>
-        /// 
-        /// </returns>
-        /// <remarks>
-        /// PCUM - Start pos of results for vars [header VARS] in cum've or subtot sols
-        /// CUMS - data
-        /// </remarks>
-        [Pure]
-        [NotNull]
-        private static IHeaderArray BuildNextArray(HeaderArrayFile arrayFile, SolutionArray array, int index)
-        {
-            int pointerToCumalitve = arrayFile["PCUM"].As<int>()[index] - 1;
-
-            float[] values =
-                pointerToCumalitve < 0
-                    ? Enumerable.Repeat(default(float), array.Count)
-                                .ToArray()
-                    : arrayFile["CUMS"].As<float>()
-                                       .GetLogicalValuesEnumerable()
-                                       .Skip(pointerToCumalitve)
-                                       .Take(array.Count)
-                                       .ToArray();
-
-            IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
-                array.Sets
-                     .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
-                     .ToImmutableArray();
-
-            IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
-                set.AsExpandedSet()
-                   .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
-                   .ToImmutableArray();
-
-            HeaderArray<float> result =
-                new HeaderArray<float>(
-                    array.Name,
-                    array.Description,
-                    HeaderArrayType.RE,
-                    entries,
-                    1,
-                    array.Sets.Select(x => x.Count).ToImmutableArray(),
-                    set);
-
-            Console.WriteLine(array.Name);
-
-            return result;
-        }
-
-        /// <summary>
-        /// Performs data validation by cross-checking current values with duplications elsewhere in the binary SL4 format.
-        /// </summary>
-        /// <param name="arrayFile">
-        /// The full SL4 data.
-        /// </param>
-        /// <param name="array">
-        /// The array to validate.
-        /// </param>
-        /// <param name="index">
-        /// The index of this array among endogenous variables.
-        /// </param>
-        /// <remarks>
-        /// VARS - names of variables(condensed+backsolved)
-        /// VCLB - VCLB - labelling information for variables(condensed + backsolved)
-        /// VCTP - BVCTP(NUMBVC) - p =% -change, c = change[condensed + backsolved var only]
-        /// VCNA - VCNIND - number of arguments for variables (condensed+backsolved) 
-        /// </remarks>
-        private static void CrossCheck(HeaderArrayFile arrayFile, SolutionArray array, int index)
-        {
-            string name = arrayFile["VARS"].As<string>()[index];
-
-            string description = arrayFile["VCLB"].As<string>()[index];
-
-            ModelChangeType changeType = arrayFile["VCTP"].As<ModelChangeType>()[index];
-
-            int numberOfSets = arrayFile["VCNA"].As<int>()[index];
-
-            if (name != array.Name)
-            {
-                throw DataValidationException.Create(array, x => x.Name, name);
-            }
-            if (description != array.Description)
-            {
-                throw DataValidationException.Create(array, x => x.Description, description);
-            }
-            if (changeType != array.ChangeType)
-            {
-                throw DataValidationException.Create(array, x => x.ChangeType, changeType);
-            }
-            if (numberOfSets != array.NumberOfSets)
-            {
-                throw DataValidationException.Create(array, x => x.NumberOfSets, numberOfSets);
-            }
         }
     }
 }
