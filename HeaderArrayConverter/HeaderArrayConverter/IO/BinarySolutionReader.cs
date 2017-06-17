@@ -129,7 +129,7 @@ namespace HeaderArrayConverter.IO
                 {
                     Array.Copy(cumulativeResults, pointer, values, 0, array.Count);
                 }
-                
+
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
                          .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
