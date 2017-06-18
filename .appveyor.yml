@@ -13,3 +13,7 @@ platform:
 install:
   - ps: Install-Product node ''
   - npm install HeaderArrayConverter\ViewHARX
+
+build:
+  project: HeaderArrayConverter\HeaderArrayConverter.csproj
+  project: HeaderArrayConsole\HeaderArrayConsole.csproj
