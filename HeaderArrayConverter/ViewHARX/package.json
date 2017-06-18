@@ -15,8 +15,7 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^1.6",
-    "electron-builder": "^19.4.2",
-    "electron-prebuilt": "^1.4.13"
+    "electron-builder": "^19.4.2"
   },
   "build": {
     "appId": "opengtap.viewharx",
