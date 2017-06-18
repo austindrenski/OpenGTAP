@@ -16,6 +16,6 @@ deploy:
   skip_cleanup: true
   overwrite: true
   on:
-    tags: true
+    tags: false
     repo: austindrenski/OpenGTAP
   app: ViewHARX
