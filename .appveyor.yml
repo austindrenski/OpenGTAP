@@ -16,3 +16,7 @@ install:
 
 build:
   project: HeaderArrayConverter\HeaderArrayConverter
+
+after_build:
+  - cd .\HeaderArrayConverter\ViewHARX
+  - npm run dist-win
