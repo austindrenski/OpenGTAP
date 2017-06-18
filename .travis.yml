@@ -7,11 +7,9 @@ node_js:
   - "4.0"
   
 before_install:
+  - cd ./HeaderArrayConverter/ViewHARX
   - npm install -g npm
-  
-before_script: 
-  - cd .\HeaderArrayConverter\ViewHARX\
-
+    
 script:
   - npm 
   - NODE_ENV=production npm run dist-mac
