@@ -10,15 +10,13 @@ image:
 platform: 
   - Any CPU
 
-install:
-  - ps: Install-Product node ''
-  - npm install -g npm
-  - npm install HeaderArrayConverter\ViewHARX 
-
 build:
   project: HeaderArrayConverter\HeaderArrayConverter
 
 after_build:
   - cd .\HeaderArrayConverter\ViewHARX
-  - node npm run dist-win
+  - ps: Install-Product node ''
+  - npm install -g npm
+  - npm install
+  - npm run dist-win
   
