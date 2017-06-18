@@ -1,7 +1,7 @@
 # OpenGTAP
 OpenGTAP provides open-source tooling for the GTAP (Global Trade Analysis Project) Model on the .NET Framework.
 
-![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/austindrenski/OpenGTAP?svg=true)
+![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/austindrenski/OpenGTAP?svg=true)[![Travis Build Status](https://travis-ci.org/austindrenski/OpenGTAP.svg?branch=master)](https://travis-ci.org/austindrenski/OpenGTAP)
 
 ## Current status
 - The HeaderArrayConverter project is working on a data interchange format for the binary HAR and SL4 files.
