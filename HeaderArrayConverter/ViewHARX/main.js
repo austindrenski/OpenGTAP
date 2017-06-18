@@ -1,9 +1,11 @@
 "use strict";
-
 const Electron = require("electron");
 const App = Electron.app;
 const BrowserWindow = Electron.BrowserWindow;
+const Menu = Electron.Menu;
+const Shell = Electron.shell;
 const Dialog = Electron.dialog;
+const GlobalShortcut = Electron.globalShortcut;
 const Path = require("path");
 const Url = require("url");
 
@@ -11,12 +13,52 @@ exports.OpenFile = OpenFile;
 
 // Global reference to the main window object.
 let MainWindow;
+let BackgroundColor = "#FCFCFC";
+App.showExitPrompt = true;
 
-// Initializes a BrowserWindow
+App.on(
+    "ready",
+    function() {
+        CreateMainWindow();
+        GlobalShortcut.register("CmdOrCtrl+O", function () { OpenFile(); });
+        GlobalShortcut.register("CmdOrCtrl+Q", function () { MainWindow.close(); });
+    });
+
+App.on(
+    "window-all-closed",
+    function() {
+        if (process.platform !== "darwin") {
+            App.quit();
+        }
+    });
+
+App.on(
+    "activate",
+    function () {
+        if (MainWindow === null) {
+            CreateMainWindow();
+        }
+
+        // Drag and drop file handling.
+        process.argv.forEach(OnOpen);
+        App.on("open-file", OnOpen);
+        App.on("open-url", OnOpen);
+
+        function OnOpen() {
+
+        }
+    });
+
 function CreateMainWindow() {
+    MainWindow =
+        new BrowserWindow(
+        {
+            backgroundColor: BackgroundColor,
+            icon: Path.join(__dirname, "OpenGTAP.ico")
+        });
 
-    MainWindow = new BrowserWindow();
-
+    Menu.setApplicationMenu(Menu.buildFromTemplate(Template));
+    
     MainWindow.loadURL(
         Url.format(
             {
@@ -24,55 +66,43 @@ function CreateMainWindow() {
                 protocol: "file:",
                 slashes: true
             }));
-
-    // Open the DevTools.
-    MainWindow.webContents.openDevTools();
-
-    // Emitted when the window is closed.
+    
     MainWindow.on(
         "closed",
-        function() {
+        function () {
             MainWindow = null;
+        });
+
+    MainWindow.on(
+        "close",
+        function(e) {
+            if (App.showExitPrompt) {
+                e.preventDefault();
+                Dialog.showMessageBox(
+                    {
+                        type: "question",
+                        buttons: ["Yes", "No"],
+                        title: "Confirm",
+                        message: "Are you sure you want to quit?"
+                    },
+                    function(response) {
+                        if (response === 0) {
+                            App.showExitPrompt = false;
+                            MainWindow.close();
+                        }
+                    });
+            }
         });
 }
 
-// This method will be called when Electron has finished initialization and is ready to create browser windows.
-App.on(
-    "ready",
-    CreateMainWindow);
-
-// Quit when all windows are closed.
-App.on(
-    "window-all-closed",
-    function() {
-        // On OS X it is common for applications and their menu bar to stay active until the user quits explicitly with Cmd + Q
-        if (process.platform !== "darwin") {
-            App.quit();
-        }
-    });
-
-App.on("activate", function () {
-    // On OS X it's common to re-create a window in the app when the dock icon is clicked and there are no other windows open.
-    if (MainWindow === null) {
-        CreateMainWindow();
-    }
-});
-
-// In this file you can include the rest of your app's specific main process code. You can also put them in separate files and require them here.
-
+// Opens the file dialog.
 function OpenFile() {
     const Files =
         Dialog.showOpenDialog(
             MainWindow,
             {
                 properties: ["openFile"],
-                filters:
-                [
-                    {
-                        name: "",
-                        extensions: ["har", "sl4", "harx"]
-                    }
-                ]
+                filters: [ { name: "", extensions: ["har", "sl4", "harx"] } ]
             });
 
     if (!Files) {
@@ -83,3 +113,60 @@ function OpenFile() {
 
     console.log(File);
 };
+
+// Template for the menu bar.
+const Template = [
+    {
+        label: "File",
+        submenu: [
+            { label: "Open", click() { OpenFile(); } },
+            { role: "quit" }
+        ]
+    },
+    {
+        label: "Edit",
+        submenu: [
+            //{ role: "undo" },
+            //{ role: "redo" },
+            //{ type: "separator" },
+            //{ role: "cut" },
+            { role: "copy" }
+            //{ role: "paste" },
+            //{ role: "pasteandmatchstyle" },
+            //{ role: "delete" },
+            //{ role: "selectall" }
+        ]
+    },
+    {
+        label: "View",
+        submenu: [
+            { role: "reload" },
+            //{ role: "forcereload" },
+            { role: "toggledevtools" },
+            { type: "separator" },
+            { role: "resetzoom" },
+            { role: "zoomin" },
+            { role: "zoomout" },
+            { type: "separator" },
+            { role: "togglefullscreen" },
+            { role: "minimize" }
+        ]
+    },
+    {
+        role: "help",
+        submenu: [
+            {
+                label: "OpenGTAP",
+                click() {
+                    Shell.openExternal("https://austindrenski.github.io/OpenGTAP");
+                }
+            },
+            {
+                label: "Electron",
+                click() {
+                    Shell.openExternal("https://electron.atom.io");
+                }
+            }
+        ]
+    }
+];
