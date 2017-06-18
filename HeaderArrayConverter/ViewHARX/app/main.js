@@ -16,12 +16,18 @@ let MainWindow;
 let BackgroundColor = "#FCFCFC";
 App.showExitPrompt = true;
 
+// Drag and drop file handling.
+//process.argv.forEach(OnOpen);
+
+
 App.on(
     "ready",
     function() {
         CreateMainWindow();
-        GlobalShortcut.register("CmdOrCtrl+O", function () { OpenFile(); });
-        GlobalShortcut.register("CmdOrCtrl+Q", function () { MainWindow.close(); });
+        GlobalShortcut.register("CmdOrCtrl+O", () => OpenFile());
+        GlobalShortcut.register("CmdOrCtrl+Q", () => MainWindow.close());
+        MainWindow.on("open-file", event => event.preventDefault());
+        MainWindow.on("open-url", event => event.preventDefault());
     });
 
 App.on(
@@ -38,15 +44,6 @@ App.on(
         if (MainWindow === null) {
             CreateMainWindow();
         }
-
-        // Drag and drop file handling.
-        process.argv.forEach(OnOpen);
-        App.on("open-file", OnOpen);
-        App.on("open-url", OnOpen);
-
-        function OnOpen() {
-
-        }
     });
 
 function CreateMainWindow() {
@@ -54,7 +51,7 @@ function CreateMainWindow() {
         new BrowserWindow(
         {
             backgroundColor: BackgroundColor,
-            icon: Path.join(__dirname, "OpenGTAP.ico")
+            icon: Path.join(__dirname, "build", "OpenGTAP.ico")
         });
 
     Menu.setApplicationMenu(Menu.buildFromTemplate(Template));
@@ -75,9 +72,9 @@ function CreateMainWindow() {
 
     MainWindow.on(
         "close",
-        function(e) {
+        function (event) {
             if (App.showExitPrompt) {
-                e.preventDefault();
+                event.preventDefault();
                 Dialog.showMessageBox(
                     {
                         type: "question",

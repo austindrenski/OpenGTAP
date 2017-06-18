@@ -1,7 +1,6 @@
 {
   "name": "viewharx",
-  "productName": "ViewHARX",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "ViewHARX is a data viewing application for HAR and SL4 formats (binary), as well as the new HARX format (zipped JSON).",
   "main": "main.js",
   "author": {
@@ -13,26 +12,7 @@
   "readme": "https://github.com/austindrenski/OpenGTAP/blob/master/HeaderArrayConverter/ViewHARX/README.md",
   "repository": "https://github.com/austindrenski/OpenGTAP/blob/master/HeaderArrayConverter/ViewHARX",
   "license": "MIT",
-  "devDependencies": {
-    "electron": "^1.6",
-    "electron-builder": "^19.4.2",
-    "electron-prebuilt": "^1.4.13"
-  },
-  "build": {
-    "appId": "opengtap.viewharx",
-    "win": {
-      "icon": "assets/logo.ico"
-    },
-    "mac":
-      {
-        "category": "public.app-category.developer-tools",
-        "icon": "assets/logo.icns"
-      }
-  },
   "scripts": {
-    "postinstall": "install-app-deps",
-    "start": "electron ./app --enable-logging",
-    "dist-win": "build --win --x64 --ia32",
-    "dist-dmg": "build --mac --x64 --ia32"
+    "start": "electron ."
   }
 }
