@@ -1,6 +1,6 @@
 os: osx
 
-before_deploy:
+env:
   - PACKAGE_VERSION = "0.0.2"
 
 language: node_js
