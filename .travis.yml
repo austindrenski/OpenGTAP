@@ -1,12 +1,22 @@
 os: osx
+
 language: node_js
+
 node_js:
-- '4.0'
+  - '4.0'
+
 before_install:
-- cd ./HeaderArrayConverter/ViewHARX
-- npm install -g npm
+  - cd ./HeaderArrayConverter/ViewHARX
+  - npm install -g npm
+
 script:
-- NODE_ENV=production npm run dist-mac
+  - NODE_ENV=production npm run dist-mac
+  
+after_success:
+  - git tag -a v$(TRAVIS_BUILD_NUMBER) -m "Travis build $TRAVIS_BUILD_NUMBER pushed a tag."
+  - git push origin --tags
+  - git fetch origin
+
 deploy:
   provider: releases
   api_key:
