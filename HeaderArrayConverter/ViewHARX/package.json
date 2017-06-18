@@ -30,7 +30,6 @@
       }
   },
   "scripts": {
-    "postinstall": "install-app-deps",
     "start": "electron ./app --enable-logging",
     "dist-win": "build --win --x64 --ia32",
     "dist-dmg": "build --mac --x64 --ia32"
