@@ -12,5 +12,4 @@ platform:
 
 install:
   - ps: Install-Product node ''
-  - npm install electron-builder@next
-  - npm install HeaderArrayConverter\ViewHARX\package.json
+  - npm install HeaderArrayConverter\ViewHARX
