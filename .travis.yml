@@ -17,5 +17,8 @@ deploy:
   - provider: heroku
   - api_key:
       - secure: Ic3raltBLldExO7RBKfTsBUsvH1t7FvvFW80mQp3W9C9nBbX12sy5VZYlDz6y80bbElZgIPcxCkcj5YAXQ3GpBi08cRzzNIicl+DPHxJH3da206pBq/P3ei2Z3zxcoqHxCW0yuAPAFA/1uQ1M8tw0ET4+0fHoBBCom78f992t6TFTPLX8tPbABoWTnOa903RH2Oe0SXgvwhWDvyG4SSf1q3dkVhlyfP4OsXq863OHUqKwyC38/V9+1euWHYP1U17q11ip1dLRxTp8O62qmyjV/CcVo01Of057NCjPXXjJWHonF1CpLa9Elgm7UtGzom+hQXyA+QeA9JGmqXCdCAenuX1zB3LannyuRVvLT12tqln9b14k2fsymWzAYeAzZjVJHOc0Q4KcEL2YNLS0yPgwrAtsQBRzRfthscfmjBE0y8uxjlCG+h/q7WRZkV5GyP9+7kHNPswExzaER574o7+x+gjoakSjKHvor/wL2ayFwtjZoEmxajplUHesjcyqUp6QqTel2cVk3t6R04sJc0s0jR7LD5bevfKZU7GNkzdjwQHghh8+y4paeQKcy5bHhlMzqxjL1d4J8lX7kcs/NSItuSIh9DRAiEokIRoO4JlQW3U92yuZrSB+Ks69573rp9ovTGQEMP+pR+zsQZ3wOFlQyoUgZ7WniT+AAjyXQrKt+o=
-  - app: 
-      - production: ViewHARX
+
+app: ViewHARX
+
+on:
+  repo: austindrenski/OpenGTAP
