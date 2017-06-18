@@ -12,6 +12,7 @@ platform:
 
 install:
   - ps: Install-Product node ''
+  - npm install -g npm
   - npm install HeaderArrayConverter\ViewHARX
 
 build:
@@ -20,3 +21,4 @@ build:
 after_build:
   - cd .\HeaderArrayConverter\ViewHARX
   - npm run dist-win
+  
