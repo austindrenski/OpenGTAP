@@ -11,12 +11,7 @@ before_install:
 
 script:
   - NODE_ENV=production npm run dist-mac
-  
-after_success:
-  - git tag -a v$(TRAVIS_BUILD_NUMBER) -m "Travis build $TRAVIS_BUILD_NUMBER pushed a tag."
-  - git push origin --tags
-  - git fetch origin
-
+    
 deploy:
   provider: releases
   api_key:
