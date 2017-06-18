@@ -12,4 +12,4 @@ platform:
 
 install:
   - ps: Install-Product node 6
-  - npm install
+  - npm install ViewHARX\ViewHARX.njsproj
