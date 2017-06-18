@@ -12,4 +12,4 @@ platform:
 
 install:
   - ps: Install-Product node 6
-  - npm install HeaderArrayConverter\ViewHARX\ViewHARX.njsproj
+  - npm install HeaderArrayConverter\ViewHARX
