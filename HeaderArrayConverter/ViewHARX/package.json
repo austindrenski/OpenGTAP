@@ -1,0 +1,16 @@
+{
+  "name": "view-harx",
+  "version": "0.0.1",
+  "description": "ViewHARX",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": {
+    "name": "austin.drenski"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "electron": "~1.6"
+  }
+}
