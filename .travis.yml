@@ -10,4 +10,6 @@ before_install:
   
 script:
   - npm 
-  - NODE_ENV=production npm run dist-mac
+  - NODE_ENV=production npm run \HeaderArrayConverter\ViewHARX\dist-mac
+
+os: "linux"
