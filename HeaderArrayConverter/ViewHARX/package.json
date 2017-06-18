@@ -22,11 +22,11 @@
     "win": {
       "icon": "assets/logo.ico"
     },
-    "mac":
-      {
-        "category": "public.app-category.developer-tools",
-        "icon": "assets/logo.icns" 
-      }
+    "mac": {
+      "title": "${productName} ${version}",
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/logo.icns"
+    }
   },
   "scripts": {
     "start": "electron ./app --enable-logging",
