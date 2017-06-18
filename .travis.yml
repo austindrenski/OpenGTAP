@@ -1,3 +1,6 @@
+
+os: osx
+
 sudo: false
 
 language: node_js
@@ -11,5 +14,3 @@ before_install:
 script:
   - npm 
   - NODE_ENV=production npm run \HeaderArrayConverter\ViewHARX\dist-mac
-
-os: "linux"
