@@ -24,7 +24,6 @@
     },
     "dmg": {
       "title": "${productName} ${version}",
-      "category": "public.app-category.developer-tools",
       "icon": "assets/logo.icns"
     }
   },
