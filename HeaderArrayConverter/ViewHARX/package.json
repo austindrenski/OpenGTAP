@@ -8,7 +8,7 @@
   },
   "author": {
     "name": "austin.drenski",
-    "email": "austin.drenski@gmail.com", 
+    "email": "austin.drenski@gmail.com",
     "url": "https://github.com/austindrenski"
   },
   "homepage": "https://austindrenski.github.io/OpenGTAP",
@@ -16,7 +16,6 @@
   "repository": "https://github.com/austindrenski/OpenGTAP/blob/master/HeaderArrayConverter/ViewHARX",
   "license": "MIT",
   "dependencies": {
-    "electron": "~1.6",
-    "angular": "1.6.4"
+    "electron": "^1.6"
   }
 }
