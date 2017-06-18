@@ -20,5 +20,5 @@ build:
 
 after_build:
   - cd .\HeaderArrayConverter\ViewHARX
-  - NODE_ENV=production npm run dist-win
+  - node npm run dist-win
   
