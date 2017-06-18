@@ -15,5 +15,6 @@ install:
   - npm install HeaderArrayConverter\ViewHARX
 
 build:
-  project: HeaderArrayConverter\HeaderArrayConverter.csproj
-  project: HeaderArrayConsole\HeaderArrayConsole.csproj
+  project: 
+    - HeaderArrayConverter\HeaderArrayConverter.csproj
+    - HeaderArrayConsole\HeaderArrayConsole.csproj
