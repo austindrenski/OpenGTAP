@@ -11,5 +11,5 @@ before_install:
   - npm install -g npm
     
 script:
-  - node NODE_ENV=production npm run dist-mac
+  - node npm run dist-mac
 
