@@ -118,7 +118,7 @@ namespace HeaderArrayConverter.IO
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
             return
-                BuildSolutionArrays(arrayFile).Where(x => x.IsEndogenous)
+                BuildSolutionArrays(arrayFile).Where(x => x.IsBacksolvedOrCondensed)
                                               .OrderBy(x => x.VariableIndex)
                                               .AsParallel()
                                               .AsOrdered()
