@@ -216,7 +216,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write("FULL".ToCharArray());
 
                     // TODO: need this for files that go SL4 -> HARX -> HAR. Fix this later.
-                    writer.Write(array.Description.PadRight(70).Take(70).ToArray());
+                    writer.Write(array.Description.PadRight(70).ToArray());
 
                     writer.Write(array.Dimensions.Count);
 

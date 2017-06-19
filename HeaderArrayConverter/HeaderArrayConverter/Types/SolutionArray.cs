@@ -58,6 +58,11 @@ namespace HeaderArrayConverter.Types
         public ModelVariableType VariableType { get; }
 
         /// <summary>
+        /// True if <see cref="VariableType"/> is either <see cref="ModelVariableType.Backsolved"/> or <see cref="ModelVariableType.Condensed"/>; otherwise false.
+        /// </summary>
+        public bool IsBacksolvedOrCondensed => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
+
+        /// <summary>
         /// Gets the unit type of the variable (e.g. ln, lv = levels var, ol = ORIG_LEV).
         /// </summary>
         /// <remarks>
@@ -77,11 +82,6 @@ namespace HeaderArrayConverter.Types
         /// The defining sets for this endogenous array.
         /// </summary>
         public IImmutableList<SetInformation> Sets { get; }
-
-        /// <summary>
-        /// True if the <see cref="VariableType"/> is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
-        /// </summary>
-        public bool IsEndogenous => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
 
         /// <summary>
         /// Returns the logical count of elements in this array.
