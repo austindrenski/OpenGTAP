@@ -14,7 +14,7 @@ script:
       
 deploy:
   file_glob: true,
-  file: dist/*,
+  file: ./HeaderArrayConverter/ViewHARX/dist/*,
   provider: releases
   api_key:
     secure: iXVk/td1nIywVok2j1RATEDIkbLwfHrVZ/KN4017F7u1LCIeZkUkZZ/Gc8c1ld+Eh9X+u3Siv+xKPoEd4exya7PcjuB2JAT1W1S9j+tXU4mf/a5FAR2vLNbJfB7LNGyhqShP7ofU0c8KdI5SPbjzNH+/zdLM255/KWoYCKR7SyN3N/Lk7kHwaQiStb+oAYX8H+CAsXPnmiBAF95d566Y0CPOEEc+L4TtBVE2tk47HnfGkl88H8gzgSEdXVeJBFm2/5PVqSPPcDUroCCFi1dtAAwbu4Zv66m5fc1QvCMDlXX0/NOmhWiLEOQzPpbVDNMwEnStGHHbUQgVnK+6e1po5ipF1VuJzm7HiA++63eL0fEF/CnizhQ94HFp6dsTnwcXMFHzLy1dYs9AU2mrDnydARiMiwevCQDIqGG3f76LnT7vLF/zvVWu+QtnJOS+NW26EBnR+bi1iTKg3+NKwLXTUp6o/mKmO+fajAGaCL1FSb+pynh6a1/D+76bQ3KVbGnSa5dFFIlxSbkPnIfZkGiESHm+2PsleAKNVgdFS1ISYTRXFVek76FBBhmaRvA9MEqs9sr6gKyMhx03ZqUGRKOSXbhBrTqy/tBljNbYXfrHSzdnMppy3v1VK6EEuUEqGkPruaJOC33+sMg/iUV8i27ahZ3FIZHRlt2bhfoolF1/WOw=
