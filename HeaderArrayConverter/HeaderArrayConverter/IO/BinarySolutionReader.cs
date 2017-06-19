@@ -147,7 +147,7 @@ namespace HeaderArrayConverter.IO
                        .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
                        .ToImmutableArray();
 
-                HeaderArray<float> result =
+                return
                     new HeaderArray<float>(
                         array.Name,
                         array.Description,
@@ -156,36 +156,34 @@ namespace HeaderArrayConverter.IO
                         1,
                         array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7).ToImmutableArray(),
                         set);
-
-                return result;
             }
         }
-        
-
 
         [Pure]
         [NotNull]
         private static IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
+            IHeaderArray<int> numberOfSets = arrayFile["VCNI"].As<int>();
+            IHeaderArray<string> names = arrayFile["VCNM"].As<string>();
+            IHeaderArray<string> descriptions = arrayFile["VCL0"].As<string>();
+            IHeaderArray<string> unitTypes = arrayFile["VCLE"].As<string>();
             IHeaderArray<ModelChangeType> changeTypes = arrayFile["VCT0"].As<ModelChangeType>();
-
             IHeaderArray<ModelVariableType> variableTypes = arrayFile["VCS0"].As<ModelVariableType>();
 
             IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
-
+            
             return
-                arrayFile["VCNM"].As<string>()
-                                 .Select(
-                                     x =>
-                                         new SolutionArray(
-                                             int.Parse(x.Key.Single()),
-                                             arrayFile["VCNI"].As<int>()[x.Key].SingleOrDefault().Value,
-                                             arrayFile["VCNM"].As<string>()[x.Key].SingleOrDefault().Value,
-                                             arrayFile["VCL0"].As<string>()[x.Key].SingleOrDefault().Value,
-                                             arrayFile["VCLE"].As<string>()[x.Key].SingleOrDefault().Value,
-                                             changeTypes[x.Key].SingleOrDefault().Value,
-                                             variableTypes[x.Key].SingleOrDefault().Value,
-                                             sets[x.Key]));
+                names.Select(
+                    x =>
+                        new SolutionArray(
+                            int.Parse(x.Key.Single()),
+                            numberOfSets[x.Key].SingleOrDefault().Value,
+                            x.Value,
+                            descriptions[x.Key].SingleOrDefault().Value,
+                            unitTypes[x.Key].SingleOrDefault().Value,
+                            changeTypes[x.Key].SingleOrDefault().Value,
+                            variableTypes[x.Key].SingleOrDefault().Value,
+                            sets[x.Key]));
         }
 
         /// <summary>
