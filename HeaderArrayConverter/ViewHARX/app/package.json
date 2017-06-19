@@ -1,7 +1,7 @@
 {
   "name": "viewharx",
   "productName": "ViewHARX",
-  "version": "0.0.2",
+  "version": "0.0.17",
   "description": "ViewHARX is a data viewing application for HAR and SL4 formats (binary), as well as the new HARX format (zipped JSON).",
   "main": "main.js",
   "author": {
@@ -11,6 +11,6 @@
   },
   "homepage": "https://austindrenski.github.io/OpenGTAP",
   "readme": "https://github.com/austindrenski/OpenGTAP/blob/master/HeaderArrayConverter/ViewHARX/README.md",
-  "repository": "https://github.com/austindrenski/OpenGTAP/blob/master/HeaderArrayConverter/ViewHARX",
+  "repository": "https://github.com/austindrenski/OpenGTAP",
   "license": "MIT"
 }
