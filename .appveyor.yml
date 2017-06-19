@@ -22,5 +22,5 @@ after_build:
   - ps: Install-Product node ''
   - npm install -g npm
   - npm install
-  - npm run dist-win
+  - npm run dist
   
