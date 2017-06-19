@@ -147,18 +147,16 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.I2:
                 {
-                    foreach (byte[] values in Write2RArrayValues(array.As<int>(), (writer, value) => writer.Write(value)))
+                    foreach (byte[] values in Write2_ArrayValues(array.As<int>(), (writer, value) => writer.Write(value)))
                     {
                         yield return values;
                     }                    
                     
-                    //yield return Write2IArrayValues(array.As<int>());
-
                     yield break;
                 }
                 case HeaderArrayType.R2:
                 {
-                    foreach (byte[] values in Write2RArrayValues(array.As<float>(), (writer, value) => writer.Write(value)))
+                    foreach (byte[] values in Write2_ArrayValues(array.As<float>(), (writer, value) => writer.Write(value)))
                     {
                         yield return values;
                     }
@@ -436,48 +434,7 @@ namespace HeaderArrayConverter.IO
         }
 
         /// <summary>
-        /// Writes the contents of an <see cref="IHeaderArray{Int32}"/> with type '2I'.
-        /// </summary>
-        /// <param name="array">
-        /// The <see cref="IHeaderArray"/> to write.
-        /// </param>
-        /// <returns>
-        /// A byte array containing the serialized data.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        private static byte[] Write2IArrayValues([NotNull] IHeaderArray<int> array)
-        {
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(Padding);
-
-                    writer.Write(1);
-                    foreach (int item in array.Dimensions)
-                    {
-                        writer.Write(item);
-                    }
-
-                    writer.Write(1);
-                    foreach (int item in array.Dimensions)
-                    {
-                        writer.Write(item);
-                    }
-
-                    writer.Write(1);
-                    foreach (int item in array.GetLogicalValuesEnumerable())
-                    {
-                        writer.Write(item);
-                    }
-                }
-                return stream.ToArray();
-            }
-        }
-
-        /// <summary>
-        /// Writes the contents of an <see cref="IHeaderArray{Single}"/> with type '2R'.
+        /// Writes the contents of an <see cref="IHeaderArray{Single}"/> with type '2R' or '2I'.
         /// </summary>
         /// <param name="array">
         /// The <see cref="IHeaderArray"/> to write.
@@ -490,7 +447,7 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static IEnumerable<byte[]> Write2RArrayValues<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write)
+        private static IEnumerable<byte[]> Write2_ArrayValues<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write)
         {
             int counter = 0;
 
@@ -575,8 +532,6 @@ namespace HeaderArrayConverter.IO
                 {
                     yield return (vectors - i, temp);
                 }
-
-                yield break;
             }
         }
     }
