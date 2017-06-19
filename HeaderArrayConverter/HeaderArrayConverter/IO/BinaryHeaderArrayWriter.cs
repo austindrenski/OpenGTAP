@@ -26,6 +26,11 @@ namespace HeaderArrayConverter.IO
         private static readonly uint Spacer = 0xFF_FF_FF_FF;
 
         /// <summary>
+        /// The internal limitation on array length in the Fortran routines used by Gempack.
+        /// </summary>
+        private static readonly int GempackArrayLimit = 1_999_991;
+
+        /// <summary>
         /// Synchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
         /// </summary>
         /// <param name="file">
@@ -119,24 +124,32 @@ namespace HeaderArrayConverter.IO
                 case HeaderArrayType.C1:
                 {
                     yield return Write1CArrayValues(array.As<string>());
-                    break;
+                    yield break;
                 }
                 case HeaderArrayType.RE:
                 {
                     yield return WriteSetNames(array);
+
                     foreach (byte[] setEntries in WriteSetEntries(array))
                     {
                         yield return setEntries;
                     }
+
                     yield return WriteDimensions(array);
                     yield return WriteExtents(array);
-                    yield return WriteReArrayValues(array.As<float>());
-                    break;
+
+                    foreach (byte[] values in WriteReArrayValues(array.As<float>()))
+                    {
+                        yield return values;
+                    }
+
+                    yield break;
                 }
                 case HeaderArrayType.I2:
                 {
                     yield return Write2IArrayValues(array.As<int>());
-                    break;
+                    
+                    yield break;
                 }
                 case HeaderArrayType.R2:
                 {
@@ -144,7 +157,8 @@ namespace HeaderArrayConverter.IO
                     {
                         yield return values;
                     }
-                    break;
+
+                    yield break;
                 }
                 default:
                 {
@@ -170,7 +184,8 @@ namespace HeaderArrayConverter.IO
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(array.Header.ToCharArray());
+                    // TODO: need this for files that go SL4 -> HARX -> HAR. Fix this later.
+                    writer.Write(array.Header.PadRight(4).ToArray());
                 }
                 return stream.ToArray();
             }
@@ -196,11 +211,15 @@ namespace HeaderArrayConverter.IO
                     writer.Write(Padding);
                     writer.Write((short)array.Type);
                     writer.Write("FULL".ToCharArray());
-                    writer.Write(array.Description.PadRight(70).ToCharArray());
+
+                    // TODO: need this for files that go SL4 -> HARX -> HAR. Fix this later.
+                    writer.Write(array.Description.PadRight(70).ToArray());
+
                     writer.Write(array.Dimensions.Count);
-                    foreach (int dim in array.Dimensions)
+
+                    foreach (int dimension in array.Dimensions)
                     {
-                        writer.Write(dim);
+                        writer.Write(dimension);
                     }
                 }
                 return stream.ToArray();
@@ -312,6 +331,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(Padding);
                     writer.Write(3);
                     writer.Write(array.Dimensions.Count);
+
                     foreach (int dimension in array.Dimensions)
                     {
                         writer.Write(dimension);
@@ -361,7 +381,7 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static byte[] WriteReArrayValues([NotNull] IHeaderArray<float> array)
+        private static IEnumerable<byte[]> WriteReArrayValues([NotNull] IHeaderArray<float> array)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -374,7 +394,7 @@ namespace HeaderArrayConverter.IO
                         writer.Write(item);
                     }
                 }
-                return stream.ToArray();
+                yield return stream.ToArray();
             }
         }
 
@@ -472,6 +492,9 @@ namespace HeaderArrayConverter.IO
                 counter += values.Length;
             }
 
+            // <summary>
+            // Returns a byte array representing the source collection.
+            // </summary>
             byte[] ProcessNext(IReadOnlyCollection<float> source, int vectorIndex)
             {
                 using (MemoryStream stream = new MemoryStream())
@@ -486,11 +509,16 @@ namespace HeaderArrayConverter.IO
                             writer.Write(item);
                         }
 
+                        // counter is tracking total elements written.
+                        // so 1 + counter is the next element in a single dimensional context.
+                        // but this may have n-dimensions.
+
                         writer.Write(1 + counter);
                         writer.Write(counter + source.Count);
-                        writer.Write(1);
 
                         writer.Write(1);
+                        writer.Write(1);
+
                         foreach (float item in source)
                         {
                             writer.Write(item);
@@ -498,39 +526,49 @@ namespace HeaderArrayConverter.IO
                     }
                     byte[] values = stream.ToArray();
 
-                    //int vectorsRemaining = BitConverter.ToInt32(values, 4);
-                    //int totalElements = BitConverter.ToInt32(values, 8);
-                    //int somethingElse0 = BitConverter.ToInt32(values, 12);
-
-                    //int startIndex = BitConverter.ToInt32(values, 16);
-                    //int endIndex = BitConverter.ToInt32(values, 20);
-
-                    //int somethingElse1 = BitConverter.ToInt32(values, 24);
-                    //int somethingElse2 = BitConverter.ToInt32(values, 28);
-
                     return values;
                 }
             }
+        }
 
-            IEnumerable<(int VectorIndex, T[] Values)> Partition<T>(IEnumerable<T> source, int partitions)
+        /// <summary>
+        /// Partitions a source collection into the specified number of sequential groups.
+        /// </summary>
+        /// <param name="source">
+        /// The source collection.
+        /// </param>
+        /// <param name="partitions">
+        /// The number of groups to create.
+        /// </param>
+        /// <returns>
+        /// The source collection split into the specified number of groups.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        private static IEnumerable<(int VectorIndex, T[] Values)> Partition<T>([NotNull] IEnumerable<T> source, int partitions)
+        {
+            source = source as T[] ?? source.ToArray();
+
+            int vectors = partitions > 0 ? partitions : 1;
+
+            int count = source.Count() / vectors + (vectors > 1 ? 2 : 0);
+
+            while (count > GempackArrayLimit)
             {
-                source = source as T[] ?? source.ToArray();
+                vectors++;
+                count = source.Count() / vectors + (vectors > 1 ? 2 : 0);
+            }
 
-                int vectors = partitions > 0 ? partitions : 1;
+            for (int i = 0; i < vectors; i++)
+            {
+                T[] temp = source.Skip(i * count).Take(count).ToArray();
 
-                int count = source.Count() / vectors + 2;
-
-                for (int i = 0; i < vectors; i++)
+                if (!temp.Any())
                 {
-                    T[] temp = source.Skip(i * count).Take(count).ToArray();
-
-                    if (!temp.Any())
-                    {
-                        yield break;
-                    }
-
-                    yield return (vectors - i, temp);
+                    yield break;
                 }
+
+                yield return (vectors - i, temp);
             }
         }
     }

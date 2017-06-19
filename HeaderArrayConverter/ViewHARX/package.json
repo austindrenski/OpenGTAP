@@ -2,7 +2,8 @@
   "name": "viewharx",
   "productName": "ViewHARX",
   "version": "0.0.2",
-  "description": "ViewHARX is a data viewing application for HAR and SL4 formats (binary), as well as the new HARX format (zipped JSON).",
+  "description":
+    "ViewHARX is a data viewing application for HAR and SL4 formats (binary), as well as the new HARX format (zipped JSON).",
   "main": "main.js",
   "author": {
     "name": "austin.drenski",
@@ -19,7 +20,7 @@
   },
   "build": {
     "appId": "opengtap.viewharx",
-    "publish": [ "github" ],
+    "publish": ["github"],
     "artifactName": "${productName}-${version}-${os}.${ext}",
     "win": {},
     "dmg": {}

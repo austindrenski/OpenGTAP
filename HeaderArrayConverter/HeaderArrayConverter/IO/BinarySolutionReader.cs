@@ -152,10 +152,8 @@ namespace HeaderArrayConverter.IO
                         HeaderArrayType.RE,
                         entries,
                         1,
-                        array.Sets.Select(x => x.Count).ToImmutableArray(),
+                        array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7).ToImmutableArray(),
                         set);
-
-                Console.Out.WriteLineAsync(array.Name);
 
                 return result;
             }
