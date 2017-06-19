@@ -4,9 +4,7 @@ before_build:
 environment:
   GH_TOKEN:
     secure: DJ9VYB+6NUozifW0LbUTMa2qjQ6I0oo0C8BPh/99a/GbJCFDess9D79+xz5K6Eu0
-  CODECOV_IO:
-    secure: S06NAGgMW49a/uPbLwGAbI9VxTvwu1cpR76DrciXH9HLy21fyh5BhEe37VRSYD+4
-
+    
 image: 
   - Visual Studio 2017
 
