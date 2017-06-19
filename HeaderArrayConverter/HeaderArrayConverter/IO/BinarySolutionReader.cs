@@ -117,12 +117,20 @@ namespace HeaderArrayConverter.IO
 
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
+            int[] exogenousComponents = arrayFile["OREX"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            int[] endogenousComponents = arrayFile["ORND"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
             return
-                BuildSolutionArrays(arrayFile).Where(x => x.IsEndogenous)
-                                              .OrderBy(x => x.VariableIndex)
-                                              .AsParallel()
-                                              .AsOrdered()
-                                              .Select(BuildNextArray);
+                BuildSolutionArrays(arrayFile)
+                    .Where(x => x.IsEndogenous)
+                    .OrderBy(x => x.VariableIndex)
+                    .AsParallel()
+                    .AsOrdered()
+                    .Branch(
+                        x => x.IsEndogenous,
+                        BuildNextArray,
+                        BuildNextArray);
 
             // Local method here to limit passing arrays as parameters.
             IHeaderArray BuildNextArray(SolutionArray array, int index)
