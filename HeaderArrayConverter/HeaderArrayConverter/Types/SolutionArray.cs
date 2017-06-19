@@ -84,11 +84,6 @@ namespace HeaderArrayConverter.Types
         public IImmutableList<SetInformation> Sets { get; }
 
         /// <summary>
-        /// True if the <see cref="VariableType"/> is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
-        /// </summary>
-        public bool IsEndogenous { get; }
-
-        /// <summary>
         /// Returns the logical count of elements in this array.
         /// </summary>
         public int Count => Sets.Aggregate(1, (current, next) => current * next.Count);
@@ -111,9 +106,6 @@ namespace HeaderArrayConverter.Types
         /// <param name="unitType">
         /// The unit type of the variable (e.g. ln, lv = levels var, ol = ORIG_LEV). [VCLE].
         /// </param>
-        /// <param name="isEndogenous">
-        /// True if the array is endogenous; otherwise false.
-        /// </param>
         /// <param name="changeType">
         /// The <see cref="ModelChangeType"/> for this object. [VCT0, VCTP(NUMVC)].
         /// </param>
@@ -121,7 +113,7 @@ namespace HeaderArrayConverter.Types
         /// The <see cref="ModelVariableType"/> for this object. [VCS0, VCSTAT(NUMVC)].
         /// </param>
         /// <param name="sets"></param>
-        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, bool isEndogenous, ModelChangeType changeType, ModelVariableType variableType, IImmutableList<SetInformation> sets)
+        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType, IImmutableList<SetInformation> sets)
         {
             if (name is null)
             {
@@ -146,7 +138,6 @@ namespace HeaderArrayConverter.Types
             ChangeType = changeType;
             VariableType = variableType;
             UnitType = unitType;
-            IsEndogenous = isEndogenous;
             NumberOfSets = numberOfSets;
             Sets = sets;
         }
@@ -160,7 +151,6 @@ namespace HeaderArrayConverter.Types
                    solutionDataObject.Name,
                    solutionDataObject.Description,
                    solutionDataObject.UnitType,
-                   solutionDataObject.IsEndogenous,
                    solutionDataObject.ChangeType,
                    solutionDataObject.VariableType,
                    solutionDataObject.Sets) { }
