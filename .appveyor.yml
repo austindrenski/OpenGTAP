@@ -1,6 +1,10 @@
 before_build:
   - cmd: nuget restore HeaderArrayConverter\HeaderArrayConverter.sln
 
+environment:
+  GH_TOKEN:
+    secure: DJ9VYB+6NUozifW0LbUTMa2qjQ6I0oo0C8BPh/99a/GbJCFDess9D79+xz5K6Eu0
+
 configuration: 
   - Release
 
