@@ -26,6 +26,7 @@
   },
   "scripts": {
     "start": "electron ./app --enable-logging",
-    "dist": "build -mwl --x64 --ia32"
+    "dist-win": "build --win --x64 --ia32",
+    "dist-mac": "build --mac --x64 --ia32"
   }
 }
