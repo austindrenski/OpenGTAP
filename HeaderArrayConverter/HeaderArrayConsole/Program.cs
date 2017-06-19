@@ -24,11 +24,11 @@ namespace HeaderArrayConsole
             //string jsonOutput = $"{directory}\\test6.harx";
             string binaryOutput = $"{directory}\\test6.har";
 
-            //Console.Out.WriteLineAsync($"Reading {nameof(input)} with {nameof(HeaderArrayFile.BinaryReader)}.");
-            //HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
+            Console.Out.WriteLineAsync($"Reading {nameof(input)} with {nameof(HeaderArrayFile.BinaryReader)}.");
+            HeaderArrayFile arrays = HeaderArrayFile.BinaryReader.Read(input);
 
-            Console.Out.WriteLineAsync($"Reading {nameof(input)} with {nameof(SolutionFile.BinaryReader)}.");
-            HeaderArrayFile arrays = SolutionFile.BinaryReader.Read(input);
+            //Console.Out.WriteLineAsync($"Reading {nameof(input)} with {nameof(SolutionFile.BinaryReader)}.");
+            //HeaderArrayFile arrays = SolutionFile.BinaryReader.Read(input);
 
             //Console.Out.WriteLineAsync($"Writing {nameof(arrays)} to {nameof(Console)}.");
             //Console.WriteLine(arrays)
@@ -45,7 +45,7 @@ namespace HeaderArrayConsole
             //Console.Out.WriteLineAsync($"Running {nameof(HeaderArray.ValidateSets)} on {nameof(arrays)}.");
             //arrays.ValidateSets(Console.Out);
 
-            Console.ReadLine();
+            //Console.ReadLine();
         }
     }
 }

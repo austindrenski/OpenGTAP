@@ -147,13 +147,18 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.I2:
                 {
-                    yield return Write2IArrayValues(array.As<int>());
+                    foreach (byte[] values in Write2RArrayValues(array.As<int>(), (writer, value) => writer.Write(value)))
+                    {
+                        yield return values;
+                    }                    
                     
+                    //yield return Write2IArrayValues(array.As<int>());
+
                     yield break;
                 }
                 case HeaderArrayType.R2:
                 {
-                    foreach (byte[] values in Write2RArrayValues(array.As<float>()))
+                    foreach (byte[] values in Write2RArrayValues(array.As<float>(), (writer, value) => writer.Write(value)))
                     {
                         yield return values;
                     }
@@ -477,16 +482,19 @@ namespace HeaderArrayConverter.IO
         /// <param name="array">
         /// The <see cref="IHeaderArray"/> to write.
         /// </param>
+        /// <param name="write">
+        /// Writes the next value to the <see cref="BinaryWriter"/>.
+        /// </param>
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
         [Pure]
         [NotNull]
-        private static IEnumerable<byte[]> Write2RArrayValues([NotNull] IHeaderArray<float> array)
+        private static IEnumerable<byte[]> Write2RArrayValues<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write)
         {
             int counter = 0;
 
-            foreach ((int vectorIndex, float[] values) in Partition(array.GetLogicalValuesEnumerable(), array.SerializedVectors))
+            foreach ((int vectorIndex, T[] values) in Partition(array.GetLogicalValuesEnumerable(), array.SerializedVectors))
             {
                 yield return ProcessNext(values, vectorIndex);
                 counter += values.Length;
@@ -495,7 +503,7 @@ namespace HeaderArrayConverter.IO
             // <summary>
             // Returns a byte array representing the source collection.
             // </summary>
-            byte[] ProcessNext(IReadOnlyCollection<float> source, int vectorIndex)
+            byte[] ProcessNext(IReadOnlyCollection<T> source, int vectorIndex)
             {
                 using (MemoryStream stream = new MemoryStream())
                 {
@@ -519,9 +527,9 @@ namespace HeaderArrayConverter.IO
                         writer.Write(1);
                         writer.Write(1);
 
-                        foreach (float item in source)
+                        foreach (T item in source)
                         {
-                            writer.Write(item);
+                            write(writer, item);
                         }
                     }
                     byte[] values = stream.ToArray();
@@ -563,12 +571,12 @@ namespace HeaderArrayConverter.IO
             {
                 T[] temp = source.Skip(i * count).Take(count).ToArray();
 
-                if (!temp.Any())
+                if (temp.Any() || count == 0)
                 {
-                    yield break;
+                    yield return (vectors - i, temp);
                 }
 
-                yield return (vectors - i, temp);
+                yield break;
             }
         }
     }
