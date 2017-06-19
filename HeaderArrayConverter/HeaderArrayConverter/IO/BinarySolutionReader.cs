@@ -130,11 +130,13 @@ namespace HeaderArrayConverter.IO
                 int pointer = pointersToCumulative[index] - 1;
 
                 float[] values = new float[array.Count];
+                
+                // TODO: When the array is condensed/backsolved and the pointer is empty, its probably a shocked variable (PSHK, SHCK, SHCL, SHOC).
                 if (pointer != -1)
                 {
-                    Array.Copy(cumulativeResults, pointer, values, 0, array.Count);
+                    Array.Copy(cumulativeResults, pointer, values, 0, values.Length);
                 }
-
+                
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
                          .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
