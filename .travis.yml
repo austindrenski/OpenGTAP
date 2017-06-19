@@ -11,7 +11,7 @@ before_install:
 
 script:
   - NODE_ENV=production npm run dist-mac
-  - ls . -R
+  - ls ./HeaderArrayConverter
       
 deploy:
   file: "ViewHARX 0.0.2.dmg",
