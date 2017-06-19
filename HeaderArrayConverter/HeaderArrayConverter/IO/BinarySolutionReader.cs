@@ -121,7 +121,7 @@ namespace HeaderArrayConverter.IO
                 BuildSolutionArrays(arrayFile)
                     .AsParallel()
                     .Branch(
-                        x => x.IsBacksolvedOrCondensed,
+                        x => x.IsEndogenous,
                         x => x.OrderBy(y => y.VariableIndex).Select(BuildNextEndogenous),
                         x => x.Select(BuildNextExogenous))
                     .Where(x => x != null);
@@ -168,34 +168,40 @@ namespace HeaderArrayConverter.IO
             }
         }
         
-                [Pure]
+        [Pure]
         [NotNull]
         private static IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
             IHeaderArray<int> numberOfSets = arrayFile["VCNI"].As<int>();
+            IHeaderArray<int> endogenous = arrayFile["ORND"].As<int>();
             IHeaderArray<string> names = arrayFile["VCNM"].As<string>();
             IHeaderArray<string> descriptions = arrayFile["VCL0"].As<string>();
             IHeaderArray<string> unitTypes = arrayFile["VCLE"].As<string>();
             IHeaderArray<ModelChangeType> changeTypes = arrayFile["VCT0"].As<ModelChangeType>();
             IHeaderArray<ModelVariableType> variableTypes = arrayFile["VCS0"].As<ModelVariableType>();
-
+            
             IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
 
-            HashSet<string> vars = new HashSet<string>(arrayFile["VARS"].As<string>().Select(x => x.Value));
+            int backsolvedOrCondensedCounter = 0;
 
-            return
-                names.Select(
-                    x =>
-                        new SolutionArray(
-                            int.Parse(x.Key.Single()),
-                            numberOfSets[x.Key].SingleOrDefault().Value,
-                            x.Value,
-                            descriptions[x.Key].SingleOrDefault().Value,
-                            unitTypes[x.Key].SingleOrDefault().Value,
-                            vars.Contains(x.Value),
-                            changeTypes[x.Key].SingleOrDefault().Value,
-                            variableTypes[x.Key].SingleOrDefault().Value,
-                            sets[x.Key]));
+            foreach (KeyValuePair<KeySequence<string>, string> name in names)
+            {
+                ModelVariableType variableType = variableTypes[name.Key].SingleOrDefault().Value;
+
+                bool backsolvedOrCondensed = variableType == ModelVariableType.Condensed || variableType == ModelVariableType.Backsolved;
+
+                yield return
+                    new SolutionArray(
+                        int.Parse(name.Key.Single()),
+                        numberOfSets[name.Key].SingleOrDefault().Value,
+                        name.Value,
+                        descriptions[name.Key].SingleOrDefault().Value,
+                        unitTypes[name.Key].SingleOrDefault().Value,
+                        backsolvedOrCondensed && endogenous[backsolvedOrCondensedCounter++] > 0,
+                        changeTypes[name.Key].SingleOrDefault().Value,
+                        variableType,
+                        sets[name.Key]);
+            }
         }
 
         /// <summary>
