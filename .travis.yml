@@ -4,6 +4,10 @@ language: node_js
 
 node_js:
   - '4.0'
+  
+cache:
+  directories:
+    - ./HeaderArrayConverter/ViewHARX/node_modules
 
 before_install:
   - cd ./HeaderArrayConverter/ViewHARX
