@@ -11,6 +11,7 @@ before_install:
 
 script:
   - NODE_ENV=production npm run dist-mac
+  - find . -type f -printf "%f\n"
       
 deploy:
   file: "ViewHARX 0.0.2.dmg",
