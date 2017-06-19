@@ -123,17 +123,18 @@ namespace HeaderArrayConverter.IO
 
             return
                 BuildSolutionArrays(arrayFile)
-                    .Where(x => x.IsEndogenous)
-                    .OrderBy(x => x.VariableIndex)
+                    //.Where(x => x.IsEndogenous)
+                    //.OrderBy(x => x.VariableIndex)
                     .AsParallel()
                     .AsOrdered()
+                    .OrderBy(x => x.VariableIndex)
                     .Branch(
                         x => x.IsEndogenous,
-                        BuildNextArray,
-                        BuildNextArray);
+                        BuildNextEndogenous,
+                        BuildNextExogenous);
 
             // Local method here to limit passing arrays as parameters.
-            IHeaderArray BuildNextArray(SolutionArray array, int index)
+            IHeaderArray BuildNextEndogenous(SolutionArray array, int index)
             {
                 int pointer = pointersToCumulative[index] - 1;
 
@@ -166,6 +167,11 @@ namespace HeaderArrayConverter.IO
                         set);
 
                 return result;
+            }
+
+            IHeaderArray BuildNextExogenous(SolutionArray array)
+            {
+                return null;
             }
         }
         
