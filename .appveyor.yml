@@ -4,7 +4,7 @@ before_build:
 environment:
   GH_TOKEN:
     secure: DJ9VYB+6NUozifW0LbUTMa2qjQ6I0oo0C8BPh/99a/GbJCFDess9D79+xz5K6Eu0
-
+    
 image: 
   - Visual Studio 2017
 
@@ -29,4 +29,4 @@ after_build:
   - ps: Install-Product node ''
   - npm install -g npm
   - npm install
-  - npm run dist-win 
+  - npm run dist-win
