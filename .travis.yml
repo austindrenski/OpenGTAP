@@ -1,6 +1,8 @@
-os: osx
+os: 
+  - osx
 
-language: node_js
+language: 
+  - node_js
 
 node_js:
   - '4.0'
@@ -10,4 +12,4 @@ before_install:
   - npm install -g npm
 
 script:
-  - NODE_ENV=production npm run dist
+  - NODE_ENV=production npm run dist-mac
