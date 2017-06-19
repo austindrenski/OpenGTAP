@@ -5,17 +5,26 @@ environment:
   GH_TOKEN:
     secure: DJ9VYB+6NUozifW0LbUTMa2qjQ6I0oo0C8BPh/99a/GbJCFDess9D79+xz5K6Eu0
 
-configuration: 
-  - Release
-
 image: 
   - Visual Studio 2017
 
-platform: 
+platform:
+  - x64
+  - x86
   - Any CPU
+
+configuration: 
+  - Release
 
 build:
   project: HeaderArrayConverter\HeaderArrayConverter
+  parallel: true                  # enable MSBuild parallel builds
+  publish_wap: true               # package Web Application Projects (WAP) for Web Deploy
+  publish_wap_xcopy: true         # package Web Application Projects (WAP) for XCopy deployment
+  publish_azure: true             # package Azure Cloud Service projects and push to artifacts
+  publish_nuget: true             # package projects with .nuspec files and push to artifacts
+  publish_nuget_symbols: true     # generate and publish NuGet symbol packages
+  include_nuget_references: true  # add -IncludeReferencedProjects option while packaging NuGet artifacts
 
 after_build:
   - cd .\HeaderArrayConverter\ViewHARX
