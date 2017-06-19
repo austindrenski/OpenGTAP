@@ -21,8 +21,7 @@
     "appId": "opengtap.viewharx",
     "win": { },
     "dmg": {
-      "title": "${productName} ${version}",
-      "publish": [ "github" ]
+      "title": "${productName} ${version}"
     }
   },
   "scripts": {
