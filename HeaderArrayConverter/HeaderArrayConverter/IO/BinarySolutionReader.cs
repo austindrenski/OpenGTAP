@@ -112,7 +112,7 @@ namespace HeaderArrayConverter.IO
         private IEnumerable<IHeaderArray> BuildHeaderArrays(FilePath file)
         {
             HeaderArrayFile arrayFile = BinaryReader.Read(file);
-            
+
             int[] pointersToCumulative = arrayFile["PCUM"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
@@ -130,13 +130,13 @@ namespace HeaderArrayConverter.IO
                 int pointer = pointersToCumulative[index] - 1;
 
                 float[] values = new float[array.Count];
-                
+
                 // TODO: When the array is condensed/backsolved and the pointer is empty, its probably a shocked variable (PSHK, SHCK, SHCL, SHOC).
                 if (pointer != -1)
                 {
                     Array.Copy(cumulativeResults, pointer, values, 0, values.Length);
                 }
-                
+
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
                          .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
@@ -160,6 +160,8 @@ namespace HeaderArrayConverter.IO
                 return result;
             }
         }
+        
+
 
         [Pure]
         [NotNull]
@@ -254,7 +256,7 @@ namespace HeaderArrayConverter.IO
 
             string[] descriptions = arrayFile["STLB"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            bool[] temporal = arrayFile["STTP"].As<string>().GetLogicalValuesEnumerable().Select(x => x == "i").ToArray();
+            bool[] intertemporal = arrayFile["STTP"].As<string>().GetLogicalValuesEnumerable().Select(x => x == "i").ToArray();
 
             int[] sizes = arrayFile["SSZ "].As<int>().GetLogicalValuesEnumerable().ToArray();
 
@@ -269,7 +271,7 @@ namespace HeaderArrayConverter.IO
                     new SetInformation(
                         names[i],
                         descriptions[i],
-                        temporal[i],
+                        intertemporal[i],
                         sizes[i],
                         elements.Skip(counter).Take(sizes[i]).ToImmutableArray());
 
