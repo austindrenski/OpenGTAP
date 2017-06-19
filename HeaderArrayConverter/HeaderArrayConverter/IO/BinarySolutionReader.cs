@@ -116,22 +116,15 @@ namespace HeaderArrayConverter.IO
             int[] pointersToCumulative = arrayFile["PCUM"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
-
-            int[] exogenousComponents = arrayFile["OREX"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            int[] endogenousComponents = arrayFile["ORND"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
+            
             return
                 BuildSolutionArrays(arrayFile)
-                    //.Where(x => x.IsEndogenous)
-                    //.OrderBy(x => x.VariableIndex)
                     .AsParallel()
-                    .AsOrdered()
-                    .OrderBy(x => x.VariableIndex)
                     .Branch(
-                        x => x.IsEndogenous,
-                        BuildNextEndogenous,
-                        BuildNextExogenous);
+                        x => x.IsBacksolvedOrCondensed,
+                        x => x.OrderBy(y => y.VariableIndex).Select(BuildNextEndogenous),
+                        x => x.Select(BuildNextExogenous))
+                    .Where(x => x != null);
 
             // Local method here to limit passing arrays as parameters.
             IHeaderArray BuildNextEndogenous(SolutionArray array, int index)
@@ -141,10 +134,10 @@ namespace HeaderArrayConverter.IO
                 float[] values = new float[array.Count];
 
                 // TODO: When the array is condensed/backsolved and the pointer is empty, its probably a shocked variable (PSHK, SHCK, SHCL, SHOC).
-                if (pointer != -1)
-                {
+                //if (pointer != -1)
+                //{
                     Array.Copy(cumulativeResults, pointer, values, 0, values.Length);
-                }
+                //}
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
@@ -175,31 +168,34 @@ namespace HeaderArrayConverter.IO
             }
         }
         
-
-
-        [Pure]
+                [Pure]
         [NotNull]
         private static IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
+            IHeaderArray<int> numberOfSets = arrayFile["VCNI"].As<int>();
+            IHeaderArray<string> names = arrayFile["VCNM"].As<string>();
+            IHeaderArray<string> descriptions = arrayFile["VCL0"].As<string>();
+            IHeaderArray<string> unitTypes = arrayFile["VCLE"].As<string>();
             IHeaderArray<ModelChangeType> changeTypes = arrayFile["VCT0"].As<ModelChangeType>();
-
             IHeaderArray<ModelVariableType> variableTypes = arrayFile["VCS0"].As<ModelVariableType>();
 
             IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
 
+            HashSet<string> vars = new HashSet<string>(arrayFile["VARS"].As<string>().Select(x => x.Value));
+
             return
-                arrayFile["VCNM"].As<string>()
-                                 .Select(
-                                     x =>
-                                         new SolutionArray(
-                                             int.Parse(x.Key.Single()),
-                                             arrayFile["VCNI"].As<int>()[x.Key].SingleOrDefault().Value,
-                                             arrayFile["VCNM"].As<string>()[x.Key].SingleOrDefault().Value,
-                                             arrayFile["VCL0"].As<string>()[x.Key].SingleOrDefault().Value,
-                                             arrayFile["VCLE"].As<string>()[x.Key].SingleOrDefault().Value,
-                                             changeTypes[x.Key].SingleOrDefault().Value,
-                                             variableTypes[x.Key].SingleOrDefault().Value,
-                                             sets[x.Key]));
+                names.Select(
+                    x =>
+                        new SolutionArray(
+                            int.Parse(x.Key.Single()),
+                            numberOfSets[x.Key].SingleOrDefault().Value,
+                            x.Value,
+                            descriptions[x.Key].SingleOrDefault().Value,
+                            unitTypes[x.Key].SingleOrDefault().Value,
+                            vars.Contains(x.Value),
+                            changeTypes[x.Key].SingleOrDefault().Value,
+                            variableTypes[x.Key].SingleOrDefault().Value,
+                            sets[x.Key]));
         }
 
         /// <summary>

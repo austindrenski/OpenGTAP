@@ -1,5 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter
@@ -8,7 +10,7 @@ namespace HeaderArrayConverter
     /// Extension methods to branch, operate, and join sequences.
     /// </summary>
     [PublicAPI]
-    public static class BranchExtensions
+    public static class ParallelBranch
     {
         /// <summary>
         /// Branches a sequence based on a predicate, applies transform functions to each, applies join transforms to each, then concatenates the results.
@@ -38,7 +40,7 @@ namespace HeaderArrayConverter
         [NotNull]
         [LinqTunnel]
         [CollectionAccess(CollectionAccessType.Read)]
-        public static IEnumerable<TResult> Branch<TSource, TResult>([NotNull] this IEnumerable<TSource> source, [NotNull] Func<TSource, bool> predicate, [NotNull] Func<IEnumerable<TSource>, IEnumerable<TResult>> left, [NotNull] Func<IEnumerable<TSource>, IEnumerable<TResult>> right)
+        public static ParallelQuery<TResult> Branch<TSource, TResult>([NotNull] this ParallelQuery<TSource> source, [NotNull] Func<TSource, bool> predicate, [NotNull] Func<ParallelQuery<TSource>, ParallelQuery<TResult>> left, [NotNull] Func<ParallelQuery<TSource>, ParallelQuery<TResult>> right)
         {
             if (source is null)
             {
@@ -63,7 +65,7 @@ namespace HeaderArrayConverter
                       .BranchRight(right)
                       .BranchMerge();
         }
-
+        
         /// <summary>
         /// Branches a sequence based on a predicate, applies transform functions to each, applies join transforms to each, then concatenates the results.
         /// </summary>
@@ -104,7 +106,7 @@ namespace HeaderArrayConverter
         [NotNull]
         [LinqTunnel]
         [CollectionAccess(CollectionAccessType.Read)]
-        public static IEnumerable<TResult> Branch<TSource, TLeft, TRight, TResult>([NotNull] this IEnumerable<TSource> source, [NotNull] Func<TSource, bool> predicate, [NotNull] Func<IEnumerable<TSource>, IEnumerable<TLeft>> left, [NotNull] Func<IEnumerable<TSource>, IEnumerable<TRight>> right, [NotNull] Func<IEnumerable<TLeft>, IEnumerable<TResult>> leftMerge, [NotNull] Func<IEnumerable<TRight>, IEnumerable<TResult>> rightMerge)
+        public static ParallelQuery<TResult> Branch<TSource, TLeft, TRight, TResult>([NotNull] this ParallelQuery<TSource> source, [NotNull] Func<TSource, bool> predicate, [NotNull] Func<ParallelQuery<TSource>, ParallelQuery<TLeft>> left, [NotNull] Func<ParallelQuery<TSource>, ParallelQuery<TRight>> right, [NotNull] Func<ParallelQuery<TLeft>, ParallelQuery<TResult>> leftMerge, [NotNull] Func<ParallelQuery<TRight>, ParallelQuery<TResult>> rightMerge)
         {
             if (source is null)
             {
@@ -156,7 +158,7 @@ namespace HeaderArrayConverter
         /// </returns>
         [Pure]
         [CollectionAccess(CollectionAccessType.Read)]
-        public static (IEnumerable<TSource> Left, IEnumerable<TSource> Right) Branch<TSource>([NotNull] this IEnumerable<TSource> source, [NotNull] Func<TSource, bool> predicate)
+        public static (ParallelQuery<TSource> Left, ParallelQuery<TSource> Right) Branch<TSource>([NotNull] this ParallelQuery<TSource> source, [NotNull] Func<TSource, bool> predicate)
         {
             if (source is null)
             {
@@ -167,22 +169,24 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(predicate));
             }
 
-            Queue<TSource> left = new Queue<TSource>();
-            Queue<TSource> right = new Queue<TSource>();
+            ConcurrentQueue<TSource> left = new ConcurrentQueue<TSource>();
+            ConcurrentQueue<TSource> right = new ConcurrentQueue<TSource>();
 
-            foreach (TSource item in source)
-            {
-                if (predicate(item))
+            Parallel.ForEach(
+                source,
+                x =>
                 {
-                    left.Enqueue(item);
-                }
-                else
-                {
-                    right.Enqueue(item);
-                }
-            }
+                    if (predicate(x))
+                    {
+                        left.Enqueue(x);
+                    }
+                    else
+                    {
+                        right.Enqueue(x);
+                    }
+                });
 
-            return (left, right);
+            return (left.AsParallel(), right.AsParallel());
         }
     }
 }

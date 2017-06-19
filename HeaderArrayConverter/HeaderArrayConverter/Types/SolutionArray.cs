@@ -58,6 +58,11 @@ namespace HeaderArrayConverter.Types
         public ModelVariableType VariableType { get; }
 
         /// <summary>
+        /// True if <see cref="VariableType"/> is either <see cref="ModelVariableType.Backsolved"/> or <see cref="ModelVariableType.Condensed"/>; otherwise false.
+        /// </summary>
+        public bool IsBacksolvedOrCondensed => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
+
+        /// <summary>
         /// Gets the unit type of the variable (e.g. ln, lv = levels var, ol = ORIG_LEV).
         /// </summary>
         /// <remarks>
@@ -81,7 +86,7 @@ namespace HeaderArrayConverter.Types
         /// <summary>
         /// True if the <see cref="VariableType"/> is <see cref="ModelVariableType.Condensed"/> or <see cref="ModelVariableType.Backsolved"/>.
         /// </summary>
-        public bool IsEndogenous => VariableType == ModelVariableType.Condensed || VariableType == ModelVariableType.Backsolved;
+        public bool IsEndogenous { get; }
 
         /// <summary>
         /// Returns the logical count of elements in this array.
@@ -106,6 +111,9 @@ namespace HeaderArrayConverter.Types
         /// <param name="unitType">
         /// The unit type of the variable (e.g. ln, lv = levels var, ol = ORIG_LEV). [VCLE].
         /// </param>
+        /// <param name="isEndogenous">
+        /// True if the array is endogenous; otherwise false.
+        /// </param>
         /// <param name="changeType">
         /// The <see cref="ModelChangeType"/> for this object. [VCT0, VCTP(NUMVC)].
         /// </param>
@@ -113,7 +121,7 @@ namespace HeaderArrayConverter.Types
         /// The <see cref="ModelVariableType"/> for this object. [VCS0, VCSTAT(NUMVC)].
         /// </param>
         /// <param name="sets"></param>
-        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType, IImmutableList<SetInformation> sets)
+        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, bool isEndogenous, ModelChangeType changeType, ModelVariableType variableType, IImmutableList<SetInformation> sets)
         {
             if (name is null)
             {
@@ -138,6 +146,7 @@ namespace HeaderArrayConverter.Types
             ChangeType = changeType;
             VariableType = variableType;
             UnitType = unitType;
+            IsEndogenous = isEndogenous;
             NumberOfSets = numberOfSets;
             Sets = sets;
         }
@@ -151,6 +160,7 @@ namespace HeaderArrayConverter.Types
                    solutionDataObject.Name,
                    solutionDataObject.Description,
                    solutionDataObject.UnitType,
+                   solutionDataObject.IsEndogenous,
                    solutionDataObject.ChangeType,
                    solutionDataObject.VariableType,
                    solutionDataObject.Sets) { }
