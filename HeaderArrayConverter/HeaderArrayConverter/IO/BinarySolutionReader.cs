@@ -115,6 +115,8 @@ namespace HeaderArrayConverter.IO
 
             int[] pointersToCumulative = arrayFile["PCUM"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
+            int[] countInCumulative = arrayFile["CMND"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
             return
@@ -129,12 +131,21 @@ namespace HeaderArrayConverter.IO
             {
                 int pointer = pointersToCumulative[index] - 1;
 
+                int count = countInCumulative[index];
+
                 float[] values = new float[array.Count];
 
                 // TODO: When the array is condensed/backsolved and the pointer is empty, its probably a shocked variable (PSHK, SHCK, SHCL, SHOC).
                 if (pointer != -1)
                 {
-                    Array.Copy(cumulativeResults, pointer, values, 0, values.Length);
+                    Array.Copy(cumulativeResults, pointer, values, 0 /*values.Length - count*/, count);
+                }
+
+                // TODO: Exogenous variables create offsets in the values. For example:
+                if (array.Name == "pfe" && arrayFile["CMDF"].As<string>().Any(x => x.Value.Contains("pfe(\"capital\",\"food\")")))
+                {
+                    Array.Copy(values, 2, values, 3, values.Length - 3);
+                    Array.Clear(values, 2, 1);
                 }
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
