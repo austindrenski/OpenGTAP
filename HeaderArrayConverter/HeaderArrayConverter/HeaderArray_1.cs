@@ -20,7 +20,7 @@ namespace HeaderArrayConverter
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
-    [JsonObject(MemberSerialization.OptIn)]
+    [JsonObject(nameof(HeaderArray), MemberSerialization = MemberSerialization.OptIn)]
     public class HeaderArray<TValue> : HeaderArray, IHeaderArray<TValue>
     {
         /// <summary>
@@ -310,6 +310,9 @@ namespace HeaderArrayConverter
             return GetEnumerator();
         }
 
+        /// <summary>
+        /// Produces a <see cref="JSchema"/> for the <see cref="IHeaderArray{TValue}"/>.
+        /// </summary>
         private static JSchema GetJsonSchema()
         {
             JSchemaGenerator generator = new JSchemaGenerator
@@ -320,6 +323,7 @@ namespace HeaderArrayConverter
                 SchemaLocationHandling = SchemaLocationHandling.Definitions,
                 SchemaReferenceHandling = SchemaReferenceHandling.All
             };
+
             generator.GenerationProviders.Add(new StringEnumGenerationProvider());
 
             return generator.Generate(typeof(HeaderArray<TValue>));
