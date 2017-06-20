@@ -34,12 +34,12 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         [JsonProperty]
         private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _dictionary;
-        
+
         /// <summary>
         /// Gets the number of entries stored in the dictionary.
         /// </summary>
         public int Count => _dictionary.Count;
-
+        
         /// <summary>
         /// Gets the total number of entries represented by the dictionary.
         /// </summary>
@@ -71,49 +71,19 @@ namespace HeaderArrayConverter.Collections
             }
         }
 
-        /// <summary>
-        /// Gets the entry that has the specified key or the entries that begin with the specified key.
-        /// </summary>
         IImmutableSequenceDictionary<TKey> IImmutableSequenceDictionary<TKey>.this[params TKey[] keys] => this[keys];
         
-        /// <summary>
-        /// Gets an <see cref="IEnumerable{T}"/> for the given keys.
-        /// </summary>
-        /// <param name="keys">
-        /// The collection of keys.
-        /// </param>
-        /// <returns>
-        /// An <see cref="IEnumerable{T}"/> for the given keys.
-        /// </returns>
         IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> ISequenceIndexer<TKey, TValue>.this[params TKey[] keys] => this[keys];
 
-        /// <summary>
-        /// Gets an <see cref="IEnumerable"/> for the given keys.
-        /// </summary>
-        /// <param name="keys">
-        /// The collection of keys.
-        /// </param>
-        /// <returns>
-        /// An <see cref="IEnumerable"/> for the given keys.
-        /// </returns>
         IEnumerable ISequenceIndexer<TKey>.this[params TKey[] keys] => this[keys];
 
-        /// <summary>
-        /// Gets the element that has the specified key in the read-only dictionary.
-        /// </summary>
-        /// <returns>
-        /// The element that has the specified key in the read-only dictionary.
-        /// </returns>
-        /// <param name="key">
-        /// The key to locate.
-        /// </param>
         TValue IReadOnlyDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key] => _dictionary[key];
 
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
         /// </summary>
         public IEnumerable<KeySequence<TKey>> Keys => _dictionary.Keys;
-        
+
         /// <summary>
         /// Gets an enumerable collection that contains the values in the read-only dictionary.
         /// </summary>
@@ -214,12 +184,6 @@ namespace HeaderArrayConverter.Collections
             return _dictionary.GetEnumerator();
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// An enumerator that can be used to iterate through the collection.
-        /// </returns>
         [Pure]
         [NotNull]
         IEnumerator IEnumerable.GetEnumerator()
@@ -243,12 +207,6 @@ namespace HeaderArrayConverter.Collections
             }
         }
 
-        /// <summary>
-        /// Returns an enumerable collection iterates through the logical collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
-        /// </returns>
         [Pure]
         IEnumerable<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerable()
         {
@@ -275,12 +233,6 @@ namespace HeaderArrayConverter.Collections
             }
         }
 
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </returns>
         [Pure]
         IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
         {
@@ -303,12 +255,6 @@ namespace HeaderArrayConverter.Collections
             }
         }
 
-        /// <summary>
-        /// Returns an enumerable collection iterates through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </returns>
         [Pure]
         IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable()
         {
@@ -349,16 +295,6 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
-        /// Gets an empty dictionary with equivalent ordering and key/value comparison rules.
-        /// </summary>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> Clear()
-        {
-            return _dictionary.Any() ? Create(Enumerable.Empty<KeyValuePair<string, IImmutableList<TKey>>>(), Enumerable.Empty<KeyValuePair<KeySequence<TKey>, TValue>>()) : this;
-        }
-
-        /// <summary>
         /// Searches the dictionary for a given key and returns the equal key it finds, if any.
         /// </summary>
         /// <param name="equalKey">
@@ -374,6 +310,16 @@ namespace HeaderArrayConverter.Collections
         public bool TryGetKey(KeySequence<TKey> equalKey, out KeySequence<TKey> actualKey)
         {
             return _dictionary.TryGetKey(equalKey, out actualKey);
+        }
+
+        /// <summary>
+        /// Gets an empty dictionary with equivalent ordering and key/value comparison rules.
+        /// </summary>
+        [Pure]
+        [NotNull]
+        public IImmutableDictionary<KeySequence<TKey>, TValue> Clear()
+        {
+            return _dictionary.Any() ? Create(Enumerable.Empty<KeyValuePair<string, IImmutableList<TKey>>>(), Enumerable.Empty<KeyValuePair<KeySequence<TKey>, TValue>>()) : this;
         }
 
         /// <summary>
@@ -447,22 +393,6 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
-        /// Removes the specified keys from the dictionary with their associated values.
-        /// </summary>
-        /// <param name="keys">
-        /// The keys to remove.
-        /// </param>
-        /// <returns>
-        /// A new dictionary with those keys removed; or this instance if those keys are not in the dictionary.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> RemoveRange(IEnumerable<KeySequence<TKey>> keys)
-        {
-            return _dictionary.RemoveRange(keys);
-        }
-
-        /// <summary>
         /// Removes the specified key from the dictionary with its associated value.
         /// </summary>
         /// <param name="key">
@@ -479,6 +409,22 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
+        /// Removes the specified keys from the dictionary with their associated values.
+        /// </summary>
+        /// <param name="keys">
+        /// The keys to remove.
+        /// </param>
+        /// <returns>
+        /// A new dictionary with those keys removed; or this instance if those keys are not in the dictionary.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        public IImmutableDictionary<KeySequence<TKey>, TValue> RemoveRange(IEnumerable<KeySequence<TKey>> keys)
+        {
+            return _dictionary.RemoveRange(keys);
+        }
+        
+        /// <summary>
         /// Determines whether this dictionary contains the specified key-value pair.
         /// </summary>
         /// <param name="pair">
@@ -492,6 +438,49 @@ namespace HeaderArrayConverter.Collections
         {
             return _dictionary.Contains(pair);
         }
+
+        #region IDictionary implementation for serialization
+
+        bool ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.IsReadOnly => throw new NotSupportedException();
+
+        ICollection<TValue> IDictionary<KeySequence<TKey>, TValue>.Values => throw new NotSupportedException();
+
+        ICollection<KeySequence<TKey>> IDictionary<KeySequence<TKey>, TValue>.Keys => throw new NotSupportedException();
+
+        void IDictionary<KeySequence<TKey>, TValue>.Add(KeySequence<TKey> key, TValue value)
+        {
+            throw new NotSupportedException();
+        }
+        bool IDictionary<KeySequence<TKey>, TValue>.Remove(KeySequence<TKey> key)
+        {
+            throw new NotSupportedException();
+        }
+        TValue IDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key]
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+        void ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Add(KeyValuePair<KeySequence<TKey>, TValue> item)
+        {
+            throw new NotSupportedException();
+        }
+
+        void ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Clear()
+        {
+            throw new NotSupportedException();
+        }
+
+        void ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.CopyTo(KeyValuePair<KeySequence<TKey>, TValue>[] array, int arrayIndex)
+        {
+            throw new NotSupportedException();
+        }
+
+        bool ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Remove(KeyValuePair<KeySequence<TKey>, TValue> item)
+        {
+            throw new NotSupportedException();
+        }
+
+        #endregion IDictionary implementation for serialization
 
         /// <summary>
         /// Provides comparisons between entries based on the keys.

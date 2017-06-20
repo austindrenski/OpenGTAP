@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using HeaderArrayConverter.Collections;
 using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
+using Newtonsoft.Json.Schema;
 
 namespace HeaderArrayConverter
 {
@@ -13,6 +14,12 @@ namespace HeaderArrayConverter
     [PublicAPI]
     public interface IHeaderArray : ISequenceIndexer<string>
     {
+        /// <summary>
+        /// Gets the <see cref="JsonSchema"/> for this object.
+        /// </summary>
+        [NotNull]
+        JSchema JsonSchema { get; }
+
         /// <summary>
         /// The header of the array.
         /// </summary>

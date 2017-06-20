@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Branches
 {
     /// <summary>
     /// Extension methods to branch, operate, and join sequences.

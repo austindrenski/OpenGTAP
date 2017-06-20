@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace HeaderArrayConverter
+namespace HeaderArrayConverter.Branches
 {
     /// <summary>
     /// Extension methods to branch, operate, and join sequences.
     /// </summary>
     [PublicAPI]
-    public static class ParallelBranchMerge
+    public static class BranchMergeExtensions
     {
         /// <summary>
         /// Concatenates the two branches sequentially.
@@ -26,7 +27,7 @@ namespace HeaderArrayConverter
         [NotNull]
         [LinqTunnel]
         [CollectionAccess(CollectionAccessType.Read)]
-        public static ParallelQuery<TResult> BranchMerge<TResult>(this (ParallelQuery<TResult> Left, ParallelQuery<TResult> Right) source)
+        public static IEnumerable<TResult> BranchMerge<TResult>(this (IEnumerable<TResult> Left, IEnumerable<TResult> Right) source)
         {
             return source.Left.Concat(source.Right);
         }
@@ -59,7 +60,7 @@ namespace HeaderArrayConverter
         [NotNull]
         [LinqTunnel]
         [CollectionAccess(CollectionAccessType.Read)]
-        public static ParallelQuery<TResult> BranchMerge<TLeft, TRight, TResult>(this (ParallelQuery<TLeft> Left, ParallelQuery<TRight> Right) source, Func<ParallelQuery<TLeft>, ParallelQuery<TResult>> left, Func<ParallelQuery<TRight>, ParallelQuery<TResult>> right)
+        public static IEnumerable<TResult> BranchMerge<TLeft, TRight, TResult>(this (IEnumerable<TLeft> Left, IEnumerable<TRight> Right) source, Func<IEnumerable<TLeft>, IEnumerable<TResult>> left, Func<IEnumerable<TRight>, IEnumerable<TResult>> right)
         {
             if (left is null)
             {

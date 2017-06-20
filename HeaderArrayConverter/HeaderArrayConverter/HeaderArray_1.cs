@@ -8,6 +8,8 @@ using HeaderArrayConverter.Collections;
 using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Schema;
+using Newtonsoft.Json.Schema.Generation;
 
 namespace HeaderArrayConverter
 {
@@ -21,6 +23,13 @@ namespace HeaderArrayConverter
     [JsonObject(MemberSerialization.OptIn)]
     public class HeaderArray<TValue> : HeaderArray, IHeaderArray<TValue>
     {
+        /// <summary>
+        /// Gets the <see cref="IHeaderArray.JsonSchema"/> for this object.
+        /// </summary>
+        public static JSchema JsonSchema { get; } = GetJsonSchema();
+
+        JSchema IHeaderArray.JsonSchema => JsonSchema;
+
         /// <summary>
         /// An immutable dictionary whose entries are stored by a sequence of the defining sets.
         /// </summary>
@@ -299,6 +308,21 @@ namespace HeaderArrayConverter
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        private static JSchema GetJsonSchema()
+        {
+            JSchemaGenerator generator = new JSchemaGenerator
+            {
+                DefaultRequired = Required.Always,
+                SchemaIdGenerationHandling = SchemaIdGenerationHandling.TypeName,
+                SchemaPropertyOrderHandling = SchemaPropertyOrderHandling.Default,
+                SchemaLocationHandling = SchemaLocationHandling.Definitions,
+                SchemaReferenceHandling = SchemaReferenceHandling.All
+            };
+            generator.GenerationProviders.Add(new StringEnumGenerationProvider());
+
+            return generator.Generate(typeof(HeaderArray<TValue>));
         }
     }
 }

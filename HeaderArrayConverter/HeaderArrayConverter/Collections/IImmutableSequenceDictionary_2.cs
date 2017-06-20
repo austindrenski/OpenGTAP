@@ -14,7 +14,8 @@ namespace HeaderArrayConverter.Collections
     /// The item type.
     /// </typeparam>
     [PublicAPI]
-    public interface IImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey>, ISequenceIndexer<TKey, TValue>, IImmutableDictionary<KeySequence<TKey>, TValue>
+    // ReSharper disable once PossibleInterfaceMemberAmbiguity
+    public interface IImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey>, ISequenceIndexer<TKey, TValue>, IImmutableDictionary<KeySequence<TKey>, TValue>, IDictionary<KeySequence<TKey>, TValue>
     {
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.

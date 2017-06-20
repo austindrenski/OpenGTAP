@@ -12,6 +12,7 @@ using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Schema;
 
 namespace HeaderArrayConverter
 {
@@ -21,6 +22,11 @@ namespace HeaderArrayConverter
     [PublicAPI]
     public abstract class HeaderArray : IHeaderArray
     {
+        /// <summary>
+        /// Gets the <see cref="IHeaderArray.JsonSchema"/> for this object.
+        /// </summary>
+        JSchema IHeaderArray.JsonSchema => throw new NotSupportedException();
+
         /// <summary>
         /// Provides a converter for the <see cref="Deserialize(string)"/> method.
         /// </summary>
@@ -40,7 +46,6 @@ namespace HeaderArrayConverter
         /// <summary>
         /// The type of the array.
         /// </summary>
-        //[JsonConverter(typeof(StringEnumConverter))]
         public abstract HeaderArrayType Type { get; }
 
         /// <summary>

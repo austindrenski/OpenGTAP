@@ -2,6 +2,8 @@
 using System.IO;
 using HeaderArrayConverter;
 using HeaderArrayConverter.IO;
+using Newtonsoft.Json.Schema;
+using Newtonsoft.Json.Schema.Generation;
 
 namespace HeaderArrayConsole
 {
@@ -62,11 +64,7 @@ namespace HeaderArrayConsole
             //    validateSets: false);
 
 
-            Newtonsoft.Json.Schema.Generation.JSchemaGenerator a = new Newtonsoft.Json.Schema.Generation.JSchemaGenerator();
-
-            Newtonsoft.Json.Schema.JSchema b = a.Generate(typeof(HeaderArray<float>));
-
-            Console.WriteLine(b);
+            Console.WriteLine(HeaderArray<float>.JsonSchema);
 
             Console.ReadLine();
         }
