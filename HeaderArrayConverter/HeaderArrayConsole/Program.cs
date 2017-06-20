@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using HeaderArrayConverter;
 using HeaderArrayConverter.IO;
 
@@ -6,24 +7,23 @@ namespace HeaderArrayConsole
 {
     public static class Program
     {
+        private static readonly string CurrentDirectory = Directory.GetCurrentDirectory();
+
         public static void Main()
         {
-            const string directory = "c:\\users\\adren\\desktop\\gtap source\\har testing files";
-            //const string directory = "g:\\data\\austin d\\gtap source code\\har testing files";
+            //string input = $"{CurrentDirectory}\\base\\sets original.har";
+            //string input = $"{CurrentDirectory}\\base\\basedata original.har";
+            //string input = $"{CurrentDirectory}\\base\\baserate original.har";
+            //string input = $"{CurrentDirectory}\\base\\baseview original.har";
 
-            //string input = $"{directory}\\base\\sets original.har";
-            //string input = $"{directory}\\base\\basedata original.har";
-            //string input = $"{directory}\\base\\baserate original.har";
-            //string input = $"{directory}\\base\\baseview original.har";
+            string input = $"{CurrentDirectory}\\laborfd\\laborfd (sl4) original.sl4";
+            //string input = $"{CurrentDirectory}\\laborfd\\laborfd (slc) original.slc";
 
-            string input = $"{directory}\\laborfd\\laborfd (sl4) original.sl4";
-            //string input = $"{directory}\\laborfd\\laborfd (slc) original.slc";
+            //string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (sl4) original.sl4";
+            //string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (slc) original.slc";
 
-            //string input = $"{directory}\\reBAS11\\reBAS11 (sl4) original.sl4";
-            //string input = $"{directory}\\reBAS11\\reBAS11 (slc) original.slc";
-
-            string jsonOutput = $"{directory}\\test6.harx";
-            string binaryOutput = $"{directory}\\test6.har";
+            string jsonOutput = $"{CurrentDirectory}\\test6.harx";
+            string binaryOutput = $"{CurrentDirectory}\\test6.har";
 
             //// 1. Read the input file with HAR semantics.
             //// 2. Write to binary and json.
@@ -61,7 +61,14 @@ namespace HeaderArrayConsole
                 writeJson: true,
                 validateSets: false);
 
-            //Console.ReadLine();
+
+            Newtonsoft.Json.Schema.Generation.JSchemaGenerator a = new Newtonsoft.Json.Schema.Generation.JSchemaGenerator();
+
+            Newtonsoft.Json.Schema.JSchema b = a.Generate(typeof(HeaderArray<float>));
+
+            Console.WriteLine(b);
+
+            Console.ReadLine();
         }
 
         private static void Test(string input, string binaryOutput, string jsonOutput, HeaderArrayReader reader, bool writeBinary, bool writeJson, bool validateSets)
