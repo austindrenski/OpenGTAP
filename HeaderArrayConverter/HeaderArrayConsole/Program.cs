@@ -12,11 +12,11 @@ namespace HeaderArrayConsole
         public static void Main()
         {
             //string input = $"{CurrentDirectory}\\base\\sets original.har";
-            //string input = $"{CurrentDirectory}\\base\\basedata original.har";
+            string input = $"{CurrentDirectory}\\base\\basedata original.har";
             //string input = $"{CurrentDirectory}\\base\\baserate original.har";
             //string input = $"{CurrentDirectory}\\base\\baseview original.har";
 
-            string input = $"{CurrentDirectory}\\laborfd\\laborfd (sl4) original.sl4";
+            //string input = $"{CurrentDirectory}\\laborfd\\laborfd (sl4) original.sl4";
             //string input = $"{CurrentDirectory}\\laborfd\\laborfd (slc) original.slc";
 
             //string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (sl4) original.sl4";
@@ -25,17 +25,17 @@ namespace HeaderArrayConsole
             string jsonOutput = $"{CurrentDirectory}\\test6.harx";
             string binaryOutput = $"{CurrentDirectory}\\test6.har";
 
-            //// 1. Read the input file with HAR semantics.
-            //// 2. Write to binary and json.
-            //// 3. Do not validate sets.
-            //Test(
-            //    input: input,
-            //    binaryOutput: binaryOutput,
-            //    jsonOutput: jsonOutput,
-            //    reader: HeaderArrayFile.BinaryReader,
-            //    writeBinary: true,
-            //    writeJson: true,
-            //    validateSets: false);
+            // 1. Read the input file with HAR semantics.
+            // 2. Write to binary and json.
+            // 3. Do not validate sets.
+            Test(
+                input: input,
+                binaryOutput: binaryOutput,
+                jsonOutput: jsonOutput,
+                reader: HeaderArrayFile.BinaryReader,
+                writeBinary: true,
+                writeJson: true,
+                validateSets: false);
 
             //// 1. Read the input file with HARX semantics.
             //// 2. Write to binary and json.
@@ -49,17 +49,17 @@ namespace HeaderArrayConsole
             //    writeJson: true,
             //    validateSets: false);
 
-            // 1. Read the input file with SL4 semantics.
-            // 2. Write to binary and json.
-            // 3. Do not validate sets.
-            Test(
-                input: input,
-                binaryOutput: binaryOutput,
-                jsonOutput: jsonOutput,
-                reader: SolutionFile.BinaryReader,
-                writeBinary: true,
-                writeJson: true,
-                validateSets: false);
+            //// 1. Read the input file with SL4 semantics.
+            //// 2. Write to binary and json.
+            //// 3. Do not validate sets.
+            //Test(
+            //    input: input,
+            //    binaryOutput: binaryOutput,
+            //    jsonOutput: jsonOutput,
+            //    reader: SolutionFile.BinaryReader,
+            //    writeBinary: true,
+            //    writeJson: true,
+            //    validateSets: false);
 
 
             Newtonsoft.Json.Schema.Generation.JSchemaGenerator a = new Newtonsoft.Json.Schema.Generation.JSchemaGenerator();
