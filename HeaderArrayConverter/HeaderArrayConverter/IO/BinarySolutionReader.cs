@@ -121,12 +121,21 @@ namespace HeaderArrayConverter.IO
 
             IHeaderArray<string> commandFile = arrayFile["CMDF"].As<string>();
 
+            IImmutableList<SolutionArray> solutionArrays = BuildSolutionArrays(arrayFile).ToImmutableArray();
+
+            IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets =
+                solutionArrays.SelectMany(
+                                  x =>
+                                      x.Sets.Select(y => new KeyValuePair<string, IImmutableList<string>>(y.Name, y.Elements)))
+                              .Distinct()
+                              .ToImmutableArray();
+
             return
-                BuildSolutionArrays(arrayFile).Where(x => x.IsBacksolvedOrCondensed)
-                                              .OrderBy(x => x.VariableIndex)
-                                              .AsParallel()
-                                              .AsOrdered()
-                                              .Select(BuildNextArray);
+                solutionArrays.Where(x => x.IsBacksolvedOrCondensed)
+                              .OrderBy(x => x.VariableIndex)
+                              .AsParallel()
+                              .AsOrdered()
+                              .Select(BuildNextArray);
 
             // Local method here to limit passing arrays as parameters.
             IHeaderArray BuildNextArray(SolutionArray array, int index)
@@ -140,7 +149,7 @@ namespace HeaderArrayConverter.IO
                 // TODO: When the array is condensed/backsolved and the pointer is empty, its probably a shocked variable (PSHK, SHCK, SHCL, SHOC).
                 if (pointer != -1)
                 {
-                    Array.Copy(cumulativeResults, pointer, values, 0 /*values.Length - count*/, count);
+                    Array.Copy(cumulativeResults, pointer, values, 0, count);
                 }
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
@@ -151,7 +160,7 @@ namespace HeaderArrayConverter.IO
                 ImmutableArray<KeySequence<string>> expandedSets = 
                     set.AsExpandedSet().ToImmutableArray();
 
-                ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, set);
+                ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, sets);
 
                 // TODO: Exogenous variables create offsets in the values. For example:
                 //if (array.Name == "pfe" && arrayFile["CMDF"].As<string>().Any(x => x.Value.Contains("pfe(\"capital\",\"food\")")))
@@ -166,7 +175,7 @@ namespace HeaderArrayConverter.IO
                     {
                         int indexOf = 
                             expandedSets.IndexOf(
-                                definition.Indexes.ToArray(), 
+                                new KeySequence<string>(definition.Indexes.ToArray()), 
                                 0,
                                 expandedSets.Count(), 
                                 KeySequence<string>.OrdinalIgnoreCaseEquality);
