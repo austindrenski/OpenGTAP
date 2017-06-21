@@ -119,7 +119,7 @@ namespace HeaderArrayConverter.IO
 
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
-            ModelCommandFile commands = new ModelCommandFile(arrayFile["CMDF"].As<string>());
+            IHeaderArray<string> commandFile = arrayFile["CMDF"].As<string>();
 
             return
                 BuildSolutionArrays(arrayFile).Where(x => x.IsBacksolvedOrCondensed)
@@ -143,22 +143,62 @@ namespace HeaderArrayConverter.IO
                     Array.Copy(cumulativeResults, pointer, values, 0 /*values.Length - count*/, count);
                 }
 
-                // TODO: Exogenous variables create offsets in the values. For example:
-                if (array.Name == "pfe" && arrayFile["CMDF"].As<string>().Any(x => x.Value.Contains("pfe(\"capital\",\"food\")")))
-                {
-                    Array.Copy(values, 2, values, 3, values.Length - 3);
-                    Array.Clear(values, 2, 1);
-                }
-
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
                          .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
                          .ToImmutableArray();
 
+                ImmutableArray<KeySequence<string>> expandedSets = 
+                    set.AsExpandedSet().ToImmutableArray();
+
+                ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, set);
+
+                // TODO: Exogenous variables create offsets in the values. For example:
+                //if (array.Name == "pfe" && arrayFile["CMDF"].As<string>().Any(x => x.Value.Contains("pfe(\"capital\",\"food\")")))
+                IEnumerable<VariableDefinition> variableDefinitions =
+                    modelCommandFile.ExogenousDefinitions
+                                    .Where(x => x.Name == array.Name)
+                                    .ToArray();
+
+                if (variableDefinitions.Any())
+                {
+                    foreach (VariableDefinition definition in variableDefinitions)
+                    {
+                        int indexOf = 
+                            expandedSets.IndexOf(
+                                definition.Indexes.ToArray(), 
+                                0,
+                                expandedSets.Count(), 
+                                KeySequence<string>.OrdinalIgnoreCaseEquality);
+
+                        if (indexOf == -1)
+                        {
+                            break;
+                            //if (!definition.HasIndexes)
+                            //{
+                            //    break;
+                            //}
+                            //if (!definition.Indexes.All(x => set.Any(y => y.Key == x)))
+                            //{
+                            //    break;
+                            //}
+                            //IImmutableList<string> setEntries = set.SingleOrDefault(x => x.Key != definition.Indexes.Single()).Value;
+
+                            //for (int i = 0; i < setEntries.Count; i++)
+                            //{
+                            //    Array.Copy(values, i, values, i + 1, values.Length - i - 1);
+                            //    Array.Clear(values, i, 1);
+                            //}
+                        }
+                        Array.Copy(values, indexOf, values, indexOf + 1, values.Length - indexOf - 1);
+                        Array.Clear(values, indexOf, 1);
+                    }
+                }
+
+
                 IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
-                    set.AsExpandedSet()
-                       .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
-                       .ToImmutableArray();
+                    expandedSets.Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
+                                .ToImmutableArray();
 
                 return
                     new HeaderArray<float>(

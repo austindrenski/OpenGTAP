@@ -43,13 +43,19 @@ namespace HeaderArrayConverter.Collections
         /// Compares sequences with <see cref="StringComparison.OrdinalIgnoreCase"/> semantics.
         /// </summary>
         [NotNull]
-        public static IComparer<KeySequence<TKey>> ForwardComparer = new Comparer(StringComparer.OrdinalIgnoreCase.Compare);
+        public static IComparer<KeySequence<TKey>> ForwardComparer { get; } = new Comparer(StringComparer.OrdinalIgnoreCase.Compare);
 
         /// <summary>
         /// Compares sequences with reverse <see cref="StringComparison.OrdinalIgnoreCase"/> semantics.
         /// </summary>
         [NotNull]
-        public static IComparer<KeySequence<TKey>> ReverseComparer = new Comparer(StringComparer.OrdinalIgnoreCase.Compare, Enumerable.Reverse);
+        public static IComparer<KeySequence<TKey>> ReverseComparer { get; } = new Comparer(StringComparer.OrdinalIgnoreCase.Compare, Enumerable.Reverse);
+
+        /// <summary>
+        /// Compares sequences with <see cref="StringComparison.OrdinalIgnoreCase"/> semantics.
+        /// </summary>
+        [NotNull]
+        public static IEqualityComparer<KeySequence<string>> OrdinalIgnoreCaseEquality { get; } = new StringKeyEqualityComparer();
 
         /// <summary>
         /// Gets the number of items contained in the sequence.
@@ -374,6 +380,19 @@ namespace HeaderArrayConverter.Collections
                     _transform is null
                         ? _comparer(x.ToString(), y.ToString())
                         : _comparer(x.ToString(_transform), y.ToString(_transform));
+            }
+        }
+
+        private sealed class StringKeyEqualityComparer : IEqualityComparer<KeySequence<string>>
+        {
+            public bool Equals(KeySequence<string> x, KeySequence<string> y)
+            {
+                return x.Count == y.Count && x.Zip(y, (a, b) => a.Equals(b, StringComparison.OrdinalIgnoreCase)).All(z => z);
+            }
+
+            public int GetHashCode(KeySequence<string> obj)
+            {
+                return obj.GetHashCode();
             }
         }
     }
