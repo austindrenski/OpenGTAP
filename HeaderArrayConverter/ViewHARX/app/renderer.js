@@ -3,13 +3,14 @@
 exports.SetCallback = SetCallback;
 exports.SetDragAndDrop = SetDragAndDrop;
 
-google.charts.load("current", { "packages": ["table"] });
 
-function SetCallback(elementId) {
-    google.charts.setOnLoadCallback(() => DrawTable(elementId));
+function SetCallback(google, elementId) {
+    google.charts.load("current", { "packages": ["table"] });
+
+    google.charts.setOnLoadCallback(() => DrawTable(google, elementId));
 }
 
-function DrawTable(elementId) {
+function DrawTable(google, elementId) {
     const Data = new google.visualization.DataTable();
     Data.addColumn("string", "Name");
     Data.addColumn("number", "Salary");

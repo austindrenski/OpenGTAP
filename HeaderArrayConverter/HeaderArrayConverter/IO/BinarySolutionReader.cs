@@ -119,6 +119,8 @@ namespace HeaderArrayConverter.IO
 
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
+            ModelCommandFile commands = new ModelCommandFile(arrayFile["CMDF"].As<string>());
+
             return
                 BuildSolutionArrays(arrayFile).Where(x => x.IsBacksolvedOrCondensed)
                                               .OrderBy(x => x.VariableIndex)

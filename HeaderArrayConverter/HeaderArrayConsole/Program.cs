@@ -49,20 +49,19 @@ namespace HeaderArrayConsole
             //    writeJson: true,
             //    validateSets: false);
 
-            //// 1. Read the input file with SL4 semantics.
-            //// 2. Write to binary and json.
-            //// 3. Do not validate sets.
-            //Test(
-            //    input: input,
-            //    binaryOutput: binaryOutput,
-            //    jsonOutput: jsonOutput,
-            //    reader: SolutionFile.BinaryReader,
-            //    writeBinary: true,
-            //    writeJson: true,
-            //    validateSets: false);
+            // 1. Read the input file with SL4 semantics.
+            // 2. Write to binary and json.
+            // 3. Do not validate sets.
+            Test(
+                input: input,
+                binaryOutput: binaryOutput,
+                jsonOutput: jsonOutput,
+                reader: SolutionFile.BinaryReader,
+                writeBinary: true,
+                writeJson: true,
+                validateSets: false);
 
-
-            Console.WriteLine(HeaderArray<float>.JsonSchema);
+            //Console.WriteLine(HeaderArray<float>.JsonSchema);
 
             Console.ReadLine();
         }
