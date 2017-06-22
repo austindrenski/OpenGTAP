@@ -172,6 +172,18 @@ namespace HeaderArrayConverter.IO
                     values[indexOf] = default(float);
                 }
 
+                foreach (VariableDefinition definition in modelCommandFile.ShockedDefinitions.Where(x => x.Name == array.Name))
+                {
+                    int indexOf =
+                        expandedSets.IndexOf(
+                            new KeySequence<string>(definition.Indexes.ToArray()),
+                            0,
+                            expandedSets.Count(),
+                            KeySequence<string>.OrdinalIgnoreCaseEquality);
+
+                    values[indexOf] = definition.Values.First();
+                }
+
                 IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
                     expandedSets.Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
                                 .ToImmutableArray();

@@ -30,13 +30,19 @@ namespace HeaderArrayConverter.Types
         /// 
         /// </summary>
         [NotNull]
-        public static Regex ShockedVariables { get; } = new Regex("(?<=shock)([^;]+)*", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+        public static Regex ShockedVariablesSection { get; } = new Regex("(?:rest\\s*endogenous\\s*;)([\\s\\S]+)", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// 
         /// </summary>
         [NotNull]
-        public static Regex VariableRegex { get; } = new Regex("\\b(?<variable>\\w+)\\(?((?<indexes>\"?\\w+\"?)*(?:,)*)*\\)?", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+        public static Regex ShockedVariables { get; } = new Regex("(?<=shock\\s*)(?<variable>\\w+)\\(?((?<indexes>\"?\\w+\"?)*[\\s,]*)*\\)?\\s*=\\s*(?<value>[^;]+)", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [NotNull]
+        public static Regex VariableRegex { get; } = new Regex("\\b(?<variable>\\w+)\\(?((?<indexes>\"?\\w+\"?)*,?)*\\)?", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// 
@@ -59,6 +65,11 @@ namespace HeaderArrayConverter.Types
         /// 
         /// </summary>
         public string ExogenousCommands { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ShockedCommands { get; }
 
         /// <summary>
         /// Constructs a command file from the command file header.
@@ -89,14 +100,20 @@ namespace HeaderArrayConverter.Types
                                             (current, next) => current.Append(next.Value + ' '),
                                             result => result.ToString());
 
-
+            ShockedCommands = ShockedVariablesSection.Match(CommandText).Value;
 
 
             ExogenousDefinitions = SetExogenousVariables(ExogenousCommands, sets).ToImmutableArray();
 
-            foreach (Match shock in ShockedVariables.Matches(CommandText))
+            ShockedDefinitions = SetShockedVariables(ShockedCommands).ToImmutableArray();
+
+            foreach (VariableDefinition def in ExogenousDefinitions)
             {
-                Console.WriteLine(shock);
+                Console.WriteLine(def);
+            }
+            foreach (VariableDefinition def in ShockedDefinitions)
+            {
+                Console.WriteLine(def);
             }
         }
 
@@ -153,7 +170,25 @@ namespace HeaderArrayConverter.Types
 
         private static IEnumerable<VariableDefinition> SetShockedVariables(string shocks)
         {
-            return null;
+            foreach (Match match in ShockedVariables.Matches(shocks))
+            {
+                yield return
+                    new VariableDefinition(
+                        match.Groups["variable"].Value,
+                        true,
+                        !match.Value.Contains('(')
+                            ? Enumerable.Empty<string>()
+                            : match.Groups["indexes"]
+                                   .Captures
+                                   .Cast<Capture>()
+                                   .Where(y => y.Length > 0)
+                                   .Select(y => y.Value.Trim('"')),
+                        match.Groups["value"]
+                             .Captures
+                             .Cast<Capture>()
+                             .Where(y => y.Length > 0)
+                             .Select(y => float.TryParse(y.Value.Trim().Replace("uniform", null), out float result) ? result : 0));
+            }
         }
     }
 }

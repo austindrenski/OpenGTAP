@@ -35,9 +35,21 @@ namespace HeaderArrayConverter.Types
         public IImmutableList<string> Indexes { get; }
 
         /// <summary>
+        /// Gets the values for this definition.
+        /// </summary>
+        [NotNull]
+        [JsonProperty]
+        public IImmutableList<float> Values { get; }
+        
+        /// <summary>
         /// True if this definition includes indexes; otherwise false.
         /// </summary>
         public bool HasIndexes => Indexes.Any();
+
+        /// <summary>
+        /// True if this definition includes values; otherwise false.
+        /// </summary>
+        public bool HasValues => Values.Any();
 
         /// <summary>
         /// Constructs a <see cref="VariableDefinition"/>.
@@ -61,10 +73,45 @@ namespace HeaderArrayConverter.Types
         /// <param name="isExogenous">
         /// True if the variable is fully exogenous; otherwise false.
         /// </param>
+        /// <param name="value">
+        /// The value related to this definition.
+        /// </param>
+        public VariableDefinition([NotNull] string name, bool isExogenous, float value) : this(name, isExogenous, Enumerable.Empty<string>(), new float[] { value })
+        {
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="VariableDefinition"/>.
+        /// </summary>
+        /// <param name="name">
+        /// The name of the variable.
+        /// </param>
+        /// <param name="isExogenous">
+        /// True if the variable is fully exogenous; otherwise false.
+        /// </param>
         /// <param name="indexes">
         /// The indexes for this definition.
         /// </param>
-        public VariableDefinition([NotNull] string name, bool isExogenous, [NotNull] IEnumerable<string> indexes)
+        public VariableDefinition([NotNull] string name, bool isExogenous, [NotNull] IEnumerable<string> indexes) : this(name, isExogenous, indexes, Enumerable.Empty<float>())
+        {
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="VariableDefinition"/>.
+        /// </summary>
+        /// <param name="name">
+        /// The name of the variable.
+        /// </param>
+        /// <param name="isExogenous">
+        /// True if the variable is fully exogenous; otherwise false.
+        /// </param>
+        /// <param name="indexes">
+        /// The indexes for this definition.
+        /// </param>
+        /// <param name="values">
+        /// The values related to this definition.
+        /// </param>
+        public VariableDefinition([NotNull] string name, bool isExogenous, [NotNull] IEnumerable<string> indexes, IEnumerable<float> values)
         {
             if (name is null)
             {
@@ -78,6 +125,7 @@ namespace HeaderArrayConverter.Types
             Name = name;
             IsExogenous = isExogenous;
             Indexes = indexes as IImmutableList<string> ?? indexes.ToImmutableArray();
+            Values = values as IImmutableList<float> ?? values.ToImmutableArray();
         }
 
         /// <summary>
