@@ -133,10 +133,9 @@ namespace HeaderArrayConverter.IO
             ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, sets);
 
             return
-                solutionArrays.Where(x => x.IsBacksolvedOrCondensed)
+                solutionArrays.AsParallel()
+                              .Where(x => x.IsBacksolvedOrCondensed)
                               .OrderBy(x => x.VariableIndex)
-                              .AsParallel()
-                              .AsOrdered()
                               .Select(BuildNextArray);
 
             // Local method here to limit passing arrays as parameters.
