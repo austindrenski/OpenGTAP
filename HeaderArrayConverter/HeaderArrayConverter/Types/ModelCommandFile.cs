@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -17,7 +18,7 @@ namespace HeaderArrayConverter.Types
         /// 
         /// </summary>
         [NotNull]
-        public static Regex RemoveComments { get; } = new Regex("(!.*)", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+        public static Regex RemoveComments { get; } = new Regex("(!.*)(?:!)", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// 
@@ -41,13 +42,13 @@ namespace HeaderArrayConverter.Types
         /// 
         /// </summary>
         [NotNull]
-        public IImmutableList<VariableDefinition> VariableDefinitions { get; }
+        public IImmutableList<VariableDefinition> ExogenousDefinitions { get; }
 
         /// <summary>
         /// 
         /// </summary>
         [NotNull]
-        public IEnumerable<VariableDefinition> ExogenousDefinitions => VariableDefinitions.Where(x => x.IsExogenous);
+        public IImmutableList<VariableDefinition> ShockedDefinitions { get; }
 
         /// <summary>
         /// 
@@ -88,7 +89,15 @@ namespace HeaderArrayConverter.Types
                                             (current, next) => current.Append(next.Value + ' '),
                                             result => result.ToString());
 
-            VariableDefinitions = SetExogenousVariables(ExogenousCommands, sets).ToImmutableArray();
+
+
+
+            ExogenousDefinitions = SetExogenousVariables(ExogenousCommands, sets).ToImmutableArray();
+
+            foreach (Match shock in ShockedVariables.Matches(CommandText))
+            {
+                Console.WriteLine(shock);
+            }
         }
 
         /// <summary>

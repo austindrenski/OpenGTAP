@@ -16,10 +16,10 @@ namespace HeaderArrayConsole
             //string input = $"{CurrentDirectory}\\base\\baserate original.har";
             //string input = $"{CurrentDirectory}\\base\\baseview original.har";
 
-            //string input = $"{CurrentDirectory}\\laborfd\\laborfd (sl4) original.sl4";
+            string input = $"{CurrentDirectory}\\laborfd\\laborfd (sl4) original.sl4";
             //string input = $"{CurrentDirectory}\\laborfd\\laborfd (slc) original.slc";
 
-            string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (sl4) original.sl4";
+            //string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (sl4) original.sl4";
             //string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (slc) original.slc";
 
             string jsonOutput = $"{CurrentDirectory}\\test6.harx";
