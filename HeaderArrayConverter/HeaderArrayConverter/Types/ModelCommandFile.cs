@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -121,11 +120,6 @@ namespace HeaderArrayConverter.Types
                                    .Cast<Capture>()
                                    .Where(y => y.Length > 0)
                                    .Select(y => y.Value));
-
-                if (definition.Name == "pfe")
-                {
-                    Console.Beep();
-                }
 
                 if (definition.Indexes.All(x => x.StartsWith("\"")))
                 {

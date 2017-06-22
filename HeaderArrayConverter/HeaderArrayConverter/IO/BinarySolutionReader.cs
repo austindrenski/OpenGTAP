@@ -130,26 +130,26 @@ namespace HeaderArrayConverter.IO
                               .Distinct()
                               .ToImmutableArray();
 
+            ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, sets);
+
             return
                 solutionArrays.Where(x => x.IsBacksolvedOrCondensed)
                               .OrderBy(x => x.VariableIndex)
-                              //.AsParallel()
-                              //.AsOrdered()
+                              .AsParallel()
+                              .AsOrdered()
                               .Select(BuildNextArray);
 
             // Local method here to limit passing arrays as parameters.
             IHeaderArray BuildNextArray(SolutionArray array, int index)
             {
-                int pointer = pointersToCumulative[index] - 1;
-
-                int count = countInCumulative[index];
-
                 float[] values = new float[array.Count];
+
+                int pointer = pointersToCumulative[index] - 1;
 
                 // TODO: When the array is condensed/backsolved and the pointer is empty, its probably a shocked variable (PSHK, SHCK, SHCL, SHOC).
                 if (pointer != -1)
                 {
-                    Array.Copy(cumulativeResults, pointer, values, 0, count);
+                    Array.Copy(cumulativeResults, pointer, values, 0, countInCumulative[index]);
                 }
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
@@ -160,38 +160,18 @@ namespace HeaderArrayConverter.IO
                 ImmutableArray<KeySequence<string>> expandedSets = 
                     set.AsExpandedSet().ToImmutableArray();
 
-                ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, sets);
-
-                IEnumerable<VariableDefinition> variableDefinitions =
-                    modelCommandFile.ExogenousDefinitions
-                                    .Where(x => x.Name == array.Name)
-                                    .ToArray();
-
-                if (array.Name == "pfe")
+                foreach (VariableDefinition definition in modelCommandFile.ExogenousDefinitions.Where(x => x.Name == array.Name))
                 {
-                    Console.Beep();
+                    int indexOf = 
+                        expandedSets.IndexOf(
+                            new KeySequence<string>(definition.Indexes.ToArray()), 
+                            0,
+                            expandedSets.Count(), 
+                            KeySequence<string>.OrdinalIgnoreCaseEquality);
+                        
+                    Array.Copy(values, indexOf, values, indexOf + 1, values.Length - indexOf - 1);
+                    values[indexOf] = default(float);
                 }
-
-                if (variableDefinitions.Any())
-                {
-                    foreach (VariableDefinition definition in variableDefinitions)
-                    {
-                        int indexOf = 
-                            expandedSets.IndexOf(
-                                new KeySequence<string>(definition.Indexes.ToArray()), 
-                                0,
-                                expandedSets.Count(), 
-                                KeySequence<string>.OrdinalIgnoreCaseEquality);
-
-                        if (indexOf == -1)
-                        {
-                            break;
-                        }
-                        Array.Copy(values, indexOf, values, indexOf + 1, values.Length - indexOf - 1);
-                        Array.Clear(values, indexOf, 1);
-                    }
-                }
-
 
                 IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
                     expandedSets.Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
@@ -203,7 +183,7 @@ namespace HeaderArrayConverter.IO
                         array.Description,
                         HeaderArrayType.RE,
                         entries,
-                        1,
+                        default(int),
                         array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7).ToImmutableArray(),
                         set);
             }
