@@ -3,6 +3,10 @@ OpenGTAP provides open-source tooling for the GTAP (Global Trade Analysis Projec
 
 ![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/austindrenski/OpenGTAP?svg=true)[![Travis Build Status](https://travis-ci.org/austindrenski/OpenGTAP.svg?branch=master)](https://travis-ci.org/austindrenski/OpenGTAP)
 
+## Libraries
+
+- [HeaderArrayConverter](https://github.com/austindrenski/OpenGTAP/blob/master/HeaderArrayConverter/README.md)
+
 ## Current status
 - The HeaderArrayConverter project is working on a data interchange format for the binary HAR and SL4 files.
     - Binary HAR and SL4 files can be read into memory.
