@@ -139,13 +139,11 @@ namespace HeaderArrayConverter.Types
                     new VariableDefinition(
                         match.Groups["variable"].Value,
                         true,
-                        !match.Value.Contains('(')
-                            ? Enumerable.Empty<string>()
-                            : match.Groups["indexes"]
-                                   .Captures
-                                   .Cast<Capture>()
-                                   .Where(y => y.Length > 0)
-                                   .Select(y => y.Value));
+                        match.Groups["indexes"]
+                             .Captures
+                             .Cast<Capture>()
+                             .Where(y => y.Length > 0)
+                             .Select(y => y.Value));
 
                 if (definition.Indexes.All(x => x.StartsWith("\"")))
                 {
@@ -176,13 +174,11 @@ namespace HeaderArrayConverter.Types
                     new VariableDefinition(
                         match.Groups["variable"].Value,
                         true,
-                        !match.Value.Contains('(')
-                            ? Enumerable.Empty<string>()
-                            : match.Groups["indexes"]
-                                   .Captures
-                                   .Cast<Capture>()
-                                   .Where(y => y.Length > 0)
-                                   .Select(y => y.Value.Trim('"')),
+                        match.Groups["indexes"]
+                             .Captures
+                             .Cast<Capture>()
+                             .Where(y => y.Length > 0)
+                             .Select(y => y.Value.Trim('"')),
                         match.Groups["value"]
                              .Captures
                              .Cast<Capture>()
