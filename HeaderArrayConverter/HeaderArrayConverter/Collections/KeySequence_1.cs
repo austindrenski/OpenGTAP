@@ -387,17 +387,20 @@ namespace HeaderArrayConverter.Collections
         {
             public bool Equals(KeySequence<string> x, KeySequence<string> y)
             {
-                IEnumerator<string> xEnumerator = x.GetEnumerator();
-                IEnumerator<string> yEnumerator = y.GetEnumerator();
-
-                while (xEnumerator.MoveNext() && yEnumerator.MoveNext())
+                using (IEnumerator<string> xEnumerator = x.GetEnumerator())
                 {
-                    if (!xEnumerator.Current.Equals(yEnumerator.Current, StringComparison.OrdinalIgnoreCase))
+                    using (IEnumerator<string> yEnumerator = y.GetEnumerator())
                     {
-                        return false;
+                        while (xEnumerator.MoveNext() && yEnumerator.MoveNext())
+                        {
+                            if (!xEnumerator.Current.Equals(yEnumerator.Current, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return false;
+                            }
+                        }
+                        return true;
                     }
                 }
-                return true;
             }
 
             public int GetHashCode(KeySequence<string> obj)

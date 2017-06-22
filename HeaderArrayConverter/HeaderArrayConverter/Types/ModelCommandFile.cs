@@ -36,7 +36,7 @@ namespace HeaderArrayConverter.Types
         /// 
         /// </summary>
         [NotNull]
-        public static Regex VariableRegex { get; } = new Regex("\\b(?<variable>\\w+)\\(?(?<indexes>\"?\\w+\"?,?\"?)+\\)?\\b", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+        public static Regex VariableRegex { get; } = new Regex("\\b(?<variable>\\w+)\\(?((?<indexes>\"?\\w+\"?)*(?:,)*)*\\)?", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// 
@@ -114,42 +114,35 @@ namespace HeaderArrayConverter.Types
                     new VariableDefinition(
                         match.Groups["variable"].Value,
                         true,
-                        match.Value.Contains('(')
-                            ? match.Groups["indexes"]
+                        !match.Value.Contains('(')
+                            ? Enumerable.Empty<string>()
+                            : match.Groups["indexes"]
                                    .Captures
                                    .Cast<Capture>()
                                    .Where(y => y.Length > 0)
-                                   .Select(y => y.Value.Replace('"', '\''))
-                            : Enumerable.Empty<string>());
-                
-                if (definition.Indexes.All(x => x.Contains('\'')))
+                                   .Select(y => y.Value));
+
+                if (definition.Name == "pfe")
                 {
-                    yield return new VariableDefinition(definition.Name, definition.IsExogenous, definition.Indexes.Select(x => x.Replace("'", null)));
+                    Console.Beep();
+                }
+
+                if (definition.Indexes.All(x => x.StartsWith("\"")))
+                {
+                    yield return
+                        new VariableDefinition(
+                            definition.Name,
+                            definition.IsExogenous,
+                            definition.Indexes.Select(x => x.Replace("\"", null).Replace(",", null)));
+
                     continue;
                 }
 
-                foreach (string index in definition.Indexes)
+                foreach (KeyValuePair<string, IImmutableList<string>> item in sets.Where(x => definition.Indexes.Contains(x.Key)))
                 {
-                    if (index.Contains('\''))
+                    foreach (string entry in item.Value)
                     {
-                        continue;
-                    }
-                    foreach (KeyValuePair<string, IImmutableList<string>> set in sets)
-                    {
-                        if (!index.Equals(set.Key, StringComparison.OrdinalIgnoreCase))
-                        {
-                            continue;
-                        }
-                        foreach (string item in set.Value)
-                        {
-                            yield return
-                                new VariableDefinition(
-                                    definition.Name,
-                                    true,
-                                    definition.Indexes
-                                              .Replace(index, item)
-                                              .Select(x => x.Replace("'", null)));
-                        }
+                        yield return new VariableDefinition(definition.Name, true, definition.Indexes.Replace(item.Key, entry).Select(x => x.Replace("\"", null).Replace(",", null)));
                     }
                 }
             }

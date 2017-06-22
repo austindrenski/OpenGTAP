@@ -133,8 +133,8 @@ namespace HeaderArrayConverter.IO
             return
                 solutionArrays.Where(x => x.IsBacksolvedOrCondensed)
                               .OrderBy(x => x.VariableIndex)
-                              .AsParallel()
-                              .AsOrdered()
+                              //.AsParallel()
+                              //.AsOrdered()
                               .Select(BuildNextArray);
 
             // Local method here to limit passing arrays as parameters.
@@ -162,12 +162,15 @@ namespace HeaderArrayConverter.IO
 
                 ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, sets);
 
-                // TODO: Exogenous variables create offsets in the values. For example:
-                //if (array.Name == "pfe" && arrayFile["CMDF"].As<string>().Any(x => x.Value.Contains("pfe(\"capital\",\"food\")")))
                 IEnumerable<VariableDefinition> variableDefinitions =
                     modelCommandFile.ExogenousDefinitions
                                     .Where(x => x.Name == array.Name)
                                     .ToArray();
+
+                if (array.Name == "pfe")
+                {
+                    Console.Beep();
+                }
 
                 if (variableDefinitions.Any())
                 {
@@ -183,21 +186,6 @@ namespace HeaderArrayConverter.IO
                         if (indexOf == -1)
                         {
                             break;
-                            //if (!definition.HasIndexes)
-                            //{
-                            //    break;
-                            //}
-                            //if (!definition.Indexes.All(x => set.Any(y => y.Key == x)))
-                            //{
-                            //    break;
-                            //}
-                            //IImmutableList<string> setEntries = set.SingleOrDefault(x => x.Key != definition.Indexes.Single()).Value;
-
-                            //for (int i = 0; i < setEntries.Count; i++)
-                            //{
-                            //    Array.Copy(values, i, values, i + 1, values.Length - i - 1);
-                            //    Array.Clear(values, i, 1);
-                            //}
                         }
                         Array.Copy(values, indexOf, values, indexOf + 1, values.Length - indexOf - 1);
                         Array.Clear(values, indexOf, 1);
