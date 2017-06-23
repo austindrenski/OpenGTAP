@@ -180,14 +180,12 @@ namespace HeaderArrayConverter.IO
                 // Shifts existing entries to their appropriate positions to create gaps for exogenous values.
                 float[] ShiftExogenous(float[] inputArray)
                 {
-                    float[] withGaps = new float[inputArray.Length];
-                    
                     if (array.Count == countOfExogenous[index])
                     {
-                        return withGaps;
+                        return new float[inputArray.Length];
                     }
 
-                    Array.Copy(inputArray, withGaps, inputArray.Length);
+                    float[] withGaps = inputArray.ToArray();
 
                     int nextValidPosition =
                         countOfExogenous.Take(index)
@@ -205,17 +203,27 @@ namespace HeaderArrayConverter.IO
                 }
 
                 // Adds shocks to open positions to a copy of the input array.
-                float[] Shocks(float[] inputArray)
+                float[] Shocks(IEnumerable<float> inputArray)
                 {
-                    float[] withShocks = new float[inputArray.Length];
+                    float[] withShocks = inputArray.ToArray();
 
-                    Array.Copy(inputArray, withShocks, withShocks.Length);
+                    int shockedCount = numberOfShockedComponents[index];
+
+                    if (shockedCount == 0)
+                    {
+                        return withShocks;
+                    }
 
                     int shockPointer = pointersToShockValues[index] - 1;
 
-                    for (int i = 0; i < numberOfShockedComponents[index]; i++)
+                    int nextValidPosition =
+                        numberOfShockedComponents.Take(index - 1)
+                                                 .Where((x, i) => x > 1 && x != numberOfShockedComponents[i])
+                                                 .Sum();
+                    
+                    for (int i = 0; i < shockedCount; i++)
                     {
-                        int position = positionsOfShockValues[shockPointer] - 1;
+                        int position = array.Count == shockedCount ? i : position = positionsOfShockValues[nextValidPosition + i];
                         float value = shockValues[shockPointer + i];
                         withShocks[position] = value;
                     }
