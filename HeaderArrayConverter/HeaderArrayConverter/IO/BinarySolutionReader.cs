@@ -113,55 +113,46 @@ namespace HeaderArrayConverter.IO
         {
             HeaderArrayFile arrayFile = BinaryReader.Read(file);
 
+            // Variable information.
+            int[] countOfComponentsInVariable = arrayFile["VNCP"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            // Endogenous variable components and information.
             int[] pointersToCumulative = arrayFile["PCUM"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
             int[] countInCumulative = arrayFile["CMND"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
-            int[] numberOfShockedComponents = arrayFile["SHCK"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            int[] pointersToShockValues = arrayFile["PSHK"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            int[] positionsOfShockValues = arrayFile["SHCL"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            float[] shockValues = arrayFile["SHOC"].As<float>().GetLogicalValuesEnumerable().ToArray();
-
+            // Exogenous variable components and list of positions (where OREX != array.Length).
             int[] countOfExogenous = arrayFile["OREX"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
             int[] positionsOfExogenous = arrayFile["OREL"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
-            IHeaderArray<string> commandFile = arrayFile["CMDF"].As<string>();
-
-            IImmutableList<SolutionArray> solutionArrays = BuildSolutionArrays(arrayFile).ToImmutableArray();
-
-            IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets =
-                solutionArrays.SelectMany(
-                                  x =>
-                                      x.Sets.Select(y => new KeyValuePair<string, IImmutableList<string>>(y.Name, y.Elements)))
-                              .Distinct()
-                              .ToImmutableArray();
-
-            ModelCommandFile modelCommandFile = new ModelCommandFile(commandFile, sets);
+            // Shocked variable information
+            int[] numberOfShockedComponents = arrayFile["SHCK"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            int[] pointersToShockValues = arrayFile["PSHK"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            int[] positionsOfShockValues = arrayFile["SHCL"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            float[] shockValues = arrayFile["SHOC"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
             return
-                solutionArrays.AsParallel()
-                              .Where(x => x.IsBacksolvedOrCondensed)
-                              .OrderBy(x => x.VariableIndex)
-                              .Select(BuildNextArray);
+                BuildSolutionArrays(arrayFile).AsParallel()
+                                              .Where(x => x.IsBacksolvedOrCondensed)
+                                              .OrderBy(x => x.VariableIndex)
+                                              .Select(BuildNextArray);
 
             // Local method here to limit passing arrays as parameters.
             IHeaderArray BuildNextArray(SolutionArray array, int index)
             {
                 float[] values = new float[array.Count];
 
-                int pointer = pointersToCumulative[index] - 1;
 
-                // TODO: When the array is condensed/backsolved and the pointer is empty, its probably a shocked variable (PSHK, SHCK, SHCL, SHOC).
+                // When the array is condensed/backsolved and the pointer is empty, its exogenous.
+                int pointer = pointersToCumulative[index] - 1;
                 if (pointer != -1)
                 {
                     Array.Copy(cumulativeResults, pointer, values, 0, countInCumulative[index]);
                 }
+                
+                values = ShiftExogenous(values);
+
+                values = Shocks(values);
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
@@ -170,36 +161,6 @@ namespace HeaderArrayConverter.IO
 
                 ImmutableArray<KeySequence<string>> expandedSets =
                     set.AsExpandedSet().ToImmutableArray();
-
-                foreach (VariableDefinition definition in modelCommandFile.ExogenousDefinitions.Where(x => x.Name == array.Name))
-                {
-                    int indexOf =
-                        expandedSets.IndexOf(
-                            new KeySequence<string>(definition.Indexes.ToArray()),
-                            0,
-                            expandedSets.Count(),
-                            KeySequence<string>.OrdinalIgnoreCaseEquality);
-
-                    Array.Copy(values, indexOf, values, indexOf + 1, values.Length - indexOf - 1);
-                    values[indexOf] = default(float);
-                }
-
-                //int previous = countOfExogenous.Take(index - 1).Sum();
-
-                //foreach (int item in positionsOfExogenous.Skip(previous).Take(countOfExogenous[index]))
-                //{
-                //    int next = item - 1;
-                //    Array.Copy(values, next, values, next + 1, values.Length - next - 1);
-                //    values[next] = default(float);
-                //}
-
-                int shockPointer = pointersToShockValues[index] - 1;
-                for (int i = 0; i < numberOfShockedComponents[index]; i++)
-                {
-                    int position = positionsOfShockValues[shockPointer] - 1;
-                    float value = shockValues[shockPointer + i];
-                    values[position] = value;
-                }
 
                 IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
                     expandedSets.Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
@@ -214,6 +175,53 @@ namespace HeaderArrayConverter.IO
                         default(int),
                         array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7).ToImmutableArray(),
                         set);
+
+
+                // Shifts existing entries to their appropriate positions to create gaps for exogenous values.
+                float[] ShiftExogenous(float[] inputArray)
+                {
+                    float[] withGaps = new float[inputArray.Length];
+                    
+                    if (array.Count == countOfExogenous[index])
+                    {
+                        return withGaps;
+                    }
+
+                    Array.Copy(inputArray, withGaps, inputArray.Length);
+
+                    int nextValidPosition =
+                        countOfExogenous.Take(index)
+                                        .Where((x, i) => x != countOfComponentsInVariable[i])
+                                        .Sum();
+
+                    for (int i = 0; i < countOfExogenous[index]; i++)
+                    {
+                        int position = positionsOfExogenous[nextValidPosition + i] - 1;
+                        Array.Copy(withGaps, position, withGaps, position + 1, withGaps.Length - position - 1);
+                        withGaps[position] = default(float);
+                    }
+
+                    return withGaps;
+                }
+
+                // Adds shocks to open positions to a copy of the input array.
+                float[] Shocks(float[] inputArray)
+                {
+                    float[] withShocks = new float[inputArray.Length];
+
+                    Array.Copy(inputArray, withShocks, withShocks.Length);
+
+                    int shockPointer = pointersToShockValues[index] - 1;
+
+                    for (int i = 0; i < numberOfShockedComponents[index]; i++)
+                    {
+                        int position = positionsOfShockValues[shockPointer] - 1;
+                        float value = shockValues[shockPointer + i];
+                        withShocks[position] = value;
+                    }
+
+                    return withShocks;
+                }
             }
         }
 
