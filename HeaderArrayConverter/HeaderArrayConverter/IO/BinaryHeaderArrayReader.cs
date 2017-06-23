@@ -145,11 +145,11 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<string>(header, description, type, items, 1, dimensions, sets);
+                    return new HeaderArray<string>(header, header, description, type, items, 1, dimensions, sets);
                 }
                 case HeaderArrayType.RE:
                 {
-                    (float[] floats, IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets) = GetReArray(reader, sparse);
+                    (string coefficient, float[] floats, IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets) = GetReArray(reader, sparse);
 
                     IEnumerable<KeySequence<string>> expandedSets =
                         sets.AsExpandedSet()
@@ -158,7 +158,7 @@ namespace HeaderArrayConverter.IO
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         expandedSets.Zip(floats, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
 
-                    return new HeaderArray<float>(header, description, type, items, 1, dimensions, sets);
+                    return new HeaderArray<float>(header, coefficient, description, type, items, 1, dimensions, sets);
                 }
                 case HeaderArrayType.I2:
                 {
@@ -179,7 +179,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<int>(header, description, type, items, serializedVectors, dimensions, sets);
+                    return new HeaderArray<int>(header, header, description, type, items, serializedVectors, dimensions, sets);
                 }
                 case HeaderArrayType.R2:
                 {
@@ -200,7 +200,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<float>(header, description, type, items, serializedVectors, dimensions, sets);
+                    return new HeaderArray<float>(header, header, description, type, items, serializedVectors, dimensions, sets);
                 }
                 default:
                 {
@@ -284,7 +284,7 @@ namespace HeaderArrayConverter.IO
             return (description, header, sparse, type, dimensions.ToImmutableArray());
         }
 
-        private static (float[] Data, IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets) GetReArray(BinaryReader reader, bool sparse)
+        private static (string Coefficient, float[] Data, IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets) GetReArray(BinaryReader reader, bool sparse)
         {
             // read dimension array
             byte[] dimensions = InitializeArray(reader);
@@ -363,7 +363,7 @@ namespace HeaderArrayConverter.IO
                 };
             }
 
-            return (data, sets.ToImmutableArray());
+            return (coefficient, data, sets.ToImmutableArray());
         }
 
         [NotNull]

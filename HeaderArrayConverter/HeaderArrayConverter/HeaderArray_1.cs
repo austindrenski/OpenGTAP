@@ -44,6 +44,12 @@ namespace HeaderArrayConverter
         public override string Header { get; }
 
         /// <summary>
+        /// The coeffecient related to this <see cref="HeaderArray{TValue}"/>
+        /// </summary>
+        [JsonProperty]
+        public override string Coefficient { get; }
+
+        /// <summary>
         /// The long name description of the <see cref="HeaderArray{T}"/>.
         /// </summary>
         [JsonProperty]
@@ -161,6 +167,9 @@ namespace HeaderArrayConverter
         /// <param name="header">
         /// The four character identifier for this <see cref="HeaderArray{TValue}"/>.
         /// </param>
+        /// <param name="coefficient">
+        /// The coefficient related to the <see cref="HeaderArray{TValue}"/>
+        /// </param>
         /// <param name="description">
         /// The long name description of the <see cref="HeaderArray{TValue}"/>.
         /// </param>
@@ -179,7 +188,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, int serializedVectors, [NotNull] IImmutableList<int> dimensions, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
+        public HeaderArray([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, int serializedVectors, [NotNull] IImmutableList<int> dimensions, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
         {
             if (entries is null)
             {
@@ -188,6 +197,10 @@ namespace HeaderArrayConverter
             if (header is null)
             {
                 throw new ArgumentNullException(nameof(header));
+            }
+            if (coefficient is null)
+            {
+                throw new ArgumentNullException(nameof(coefficient));
             }
             if (dimensions is null)
             {
@@ -199,6 +212,7 @@ namespace HeaderArrayConverter
             }
             
             Header = header;
+            Coefficient = coefficient;
             Description = description ?? string.Empty;
             Type = type;
             Dimensions = dimensions.ToImmutableArray();
@@ -248,7 +262,37 @@ namespace HeaderArrayConverter
                             x.Key,
                             (TResult) Enum.Parse(typeof(TResult), $"{Convert.ToInt32(Convert.ToChar(x.Value))}")));
 
-            return new HeaderArray<TResult>(Header, Description, Type, entries, SerializedVectors, Dimensions, Sets);
+            return new HeaderArray<TResult>(Header, Coefficient, Description, Type, entries, SerializedVectors, Dimensions, Sets);
+        }
+
+        /// <summary>
+        /// Returns a copy of this <see cref="IHeaderArray{TValue}"/> with the header modified.
+        /// </summary>
+        /// <param name="header">
+        /// The new header.
+        /// </param>
+        /// <returns>
+        /// A copy of this <see cref="IHeaderArray{TValue}"/> with a new name.
+        /// </returns>
+        [Pure]
+        public IHeaderArray<TValue> With(string header)
+        {
+            return new HeaderArray<TValue>(header, Coefficient, Description, Type, _entries, SerializedVectors, Dimensions, Sets);
+        }
+
+        /// <summary>
+        /// Returns a copy of this <see cref="IHeaderArray"/> with the header modified.
+        /// </summary>
+        /// <param name="header">
+        /// The new header.
+        /// </param>
+        /// <returns>
+        /// A copy of this <see cref="IHeaderArray"/> with a new name.
+        /// </returns>
+        [Pure]
+        IHeaderArray IHeaderArray.With(string header)
+        {
+            return With(header);
         }
 
         /// <summary>

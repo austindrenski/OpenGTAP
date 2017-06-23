@@ -169,6 +169,7 @@ namespace HeaderArrayConverter.IO
                 return
                     new HeaderArray<float>(
                         array.Name,
+                        array.Name,
                         array.Description,
                         HeaderArrayType.RE,
                         entries,

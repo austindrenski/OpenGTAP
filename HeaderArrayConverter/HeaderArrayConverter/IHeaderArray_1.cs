@@ -50,6 +50,19 @@ namespace HeaderArrayConverter
         new TValue this[int key] { get; }
 
         /// <summary>
+        /// Returns a copy of this <see cref="IHeaderArray"/> with the header modified.
+        /// </summary>
+        /// <param name="header">
+        /// The new header.
+        /// </param>
+        /// <returns>
+        /// A copy of this <see cref="IHeaderArray"/> with a new name.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        new IHeaderArray<TValue> With([NotNull] string header);
+
+        /// <summary>
         /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
         /// </summary>
         /// <returns>

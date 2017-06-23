@@ -39,6 +39,11 @@ namespace HeaderArrayConverter
         public abstract string Header { get; }
 
         /// <summary>
+        /// The coeffecient related to this <see cref="HeaderArray"/>
+        /// </summary>
+        public abstract string Coefficient { get; }
+
+        /// <summary>
         /// An optional description of the array.
         /// </summary>
         public abstract string Description { get; }
@@ -128,6 +133,20 @@ namespace HeaderArrayConverter
         public virtual IHeaderArray<TResult> As<TResult>()
         {
             return (IHeaderArray<TResult>)this;
+        }
+
+        /// <summary>
+        /// Returns a copy of this <see cref="IHeaderArray"/> with the header modified.
+        /// </summary>
+        /// <param name="header">
+        /// The new header.
+        /// </param>
+        /// <returns>
+        /// A copy of this <see cref="IHeaderArray"/> with a new name.
+        /// </returns>
+        IHeaderArray IHeaderArray.With(string header)
+        {
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -352,6 +371,7 @@ namespace HeaderArrayConverter
                 return
                     new HeaderArray<TValue>(
                         jObject["Header"].Value<string>(),
+                        jObject["Coefficient"].Value<string>(),
                         jObject["Description"].Value<string>(),
                         type,
                         ParseEntries(jObject["Entries"]),

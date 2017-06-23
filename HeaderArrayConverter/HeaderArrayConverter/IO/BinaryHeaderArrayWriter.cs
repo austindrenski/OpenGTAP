@@ -75,10 +75,47 @@ namespace HeaderArrayConverter.IO
 
             using (BinaryWriter writer = new BinaryWriter(new FileStream(file, FileMode.Create)))
             {
-                foreach (IHeaderArray array in source)
+                foreach (IHeaderArray array in ValidateHeaders(source))
                 {
                     await WriteArrayAsync(writer, array);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Validates the headers for uniqueness and length. 
+        /// If not unique or too long, an attempt to truncate is made. 
+        /// If that fails, then a numeric header is generated.
+        /// </summary>
+        /// <param name="arrays">
+        /// The list of arrays to validate.
+        /// </param>
+        /// <returns>
+        /// A sequnece of arrays with valid headers.
+        /// </returns>
+        private static IEnumerable<IHeaderArray> ValidateHeaders([NotNull] IEnumerable<IHeaderArray> arrays)
+        {
+            HashSet<string> headers = new HashSet<string>();
+            int numeric = 0;
+
+            foreach (IHeaderArray array in arrays)
+            {
+                if (array.Header.Length <= 4 && headers.Add(array.Header))
+                {
+                    yield return array;
+                    continue;
+                }
+
+                string truncated = new string(array.Header.Take(4).ToArray());
+                if (headers.Add(truncated))
+                {
+                    yield return array.With(truncated);
+                    continue;
+                }
+
+                string temp = $"z{numeric++.ToString().PadLeft(3, '0')}";
+                headers.Add(temp);
+                yield return array.With(temp);
             }
         }
 
@@ -188,7 +225,7 @@ namespace HeaderArrayConverter.IO
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     // TODO: need this for files that go SL4 -> HARX -> HAR. Fix this later.
-                    writer.Write(array.Header.PadRight(4).ToArray());
+                    writer.Write(array.Header.PadRight(4).Take(4).ToArray());
                 }
                 return stream.ToArray();
             }
@@ -295,7 +332,10 @@ namespace HeaderArrayConverter.IO
                     writer.Write(array.Sets.Select(x => x.Key).Distinct().Count());
                     writer.Write(Spacer);
                     writer.Write(array.Sets.Select(x => x.Key).Count());
-                    writer.Write(array.Header.PadRight(12).ToCharArray());
+                    
+                    // TODO: fix later, should write the coefficient and limit overrun.
+                    writer.Write(array.Coefficient.PadRight(12).Take(12).ToArray());
+
                     writer.Write(Spacer);
                     foreach (string name in array.Sets.Select(x => x.Key))
                     {

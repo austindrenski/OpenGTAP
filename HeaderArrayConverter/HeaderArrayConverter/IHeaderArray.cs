@@ -27,6 +27,12 @@ namespace HeaderArrayConverter
         string Header { get; }
 
         /// <summary>
+        /// The coeffecient related to this <see cref="IHeaderArray"/>
+        /// </summary>
+        [NotNull]
+        string Coefficient { get; }
+
+        /// <summary>
         /// An optional description of the array.
         /// </summary>
         [NotNull]
@@ -95,6 +101,19 @@ namespace HeaderArrayConverter
         [Pure]
         [NotNull]
         IHeaderArray<TResult> As<TResult>();
+
+        /// <summary>
+        /// Returns a copy of this <see cref="IHeaderArray"/> with the header modified.
+        /// </summary>
+        /// <param name="header">
+        /// The new header.
+        /// </param>
+        /// <returns>
+        /// A copy of this <see cref="IHeaderArray"/> with a new name.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        IHeaderArray With([NotNull] string header);
 
         /// <summary>
         /// Returns a JSON representation of the contents of this <see cref="HeaderArray{TValue}"/>.
