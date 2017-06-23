@@ -119,6 +119,18 @@ namespace HeaderArrayConverter.IO
 
             float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
+            int[] numberOfShockedComponents = arrayFile["SHCK"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            int[] pointersToShockValues = arrayFile["PSHK"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            int[] positionsOfShockValues = arrayFile["SHCL"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            float[] shockValues = arrayFile["SHOC"].As<float>().GetLogicalValuesEnumerable().ToArray();
+
+            int[] countOfExogenous = arrayFile["OREX"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
+            int[] positionsOfExogenous = arrayFile["OREL"].As<int>().GetLogicalValuesEnumerable().ToArray();
+
             IHeaderArray<string> commandFile = arrayFile["CMDF"].As<string>();
 
             IImmutableList<SolutionArray> solutionArrays = BuildSolutionArrays(arrayFile).ToImmutableArray();
@@ -156,23 +168,10 @@ namespace HeaderArrayConverter.IO
                          .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
                          .ToImmutableArray();
 
-                ImmutableArray<KeySequence<string>> expandedSets = 
+                ImmutableArray<KeySequence<string>> expandedSets =
                     set.AsExpandedSet().ToImmutableArray();
 
                 foreach (VariableDefinition definition in modelCommandFile.ExogenousDefinitions.Where(x => x.Name == array.Name))
-                {
-                    int indexOf = 
-                        expandedSets.IndexOf(
-                            new KeySequence<string>(definition.Indexes.ToArray()), 
-                            0,
-                            expandedSets.Count(), 
-                            KeySequence<string>.OrdinalIgnoreCaseEquality);
-                        
-                    Array.Copy(values, indexOf, values, indexOf + 1, values.Length - indexOf - 1);
-                    values[indexOf] = default(float);
-                }
-
-                foreach (VariableDefinition definition in modelCommandFile.ShockedDefinitions.Where(x => x.Name == array.Name))
                 {
                     int indexOf =
                         expandedSets.IndexOf(
@@ -181,7 +180,25 @@ namespace HeaderArrayConverter.IO
                             expandedSets.Count(),
                             KeySequence<string>.OrdinalIgnoreCaseEquality);
 
-                    values[indexOf] = definition.Values.First();
+                    Array.Copy(values, indexOf, values, indexOf + 1, values.Length - indexOf - 1);
+                    values[indexOf] = default(float);
+                }
+
+                //int previous = countOfExogenous.Take(index - 1).Sum();
+
+                //foreach (int item in positionsOfExogenous.Skip(previous).Take(countOfExogenous[index]))
+                //{
+                //    int next = item - 1;
+                //    Array.Copy(values, next, values, next + 1, values.Length - next - 1);
+                //    values[next] = default(float);
+                //}
+
+                int shockPointer = pointersToShockValues[index] - 1;
+                for (int i = 0; i < numberOfShockedComponents[index]; i++)
+                {
+                    int position = positionsOfShockValues[shockPointer] - 1;
+                    float value = shockValues[shockPointer + i];
+                    values[position] = value;
                 }
 
                 IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
