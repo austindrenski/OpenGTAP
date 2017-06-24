@@ -172,9 +172,6 @@ namespace HeaderArrayConverter.IO
                         yield return setEntries;
                     }
 
-                    yield return WriteDimensions(array);
-                    yield return WriteExtents(array);
-
                     foreach (byte[] values in WriteReArrayValues(array.As<float>()))
                     {
                         yield return values;
@@ -224,7 +221,6 @@ namespace HeaderArrayConverter.IO
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    // TODO: need this for files that go SL4 -> HARX -> HAR. Fix this later.
                     writer.Write(array.Header.PadRight(4).Take(4).ToArray());
                 }
                 return stream.ToArray();
@@ -251,10 +247,7 @@ namespace HeaderArrayConverter.IO
                     writer.Write(Padding);
                     writer.Write((short)array.Type);
                     writer.Write("FULL".ToCharArray());
-
-                    // TODO: need this for files that go SL4 -> HARX -> HAR. Fix this later.
                     writer.Write(array.Description.PadRight(70).Take(70).ToArray());
-
                     writer.Write(array.Dimensions.Count);
 
                     foreach (int dimension in array.Dimensions)
@@ -332,8 +325,6 @@ namespace HeaderArrayConverter.IO
                     writer.Write(array.Sets.Select(x => x.Key).Distinct().Count());
                     writer.Write(Spacer);
                     writer.Write(array.Sets.Select(x => x.Key).Count());
-                    
-                    // TODO: fix later, should write the coefficient and limit overrun.
                     writer.Write(array.Coefficient.PadRight(12).Take(12).ToArray());
 
                     writer.Write(Spacer);
@@ -360,52 +351,26 @@ namespace HeaderArrayConverter.IO
         /// <param name="array">
         /// The <see cref="IHeaderArray"/> to write.
         /// </param>
-        /// <returns>
-        /// A byte array containing the serialized data.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        private static byte[] WriteDimensions([NotNull] IHeaderArray array)
-        {
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(Padding);
-                    writer.Write(3);
-                    writer.Write(array.Dimensions.Count);
-
-                    foreach (int dimension in array.Dimensions)
-                    {
-                        writer.Write(dimension);
-                    }
-                }
-                return stream.ToArray();
-            }
-        }
-
-        /// <summary>
-        /// Writes the extent array that describes the positions in the logical array that the next array represents.
-        /// </summary>
-        /// <param name="array">
-        /// The <see cref="IHeaderArray"/> to write.
+        /// <param name="vectorIndex">
+        /// Index from the end of the record.
         /// </param>
         /// <returns>
         /// A byte array containing the serialized data.
         /// </returns>
         [Pure]
         [NotNull]
-        private static byte[] WriteExtents([NotNull] IHeaderArray array)
+        private static byte[] WriteDimensions([NotNull] IHeaderArray array, int vectorIndex)
         {
             using (MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(Padding);
-                    writer.Write(2);
+                    writer.Write(vectorIndex);
+                    writer.Write(array.Dimensions.Count);
+
                     foreach (int dimension in array.Dimensions)
                     {
-                        writer.Write(1);
                         writer.Write(dimension);
                     }
                 }
@@ -426,18 +391,66 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IEnumerable<byte[]> WriteReArrayValues([NotNull] IHeaderArray<float> array)
         {
-            using (MemoryStream stream = new MemoryStream())
+
+            (int VectorIndex, float[] Values)[] partition = Partition(array.GetLogicalValuesEnumerable(), default(int)).ToArray();
+            
+            yield return WriteDimensions(array, partition.Length);
+
+            foreach ((int vectorIndex, float[] values) in partition)
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                yield return WriteExtents(vectorIndex + 1);
+
+                yield return WriteSegment(vectorIndex, values);
+            }
+
+            // Writes the next array segment.
+            byte[] WriteSegment(int vectorIndex, IEnumerable<float> values)
+            {
+                using (MemoryStream stream = new MemoryStream())
                 {
-                    writer.Write(Padding);
-                    writer.Write(1);
-                    foreach (float item in array.GetLogicalValuesEnumerable())
+                    using (BinaryWriter writer = new BinaryWriter(stream))
                     {
-                        writer.Write(item);
+                        writer.Write(Padding);
+                        writer.Write(vectorIndex);
+
+                        foreach (float item in values)
+                        {
+                            writer.Write(item);
+                        }
+
+                        return stream.ToArray();
                     }
                 }
-                yield return stream.ToArray();
+            }
+
+            // Writes the extent array that describes the positions in the logical array that the next array represents.
+            byte[] WriteExtents(int vectorIndex)
+            {
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    {
+                        writer.Write(Padding);
+                        writer.Write(vectorIndex);
+
+                        // TODO: right now this writes 1:dimension which works for single vector storage.
+                        // TODO: so this needs to change to allow for partial writing for multiple vectors.
+                        foreach (int dimension in array.Dimensions)
+                        {
+                            if (array.Dimensions.Aggregate(1.0, (current, next) => current * next) < GempackArrayLimit)
+                            {
+                                writer.Write(1);
+                                writer.Write(dimension);
+                            }
+                            else
+                            {
+                                
+                            }
+                        }
+
+                        return stream.ToArray();
+                    }
+                }
             }
         }
 
