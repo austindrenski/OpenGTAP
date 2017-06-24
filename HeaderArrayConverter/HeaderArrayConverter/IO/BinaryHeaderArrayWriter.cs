@@ -165,13 +165,6 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.RE:
                 {
-                    yield return WriteSetNames(array);
-
-                    foreach (byte[] setEntries in WriteSetEntries(array))
-                    {
-                        yield return setEntries;
-                    }
-
                     foreach (byte[] values in WriteReArrayValues(array.As<float>()))
                     {
                         yield return values;
@@ -391,7 +384,13 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IEnumerable<byte[]> WriteReArrayValues([NotNull] IHeaderArray<float> array)
         {
+            yield return WriteSetNames(array);
 
+            foreach (byte[] setEntries in WriteSetEntries(array))
+            {
+                yield return setEntries;
+            }
+            
             (int VectorIndex, float[] Values)[] partition = Partition(array.GetLogicalValuesEnumerable(), default(int)).ToArray();
             
             yield return WriteDimensions(array, partition.Length);
