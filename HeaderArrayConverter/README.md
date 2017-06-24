@@ -12,10 +12,19 @@ To install the HeaderArrayConverter library, run the following command in the Pa
 
 ### Reading a binary header array file (.har) 
 
-The `HeaderArrayFile` class provides a `Read(string)` method to read from a file path.
+```c#
+HeaderArrayFile source = HeaderArrayFile.BinaryReader.Read("filePath");
+
+foreach (IHeaderArray array in source)
+{
+    Console.WriteLine(array);
+}
+```
+
+### Reading a binary solution file (.sl4)
 
 ```c#
-HeaderArrayFile source = HeaderArrayFile.Read("filePath");
+HeaderArrayFile source = SolutionFile.BinaryReader.Read("filePath");
 
 foreach (IHeaderArray array in source)
 {
