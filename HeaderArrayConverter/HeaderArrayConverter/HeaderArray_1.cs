@@ -77,13 +77,7 @@ namespace HeaderArrayConverter
         /// Gets the total number of entries in the array.
         /// </summary>
         public override int Total => _entries.Total;
-
-        /// <summary>
-        /// Gets the number of vectors used to store the array data in a binary HAR file.
-        /// </summary>
-        [JsonProperty]
-        public override int SerializedVectors { get; }
-
+        
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
@@ -179,16 +173,13 @@ namespace HeaderArrayConverter
         /// <param name="entries">
         /// The data in the array.
         /// </param>
-        /// <param name="serializedVectors">
-        /// The number of vectors used to store the array data in a binary HAR file.
-        /// </param>
         /// <param name="dimensions">
         /// The dimensions of the array.
         /// </param>
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, int serializedVectors, [NotNull] IImmutableList<int> dimensions, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
+        public HeaderArray([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<int> dimensions, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
         {
             if (entries is null)
             {
@@ -218,7 +209,6 @@ namespace HeaderArrayConverter
             Dimensions = dimensions.ToImmutableArray();
             Sets = sets;
             _entries = entries.ToImmutableSequenceDictionary(sets);
-            SerializedVectors = serializedVectors;
         }
 
         /// <summary>
@@ -262,7 +252,7 @@ namespace HeaderArrayConverter
                             x.Key,
                             (TResult) Enum.Parse(typeof(TResult), $"{Convert.ToInt32(Convert.ToChar(x.Value))}")));
 
-            return new HeaderArray<TResult>(Header, Coefficient, Description, Type, entries, SerializedVectors, Dimensions, Sets);
+            return new HeaderArray<TResult>(Header, Coefficient, Description, Type, entries, Dimensions, Sets);
         }
 
         /// <summary>
@@ -277,7 +267,7 @@ namespace HeaderArrayConverter
         [Pure]
         public IHeaderArray<TValue> With(string header)
         {
-            return new HeaderArray<TValue>(header, Coefficient, Description, Type, _entries, SerializedVectors, Dimensions, Sets);
+            return new HeaderArray<TValue>(header, Coefficient, Description, Type, _entries, Dimensions, Sets);
         }
 
         /// <summary>

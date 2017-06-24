@@ -173,7 +173,6 @@ namespace HeaderArrayConverter.IO
                         array.Description,
                         HeaderArrayType.RE,
                         entries,
-                        default(int),
                         array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7).ToImmutableArray(),
                         set);
 

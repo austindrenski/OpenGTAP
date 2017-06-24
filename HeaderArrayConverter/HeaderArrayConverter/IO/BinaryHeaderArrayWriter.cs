@@ -26,11 +26,6 @@ namespace HeaderArrayConverter.IO
         private static readonly uint Spacer = 0xFF_FF_FF_FF;
 
         /// <summary>
-        /// The internal limitation on array length in the Fortran routines used by Gempack.
-        /// </summary>
-        private static readonly int GempackArrayLimit = 1_999_991;
-
-        /// <summary>
         /// Synchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
         /// </summary>
         /// <param name="file">
@@ -95,8 +90,7 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         private static IEnumerable<IHeaderArray> ValidateHeaders([NotNull] IEnumerable<IHeaderArray> arrays)
         {
-            HashSet<string> headers = new HashSet<string>();
-            int numeric = 0;
+            HashSet<string> headers = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
 
             foreach (IHeaderArray array in arrays)
             {
@@ -105,17 +99,31 @@ namespace HeaderArrayConverter.IO
                     yield return array;
                     continue;
                 }
+                
+                string truncated = array.Header.Substring(0, 4);
 
-                string truncated = new string(array.Header.Take(4).ToArray());
                 if (headers.Add(truncated))
                 {
+                    Console.Out.WriteLineAsync($"Renaming header '{array.Header}' to {truncated}.");
+
                     yield return array.With(truncated);
                     continue;
                 }
 
-                string temp = $"z{numeric++.ToString().PadLeft(3, '0')}";
-                headers.Add(temp);
-                yield return array.With(temp);
+                for (int i = 0; i < 10000; i++)
+                {
+                    truncated = $"{array.Header.Substring(0, 4 - i.ToString().Length)}{i}";
+
+                    if (!headers.Add(truncated))
+                    {
+                        continue;
+                    }
+
+                    Console.Out.WriteLineAsync($"Renaming header '{array.Header}' to {truncated}.");
+
+                    yield return array.With(truncated);
+                    break;
+                }
             }
         }
 
@@ -319,16 +327,18 @@ namespace HeaderArrayConverter.IO
                     writer.Write(Spacer);
                     writer.Write(array.Sets.Select(x => x.Key).Count());
                     writer.Write(array.Coefficient.PadRight(12).Take(12).ToArray());
-
                     writer.Write(Spacer);
+
                     foreach (string name in array.Sets.Select(x => x.Key))
                     {
                         writer.Write(name.PadRight(12).ToCharArray());
                     }
+
                     for (int i = 0; i < array.Sets.Count; i++)
                     {
                         writer.Write((byte)0x6B);
                     }
+
                     for (int i = 0; i < array.Sets.Count + 1; i++)
                     {
                         writer.Write(0x00_00_00_00);
@@ -391,15 +401,36 @@ namespace HeaderArrayConverter.IO
                 yield return setEntries;
             }
             
-            (int VectorIndex, float[] Values)[] partition = Partition(array.GetLogicalValuesEnumerable(), default(int)).ToArray();
-            
-            yield return WriteDimensions(array, partition.Length);
+           Partition<float> partitions = new Partition<float>(array);
 
-            foreach ((int vectorIndex, float[] values) in partition)
+            yield return WriteDimensions(array, 2 * partitions.Partitions + 1);
+
+            foreach ((int vectorIndex, IReadOnlyList<int> min, IReadOnlyList<int> max, IReadOnlyCollection<float> values) in partitions)
             {
-                yield return WriteExtents(vectorIndex + 1);
+                yield return WriteNextExtents(2 * vectorIndex, min, max);
 
-                yield return WriteSegment(vectorIndex, values);
+                yield return WriteSegment(2 * vectorIndex - 1, values);
+            }
+
+            // Writes the extent array that describes the positions in the logical array that the next array represents.
+            byte[] WriteNextExtents(int vectorIndex, IReadOnlyList<int> min, IReadOnlyList<int> max)
+            {
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    {
+                        writer.Write(Padding);
+                        writer.Write(vectorIndex);
+
+                        for (int i = 0; i < min.Count; i++)
+                        {
+                            writer.Write(min[i] > 0 ? min[i] : 1);
+                            writer.Write(max[i] > 0 ? max[i] : 1);
+                        }
+
+                        return stream.ToArray();
+                    }
+                }
             }
 
             // Writes the next array segment.
@@ -415,36 +446,6 @@ namespace HeaderArrayConverter.IO
                         foreach (float item in values)
                         {
                             writer.Write(item);
-                        }
-
-                        return stream.ToArray();
-                    }
-                }
-            }
-
-            // Writes the extent array that describes the positions in the logical array that the next array represents.
-            byte[] WriteExtents(int vectorIndex)
-            {
-                using (MemoryStream stream = new MemoryStream())
-                {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        writer.Write(Padding);
-                        writer.Write(vectorIndex);
-
-                        // TODO: right now this writes 1:dimension which works for single vector storage.
-                        // TODO: so this needs to change to allow for partial writing for multiple vectors.
-                        foreach (int dimension in array.Dimensions)
-                        {
-                            if (array.Dimensions.Aggregate(1.0, (current, next) => current * next) < GempackArrayLimit)
-                            {
-                                writer.Write(1);
-                                writer.Write(dimension);
-                            }
-                            else
-                            {
-                                
-                            }
                         }
 
                         return stream.ToArray();
@@ -503,10 +504,10 @@ namespace HeaderArrayConverter.IO
         {
             int counter = 0;
 
-            foreach ((int vectorIndex, T[] values) in Partition(array.GetLogicalValuesEnumerable(), array.SerializedVectors))
+            foreach ((int vectorIndex, _, _, IReadOnlyCollection<T> values) in new Partition<T>(array))
             {
                 yield return ProcessNext(values, vectorIndex);
-                counter += values.Length;
+                counter += values.Count;
             }
 
             // <summary>
@@ -540,49 +541,9 @@ namespace HeaderArrayConverter.IO
                         {
                             write(writer, item);
                         }
+
+                        return stream.ToArray();
                     }
-                    byte[] values = stream.ToArray();
-
-                    return values;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Partitions a source collection into the specified number of sequential groups.
-        /// </summary>
-        /// <param name="source">
-        /// The source collection.
-        /// </param>
-        /// <param name="partitions">
-        /// The number of groups to create.
-        /// </param>
-        /// <returns>
-        /// The source collection split into the specified number of groups.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        private static IEnumerable<(int VectorIndex, T[] Values)> Partition<T>([NotNull] IEnumerable<T> source, int partitions)
-        {
-            source = source as T[] ?? source.ToArray();
-
-            int vectors = partitions > 0 ? partitions : 1;
-
-            int count = source.Count() / vectors + (vectors > 1 ? 2 : 0);
-
-            while (count > GempackArrayLimit)
-            {
-                vectors++;
-                count = source.Count() / vectors + (vectors > 1 ? 2 : 0);
-            }
-
-            for (int i = 0; i < vectors; i++)
-            {
-                T[] temp = source.Skip(i * count).Take(count).ToArray();
-
-                if (temp.Any() || count == 0)
-                {
-                    yield return (vectors - i, temp);
                 }
             }
         }

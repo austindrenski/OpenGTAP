@@ -61,11 +61,6 @@ namespace HeaderArrayConverter
         int Total { get; }
 
         /// <summary>
-        /// Gets additional serialization data needed to persist this <see cref="IHeaderArray"/> to binary.
-        /// </summary>
-        int SerializedVectors { get; }
-
-        /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
         /// <param name="keys">

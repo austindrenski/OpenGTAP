@@ -145,7 +145,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<string>(header, header, description, type, items, 1, dimensions, sets);
+                    return new HeaderArray<string>(header, header, description, type, items, dimensions, sets);
                 }
                 case HeaderArrayType.RE:
                 {
@@ -158,11 +158,11 @@ namespace HeaderArrayConverter.IO
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         expandedSets.Zip(floats, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
 
-                    return new HeaderArray<float>(header, coefficient, description, type, items, 1, dimensions, sets);
+                    return new HeaderArray<float>(header, coefficient, description, type, items, dimensions, sets);
                 }
                 case HeaderArrayType.I2:
                 {
-                    (int serializedVectors, int[] ints) = Get2_Array(reader, BitConverter.ToInt32);
+                    int[] ints = Get2_Array(reader, BitConverter.ToInt32);
 
                     IEnumerable<KeyValuePair<KeySequence<string>, int>> items = 
                         ints.Select(
@@ -179,11 +179,11 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<int>(header, header, description, type, items, serializedVectors, dimensions, sets);
+                    return new HeaderArray<int>(header, header, description, type, items, dimensions, sets);
                 }
                 case HeaderArrayType.R2:
                 {
-                    (int serializedVectors, float[] floats) = Get2_Array(reader, BitConverter.ToSingle);
+                    float[] floats = Get2_Array(reader, BitConverter.ToSingle);
 
                     IEnumerable<KeyValuePair<KeySequence<string>, float>> items =
                         floats.Select(
@@ -200,7 +200,7 @@ namespace HeaderArrayConverter.IO
                                           .ToImmutableArray())
                         }.ToImmutableArray();
 
-                    return new HeaderArray<float>(header, header, description, type, items, serializedVectors, dimensions, sets);
+                    return new HeaderArray<float>(header, header, description, type, items, dimensions, sets);
                 }
                 default:
                 {
@@ -507,7 +507,7 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A tuple with a <typeparamref name="TValue"/> array and the number of binary vectors from which the array was read.
         /// </returns>
-        private static (int SerializedVectors, TValue[] Values) Get2_Array<TValue>(BinaryReader reader, Func<byte[], int, TValue> converter)
+        private static TValue[] Get2_Array<TValue>(BinaryReader reader, Func<byte[], int, TValue> converter)
         {
             byte[] data = InitializeArray(reader);
 
@@ -524,10 +524,8 @@ namespace HeaderArrayConverter.IO
             TValue[] results = new TValue[totalCount];
             bool test = true;
             int counter = 0;
-            int serializedVectors = 0;
             while (test)
             {
-                serializedVectors++;
                 if (counter > 0)
                 {
                     data = InitializeArray(reader);
@@ -545,7 +543,7 @@ namespace HeaderArrayConverter.IO
                 test = BitConverter.ToInt32(data, 0) != 1;
             }
 
-            return (serializedVectors, results);
+            return results;
         }
     }
 }
