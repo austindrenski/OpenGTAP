@@ -69,7 +69,7 @@ The following methods read the entire file and return a `HeaderArrayFile`:
 #### Synchronously:
 
 ```c#
-HeaderArrayFile source = HeaderArrayFile.BinaryReader.Read("filePath");
+HeaderArrayFile source = HeaderArrayFile.JsonReader.Read("filePath");
 
 foreach (IHeaderArray array in source)
 {
@@ -80,7 +80,7 @@ foreach (IHeaderArray array in source)
 #### Asynchronously:
 
 ```c#
-HeaderArrayFile source = await HeaderArrayFile.BinaryReader.ReadAsync("filePath");
+HeaderArrayFile source = await HeaderArrayFile.JsonReader.ReadAsync("filePath");
 
 foreach (IHeaderArray array in source)
 {
@@ -95,7 +95,7 @@ The following methods yield one array at a time:
 #### Synchronously:
 
 ```c#
-foreach (IHeaderArray array in HeaderArrayFile.JsonReader.ReadArrays("filePath"))
+foreach (IHeaderArray array in HeaderArrayFile.BinaryReader.ReadArrays("filePath"))
 {
     Console.WriteLine(array);
 }
@@ -104,7 +104,7 @@ foreach (IHeaderArray array in HeaderArrayFile.JsonReader.ReadArrays("filePath")
 #### Asynchronously:
 
 ```c#
-foreach (Task<IHeaderArray> array in HeaderArrayFile.JsonReader.ReadArraysAsync("filePath"))
+foreach (Task<IHeaderArray> array in HeaderArrayFile.BinaryReader.ReadArraysAsync("filePath"))
 {
     Console.WriteLine(await array);
 }
