@@ -43,7 +43,7 @@ The following methods read the entire file and return a `HeaderArrayFile`:
 #### Synchronously:
 
 ```c#
-HeaderArrayFile source = SolutionFile.BinaryReader.Read("filePath");
+HeaderArrayFile source = HeaderArrayFile.BinarySolutionReader.Read("filePath");
 
 foreach (IHeaderArray array in source)
 {
@@ -54,7 +54,7 @@ foreach (IHeaderArray array in source)
 #### Asynchronously:
 
 ```c#
-HeaderArrayFile source = await SolutionFile.BinaryReader.ReadAsync("filePath");
+HeaderArrayFile source = await HeaderArrayFile.BinarySolutionReader.ReadAsync("filePath");
 
 foreach (IHeaderArray array in source)
 {
