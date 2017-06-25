@@ -12,6 +12,8 @@ To install the HeaderArrayConverter library, run the following command in the Pa
 
 ### Reading a binary header array file (.har) 
 
+The following methods read the entire header array file and return a `HeaderArrayFile`:
+
 #### Synchronously:
 
 ```c#
@@ -36,7 +38,9 @@ foreach (IHeaderArray array in source)
 
 ### Reading a binary solution file (.sl4)
 
-#### Synchronously;
+The following methods read the entire solution file and return a `HeaderArrayFile`:
+
+#### Synchronously:
 
 ```c#
 HeaderArrayFile source = SolutionFile.BinaryReader.Read("filePath");
@@ -47,7 +51,7 @@ foreach (IHeaderArray array in source)
 }
 ```
 
-#### Asynchronously;
+#### Asynchronously:
 
 ```c#
 HeaderArrayFile source = await SolutionFile.BinaryReader.ReadAsync("filePath");
@@ -57,3 +61,26 @@ foreach (IHeaderArray array in source)
     Console.WriteLine(array);
 }
 ```
+
+### Enumerating header arrays from a binary header array file (.har)
+
+The following methods yield one array at a time:
+
+#### Synchronously:
+
+```c#
+foreach (IHeaderArray array in HeaderArrayFile.BinaryReader.ReadArrays("filePath"))
+{
+    Console.WriteLine(array);
+}
+```
+
+#### Asynchronously:
+
+```c#
+foreach (Task<IHeaderArray> array in HeaderArrayFile.BinaryReader.ReadArraysAsync("filePath"))
+{
+    Console.WriteLine(await array);
+}
+```
+
