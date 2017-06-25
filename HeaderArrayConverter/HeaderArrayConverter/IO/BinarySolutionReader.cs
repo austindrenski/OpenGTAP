@@ -240,18 +240,17 @@ namespace HeaderArrayConverter.IO
             IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
 
             return
-                names.AsParallel()
-                     .Select(
-                         x =>
-                             new SolutionArray(
-                                 int.Parse(x.Key.Single()),
-                                 numberOfSets[x.Key].SingleOrDefault().Value,
-                                 x.Value,
-                                 descriptions[x.Key].SingleOrDefault().Value,
-                                 unitTypes[x.Key].SingleOrDefault().Value,
-                                 changeTypes[x.Key].SingleOrDefault().Value,
-                                 variableTypes[x.Key].SingleOrDefault().Value,
-                                 sets[x.Key]));
+                names.Select(
+                    x =>
+                        new SolutionArray(
+                            int.Parse(x.Key.Single()),
+                            numberOfSets[x.Key].SingleOrDefault().Value,
+                            x.Value,
+                            descriptions[x.Key].SingleOrDefault().Value,
+                            unitTypes[x.Key].SingleOrDefault().Value,
+                            changeTypes[x.Key].SingleOrDefault().Value,
+                            variableTypes[x.Key].SingleOrDefault().Value,
+                            sets[x.Key]));
         }
 
         /// <summary>

@@ -56,18 +56,15 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(source));
             }
 
-            using (FileStream stream = new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.Read, BufferSize, true))
+            using (ZipArchive archive = new ZipArchive(File.Open(file, FileMode.Create, FileAccess.Write, FileShare.Read), ZipArchiveMode.Create))
             {
-                using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Create))
+                foreach (IHeaderArray item in source)
                 {
-                    foreach (IHeaderArray item in source)
-                    {
-                        ZipArchiveEntry entry = archive.CreateEntry($"{item.Header}.json", CompressionLevel.Optimal);
+                    ZipArchiveEntry entry = archive.CreateEntry($"{item.Header}.json", CompressionLevel.Optimal);
 
-                        using (StreamWriter writer = new StreamWriter(entry.Open()))
-                        {
-                            await writer.WriteAsync(item.Serialize(false));
-                        }
+                    using (StreamWriter writer = new StreamWriter(entry.Open()))
+                    {
+                        await writer.WriteAsync(item.Serialize(false));
                     }
                 }
             }
