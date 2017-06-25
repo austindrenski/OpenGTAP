@@ -112,7 +112,7 @@ namespace HeaderArrayConverter.Collections
 
             Sets = sets.ToImmutableArray();
 
-            _dictionary = source.Where(x => !x.Value.Equals(default(TValue))).ToImmutableDictionary();
+            _dictionary = source.AsParallel().Where(x => !x.Value.Equals(default(TValue))).ToImmutableDictionary();
         }
 
         /// <summary>
@@ -200,21 +200,31 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerable()
         {
-            foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
-            {
-                _dictionary.TryGetValue(key, out TValue value);
-                yield return new KeyValuePair<KeySequence<TKey>, TValue>(key, value);
-            }
+            return
+                Sets.AsExpandedSet()
+                    .AsParallel()
+                    .AsOrdered()
+                    .Select(
+                        x =>
+                        {
+                            _dictionary.TryGetValue(x, out TValue value);
+                            return new KeyValuePair<KeySequence<TKey>, TValue>(x, value);
+                        });
         }
 
         [Pure]
         IEnumerable<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerable()
         {
-            foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
-            {
-                _dictionary.TryGetValue(key, out TValue value);
-                yield return new KeyValuePair<KeySequence<TKey>, object>(key, value);
-            }
+            return
+                Sets.AsExpandedSet()
+                    .AsParallel()
+                    .AsOrdered()
+                    .Select(
+                        x =>
+                        {
+                            _dictionary.TryGetValue(x, out TValue value);
+                            return new KeyValuePair<KeySequence<TKey>, object>(x, value);
+                        });
         }
 
         /// <summary>
@@ -226,11 +236,16 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<TValue> GetLogicalValuesEnumerable()
         {
-            foreach (KeySequence<TKey> key in Sets.AsExpandedSet())
-            {
-                _dictionary.TryGetValue(key, out TValue value);
-                yield return value;
-            }
+            return
+                Sets.AsExpandedSet()
+                    .AsParallel()
+                    .AsOrdered()
+                    .Select(
+                        x =>
+                        {
+                            _dictionary.TryGetValue(x, out TValue value);
+                            return value;
+                        });
         }
 
         [Pure]
@@ -248,11 +263,16 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<TValue> GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
         {
-            foreach (KeySequence<TKey> key in Sets.AsExpandedSet().OrderBy(x => x, keyComparer))
-            {
-                _dictionary.TryGetValue(key, out TValue value);
-                yield return value;
-            }
+            return
+                Sets.AsExpandedSet()
+                    .AsParallel()
+                    .OrderBy(x => x, keyComparer)
+                    .Select(
+                        x =>
+                        {
+                            _dictionary.TryGetValue(x, out TValue value);
+                            return value;
+                        });
         }
 
         [Pure]

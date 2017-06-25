@@ -68,6 +68,8 @@ namespace HeaderArrayConverter.IO
 
             _items =
                 source.GetLogicalEnumerable()
+                      .AsParallel()
+                      .AsOrdered()
                       .Select(x => (x.Key.Select((y, i) => _headerArray.Sets[i].Value.IndexOf(y) + 1).ToArray(), x.Value))
                       .ToArray();
 

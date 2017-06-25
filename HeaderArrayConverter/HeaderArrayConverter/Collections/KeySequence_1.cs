@@ -17,18 +17,6 @@ namespace HeaderArrayConverter.Collections
     public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable
     {
         /// <summary>
-        /// The sequence values.
-        /// </summary>
-        [CanBeNull]
-        private readonly IImmutableList<TKey> _keys;
-
-        /// <summary>
-        /// The sequence values or an empty sequence.
-        /// </summary>
-        [NotNull]
-        private IImmutableList<TKey> Keys => _keys ?? EmptyArray;
-
-        /// <summary>
         /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
         /// </summary>
         [NotNull]
@@ -56,6 +44,18 @@ namespace HeaderArrayConverter.Collections
         /// </summary>
         [NotNull]
         public static IEqualityComparer<KeySequence<string>> OrdinalIgnoreCaseEquality { get; } = new StringKeyEqualityComparer();
+
+        /// <summary>
+        /// The sequence values.
+        /// </summary>
+        [CanBeNull]
+        private readonly IImmutableList<TKey> _keys;
+
+        /// <summary>
+        /// The sequence values or an empty sequence.
+        /// </summary>
+        [NotNull]
+        private IImmutableList<TKey> Keys => _keys ?? EmptyArray;
 
         /// <summary>
         /// Gets the number of items contained in the sequence.
