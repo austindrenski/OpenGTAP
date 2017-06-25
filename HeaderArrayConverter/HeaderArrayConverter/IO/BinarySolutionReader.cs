@@ -328,23 +328,20 @@ namespace HeaderArrayConverter.IO
 
             string[] elements = arrayFile["STEL"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            SetInformation[] setInformation = new SetInformation[names.Length];
-
-            int counter = 0;
-            for (int i = 0; i < names.Length; i++)
-            {
-                setInformation[i] =
-                    new SetInformation(
-                        names[i],
-                        descriptions[i],
-                        intertemporal[i],
-                        sizes[i],
-                        new ArraySegment<string>(elements, counter, sizes[i]));
-
-                counter += sizes[i];
-            }
-
-            return setInformation.ToImmutableArray();
+            return
+                arrayFile["STNM"].As<string>()
+                                 .GetLogicalValuesEnumerable()
+                                 .AsParallel()
+                                 .AsOrdered()
+                                 .Select(
+                                     (x, i) =>
+                                         new SetInformation(
+                                             names[i],
+                                             descriptions[i],
+                                             intertemporal[i],
+                                             sizes[i],
+                                             new ArraySegment<string>(elements, sizes.Take(i - 1).Sum(), sizes[i])))
+                                 .ToImmutableArray();
         }
     }
 }
