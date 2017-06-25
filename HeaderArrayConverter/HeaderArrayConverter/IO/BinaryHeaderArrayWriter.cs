@@ -204,33 +204,21 @@ namespace HeaderArrayConverter.IO
         [ItemNotNull]
         private static Task<byte[]> WriteComponentAsync(Action<BinaryWriter> write)
         {
-            return Task.Run(() => WriteComponent(write));
-        }
-
-        /// <summary>
-        /// Writes the next array component.
-        /// </summary>
-        /// <param name="write">
-        /// A delegate that writes to a <see cref="BinaryWriter"/>.
-        /// </param>
-        /// <returns>
-        /// A <see cref="byte"/> array containing the serialized data written by <paramref name="write"/>.,
-        /// </returns>
-        [Pure]
-        [NotNull]
-        private static byte[] WriteComponent(Action<BinaryWriter> write)
-        {
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+            return
+                Task.Run(() =>
                 {
-                    writer.Write(Padding);
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        {
+                            writer.Write(Padding);
 
-                    write(writer);
+                            write(writer);
 
-                    return stream.ToArray();
-                }
-            }
+                            return stream.ToArray();
+                        }
+                    }
+                });
         }
 
         /// <summary>
@@ -343,7 +331,35 @@ namespace HeaderArrayConverter.IO
                         }
                     });
         }
-        
+
+        /// <summary>
+        /// Writes the extents for an upcoming component.
+        /// </summary>
+        /// <param name="vectorIndex">
+        /// The index of the extent array itself.
+        /// </param>
+        /// <param name="ranges">
+        /// Information describing which set dimensions are in the following array.
+        /// </param>
+        /// <returns>
+        /// A <see cref="byte"/> array of the serialized daya.
+        /// </returns>
+        private static Task<byte[]> WriteExtents(int vectorIndex, IReadOnlyList<(int Lower, int Upper)> ranges)
+        {
+            return
+                WriteComponentAsync(
+                    writer =>
+                    {
+                        writer.Write(vectorIndex);
+
+                        for (int i = 0; i < ranges.Count; i++)
+                        {
+                            writer.Write(ranges[i].Lower > 0 ? ranges[i].Lower : 1);
+                            writer.Write(ranges[i].Upper);
+                        }
+                    });
+        }
+
         /// <summary>
         /// Writes the contents of an <see cref="IHeaderArray{String}"/> with type '1C'.
         /// </summary>
@@ -402,18 +418,7 @@ namespace HeaderArrayConverter.IO
             
             foreach ((int vectorIndex, IReadOnlyList<(int Lower, int Upper)> ranges, IReadOnlyList<float> values) in partitions)
             {
-                yield return
-                    WriteComponentAsync(
-                        writer =>
-                        {
-                            writer.Write(2 * vectorIndex);
-
-                            for (int i = 0; i < ranges.Count; i++)
-                            {
-                                writer.Write(ranges[i].Lower > 0 ? ranges[i].Lower : 1);
-                                writer.Write(ranges[i].Upper > 0 ? ranges[i].Upper : 1);
-                            }
-                        });
+                yield return WriteExtents(2 * vectorIndex, ranges);
 
                 yield return 
                     WriteComponentAsync(
@@ -428,6 +433,8 @@ namespace HeaderArrayConverter.IO
                         });
             }
         }
+
+
 
         /// <summary>
         /// Writes the contents of a two dimensional numeric <see cref="IHeaderArray{T}"/> with type '2R' or '2I'.
@@ -445,12 +452,8 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IEnumerable<Task<byte[]>> WriteTwoDimensionalNumericArray<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write) where T : IEquatable<T>
         {
-            int counter = 0;
-
-            foreach ((int vectorIndex, _, IReadOnlyCollection<T> values) in new Partition<T>(array))
+            foreach ((int vectorIndex, IReadOnlyList<(int Lower, int Upper)> ranges, IReadOnlyCollection<T> values) in new Partition<T>(array))
             {
-                int closureCounter = counter;
-
                 yield return
                     WriteComponentAsync(
                         writer =>
@@ -460,24 +463,18 @@ namespace HeaderArrayConverter.IO
                             {
                                 writer.Write(item);
                             }
-
-                            // counter is tracking total elements written.
-                            // so 1 + counter is the next element in a single dimensional context.
-                            // but this may have n-dimensions.
-
-                            writer.Write(1 + closureCounter);
-                            writer.Write(closureCounter + values.Count);
-
-                            writer.Write(1);
-                            writer.Write(1);
+                           
+                            for (int i = 0; i < ranges.Count; i++)
+                            {
+                                writer.Write(ranges[i].Lower > 0 ? ranges[i].Lower : 1);
+                                writer.Write(ranges[i].Upper);
+                            }
 
                             foreach (T item in values)
                             {
                                 write(writer, item);
                             }
                         });
-
-                counter += values.Count;
             }
         }
     }

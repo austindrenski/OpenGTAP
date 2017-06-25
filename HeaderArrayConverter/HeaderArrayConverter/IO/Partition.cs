@@ -94,18 +94,19 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         public IEnumerator<(int VectorIndex, IReadOnlyList<(int Lower, int Upper)> Ranges, IReadOnlyList<T> Values)> GetEnumerator()
         {
+            int dimensions = _headerArray.Dimensions.Count;
+
             // Corner case where a valid header does not have any data, such as marker headers.
             if (Partitions == 0)
             {
-                yield return (1, new (int, int)[0], new T[0]);
+                yield return (1, new (int, int)[dimensions], new T[0]);
+                yield break;
             }
             
             KeyValuePair<KeySequence<string>, T>[] items = _headerArray.GetLogicalEnumerable().ToArray();
 
             IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets = _headerArray.Sets;
-
-            int dimensions = _headerArray.Dimensions.Count;
-
+            
             for (int i = 0; i < Partitions; i++)
             {
                 ArraySegment<KeyValuePair<KeySequence<string>, T>> temp = new ArraySegment<KeyValuePair<KeySequence<string>, T>>(items, i * Size, Size);
