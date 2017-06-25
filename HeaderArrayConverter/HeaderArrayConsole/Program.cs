@@ -29,7 +29,7 @@ namespace HeaderArrayConsole
                 input: input,
                 binaryOutput: $"{CurrentDirectory}\\test6.har",
                 jsonOutput: $"{CurrentDirectory}\\test6.harx",
-                reader: SolutionFile.BinaryReader,
+                reader: HeaderArrayFile.BinarySolutionReader,
                 writeBinary: true,
                 writeJson: true,
                 readJson: true,

@@ -80,13 +80,16 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         public override IEnumerable<Task<IHeaderArray>> ReadArraysAsync(FilePath file)
         {
-            using (ZipArchive archive = new ZipArchive(File.Open(file, FileMode.Open, FileAccess.Read)))
+            using (FileStream stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, true))
             {
-                foreach (ZipArchiveEntry entry in archive.Entries)
+                using (ZipArchive archive = new ZipArchive(stream))
                 {
-                    string json = new StreamReader(entry.Open()).ReadToEnd();
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+                        string json = new StreamReader(entry.Open()).ReadToEnd();
 
-                    yield return Task.FromResult(HeaderArray.Deserialize(json));
+                        yield return Task.FromResult(HeaderArray.Deserialize(json));
+                    }
                 }
             }
         }

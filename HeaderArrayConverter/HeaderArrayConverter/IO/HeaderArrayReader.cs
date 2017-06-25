@@ -12,6 +12,11 @@ namespace HeaderArrayConverter.IO
     public abstract class HeaderArrayReader
     {
         /// <summary>
+        /// An internal buffer size for asynchronous file streams.
+        /// </summary>
+        protected static readonly int BufferSize = 4096;
+
+        /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file.
         /// </summary>
         /// <param name="file">

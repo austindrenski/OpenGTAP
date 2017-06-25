@@ -20,7 +20,7 @@ namespace HeaderArrayConverter
     /// The type of data in the array.
     /// </typeparam>
     [PublicAPI]
-    [JsonObject(nameof(HeaderArray), MemberSerialization = MemberSerialization.OptIn)]
+    [JsonObject(nameof(HeaderArray<TValue>), MemberSerialization = MemberSerialization.OptIn)]
     public class HeaderArray<TValue> : HeaderArray, IHeaderArray<TValue>
     {
         /// <summary>
@@ -28,6 +28,9 @@ namespace HeaderArrayConverter
         /// </summary>
         public static JSchema JsonSchema { get; } = GetJsonSchema();
 
+        /// <summary>
+        /// Gets the <see cref="IHeaderArray.JsonSchema"/> for this object.
+        /// </summary>
         JSchema IHeaderArray.JsonSchema => JsonSchema;
 
         /// <summary>
@@ -347,6 +350,8 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Produces a <see cref="JSchema"/> for the <see cref="IHeaderArray{TValue}"/>.
         /// </summary>
+        [Pure]
+        [NotNull]
         private static JSchema GetJsonSchema()
         {
             JSchemaGenerator generator = new JSchemaGenerator

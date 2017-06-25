@@ -107,11 +107,14 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read)))
+            using (FileStream stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, true))
             {
-                while (reader.BaseStream.Position != reader.BaseStream.Length)
+                using (BinaryReader reader = new BinaryReader(stream))
                 {
-                    yield return Task.FromResult(ReadNext(reader));
+                    while (reader.BaseStream.Position != reader.BaseStream.Length)
+                    {
+                        yield return Task.FromResult(ReadNext(reader));
+                    }
                 }
             }
         }

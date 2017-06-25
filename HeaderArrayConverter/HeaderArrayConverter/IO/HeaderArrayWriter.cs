@@ -12,6 +12,11 @@ namespace HeaderArrayConverter.IO
     public abstract class HeaderArrayWriter
     {
         /// <summary>
+        /// An internal buffer size for asynchronous file streams.
+        /// </summary>
+        protected static readonly int BufferSize = 4096;
+
+        /// <summary>
         /// Synchronously writes the <see cref="IHeaderArray"/> collection to a zipped archive of JSON files.
         /// </summary>
         /// <param name="file">

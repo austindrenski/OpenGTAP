@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace HeaderArrayConverter.Types
 {
     /// <summary>
-    /// Represents the base properties of a variable in a <see cref="SolutionFile"/>.
+    /// Represents the base properties of a variable in a solution file array.
     /// </summary>
     /// <remarks>
     /// Encapsulates values from the headers in a Gempack solution file (SL4) that include the full range of model variables.
@@ -89,7 +89,7 @@ namespace HeaderArrayConverter.Types
         public int Count => Sets.Aggregate(1, (current, next) => current * next.Count);
 
         /// <summary>
-        /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a <see cref="SolutionFile"/>.
+        /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a solution file.
         /// </summary>
         /// <param name="variableIndex">
         /// The index number of this variable among all variables. [VCNM, NUMVC].
@@ -143,7 +143,7 @@ namespace HeaderArrayConverter.Types
         }
 
         /// <summary>
-        /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a <see cref="SolutionFile"/> from an existing <see cref="SolutionArray"/>.
+        /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a solution file from an existing <see cref="SolutionArray"/>.
         /// </summary>
         public SolutionArray(SolutionArray solutionDataObject)
             : this(solutionDataObject.VariableIndex,

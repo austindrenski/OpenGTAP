@@ -100,7 +100,7 @@ namespace HeaderArrayConverter.IO
         }
 
         /// <summary>
-        /// Builds an <see cref="IHeaderArray"/> sequence from the <see cref="SolutionFile"/>.
+        /// Builds an <see cref="IHeaderArray"/> sequence from the solution file.
         /// </summary>
         /// <param name="file">
         /// A solution file (SL4).

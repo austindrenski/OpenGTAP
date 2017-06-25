@@ -23,6 +23,12 @@ namespace HeaderArrayConverter
         public static HeaderArrayReader BinaryReader { get; } = new BinaryHeaderArrayReader();
 
         /// <summary>
+        /// Provides methods to read <see cref="IHeaderArray"/> collections from Solution files in binary format (SL4).
+        /// </summary>
+        [NotNull]
+        public static HeaderArrayReader BinarySolutionReader { get; } = new BinarySolutionReader();
+
+        /// <summary>
         /// Provides methods to read <see cref="IHeaderArray"/> collections to Header Array files in binary format (HAR).
         /// </summary>
         [NotNull]

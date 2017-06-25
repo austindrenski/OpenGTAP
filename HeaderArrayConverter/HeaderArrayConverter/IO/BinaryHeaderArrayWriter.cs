@@ -68,11 +68,14 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(source));
             }
 
-            using (BinaryWriter writer = new BinaryWriter(new FileStream(file, FileMode.Create)))
+            using (FileStream stream = new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.Read, BufferSize, true))
             {
-                foreach (IHeaderArray array in ValidateHeaders(source))
+                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    await WriteArrayAsync(writer, array);
+                    foreach (IHeaderArray array in ValidateHeaders(source))
+                    {
+                        await WriteArrayAsync(writer, array);
+                    }
                 }
             }
         }
