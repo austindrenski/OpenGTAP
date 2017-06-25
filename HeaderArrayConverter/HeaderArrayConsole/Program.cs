@@ -36,7 +36,7 @@ namespace HeaderArrayConsole
                 validateSets: true);
 
             Console.WriteLine(HeaderArray<float>.JsonSchema);
-
+              
             Console.ReadLine();
         }
 
