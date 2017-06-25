@@ -20,7 +20,7 @@ namespace HeaderArrayConverter.Collections
     /// </typeparam>
     [PublicAPI]
     [JsonDictionary]
-    public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey, TValue>
+    public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey, TValue> where TKey : IEquatable<TKey> where TValue : IEquatable<TValue>
     {
         /// <summary>
         /// Compares dictionary entries based on the keys.
@@ -48,7 +48,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
         /// </summary>
-        public ImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys]
+        public IImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys]
         {
             get
             {
@@ -112,7 +112,9 @@ namespace HeaderArrayConverter.Collections
 
             Sets = sets.ToImmutableArray();
 
-            _dictionary = source.AsParallel().Where(x => !x.Value.Equals(default(TValue))).ToImmutableDictionary();
+            TValue skipValue = default(TValue);
+
+            _dictionary = source.AsParallel().Where(x => !x.Value.Equals(skipValue)).ToImmutableDictionary();
         }
 
         /// <summary>

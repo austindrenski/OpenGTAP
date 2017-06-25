@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
 
@@ -14,13 +13,13 @@ namespace HeaderArrayConverter.Collections
     /// The type of key in the sequence.
     /// </typeparam>
     [PublicAPI]
-    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<TKey>, IEquatable<KeySequence<TKey>>, IStructuralEquatable
+    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<KeySequence<TKey>>, IEquatable<TKey>, IStructuralEquatable
     {
         /// <summary>
         /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
         /// </summary>
         [NotNull]
-        private static IImmutableList<TKey> EmptyArray { get; } = new TKey[0].ToImmutableArray();
+        private static readonly TKey[] EmptyArray = new TKey[0];
 
         /// <summary>
         /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
@@ -49,33 +48,18 @@ namespace HeaderArrayConverter.Collections
         /// The sequence values.
         /// </summary>
         [CanBeNull]
-        private readonly IImmutableList<TKey> _keys;
-
-        /// <summary>
-        /// The sequence values or an empty sequence.
-        /// </summary>
-        [NotNull]
-        private IImmutableList<TKey> Keys => _keys ?? EmptyArray;
+        private readonly TKey[] _keys;
 
         /// <summary>
         /// Gets the number of items contained in the sequence.
         /// </summary>
-        public int Count => Keys.Count;
+        public int Count => _keys?.Length ?? 0;
 
         /// <summary>
         /// Returns the values at the specified index.
         /// </summary>
         [NotNull]
-        public IEnumerable<TKey> this[params int[] index]
-        {
-            get
-            {
-                for (int i = 0; i < index.Length; i++)
-                {
-                    yield return Keys[index[i]];
-                }
-            }
-        }
+        public TKey this[int index] => _keys is null ? throw new IndexOutOfRangeException() : _keys[index];
 
         /// <summary>
         /// Constructs a <see cref="KeySequence{TKey}"/> from the collection.
@@ -90,7 +74,7 @@ namespace HeaderArrayConverter.Collections
                 throw new ArgumentNullException(nameof(keys));
             }
 
-            _keys = keys.ToImmutableArray();
+            _keys = keys.ToArray();
         }
 
         /// <summary>
@@ -131,7 +115,7 @@ namespace HeaderArrayConverter.Collections
         /// </param>
         public static implicit operator KeySequence<TKey>(KeySequence<object> value)
         {
-            return new KeySequence<TKey>(value.Keys.Cast<TKey>());
+            return new KeySequence<TKey>(value._keys.Cast<TKey>());
         }
 
         /// <summary>
@@ -172,7 +156,7 @@ namespace HeaderArrayConverter.Collections
                 throw new ArgumentNullException(nameof(next));
             }
 
-            return new KeySequence<TKey>(Keys.Concat(next));
+            return new KeySequence<TKey>(_keys?.Concat(next) ?? next);
         }
 
         /// <summary>
@@ -202,7 +186,7 @@ namespace HeaderArrayConverter.Collections
         /// </summary>
         public string ToString(Func<IEnumerable<TKey>, IEnumerable<TKey>> transform)
         {
-            return transform(Keys).Aggregate(string.Empty, (current, next) => $"{current}[{next}]");
+            return transform(_keys ?? Empty).Aggregate(string.Empty, (current, next) => $"{current}[{next}]");
         }
 
         /// <summary>
@@ -215,10 +199,7 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         public IEnumerator<TKey> GetEnumerator()
         {
-            for (int i = 0; i < Keys.Count; i++)
-            {
-                yield return Keys[i];
-            }
+            return _keys?.AsEnumerable().GetEnumerator() ?? Empty.GetEnumerator();
         }
 
         /// <summary>
@@ -243,7 +224,20 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public bool Equals(KeySequence<TKey> other)
         {
-            return GetHashCode() == other.GetHashCode() && Keys.SequenceEqual(other);
+            if (_keys is null || other._keys is null || _keys.Length != other._keys.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _keys.Length; i++)
+            {
+                if (!_keys[i].Equals(other._keys[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -257,7 +251,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public bool Equals(TKey other)
         {
-            return Keys.Count == 1 && Keys[0].Equals(other);
+            return _keys?.Length == 1 && _keys[0].Equals(other);
         }
 
         /// <summary>
@@ -310,6 +304,22 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
+        /// Equality member.
+        /// </summary>
+        public static bool operator ==(KeySequence<TKey> left, KeySequence<TKey> right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <summary>
+        /// Inequality member.
+        /// </summary>
+        public static bool operator !=(KeySequence<TKey> left, KeySequence<TKey> right)
+        {
+            return !left.Equals(right);
+        }
+
+        /// <summary>
         /// Returns the hash code for this instance.
         /// </summary>
         /// <returns>
@@ -317,15 +327,24 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         public override int GetHashCode()
         {
-            int hashCode = 0;
-            for (int i = 0; i < Keys.Count; i++)
+            if (_keys is null)
             {
-                unchecked
-                {
-                    hashCode += 391 * Keys[i].GetHashCode();
-                }
+                return 0;
             }
-            return hashCode;
+            if (_keys.Length == 0)
+            {
+                return -1;
+            }
+
+            unchecked
+            {
+                int hashCode = 17;
+                for (int i = 0; i < _keys.Length; i++)
+                {
+                    hashCode = 31 * hashCode + _keys[i].GetHashCode();
+                }
+                return hashCode;
+            }
         }
 
         /// <summary>

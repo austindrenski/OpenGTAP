@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 // ReSharper disable PossibleInfiniteInheritance
 
@@ -12,18 +13,12 @@ namespace HeaderArrayConverter.IO
     /// Represents a partitioned collection supporting enumeration.
     /// </summary>
     [PublicAPI]
-    public sealed class Partition<T> : IEnumerable<(int VectorIndex, IReadOnlyList<int> Min, IReadOnlyList<int> Max, IReadOnlyCollection<T> Values)>
+    public sealed class Partition<T> : IEnumerable<(int VectorIndex, IReadOnlyList<(int Lower, int Upper)> Ranges, IReadOnlyList<T> Values)> where T : IEquatable<T>
     {
         /// <summary>
         /// The internal limitation on array length in the Fortran routines used by Gempack.
         /// </summary>
         private static readonly int GempackArrayLimit = 1_999_991;
-
-        /// <summary>
-        /// The source collection.
-        /// </summary>
-        [NotNull]
-        private readonly (int[] Indexes, T Value)[] _items;
 
         /// <summary>
         /// The source <see cref="IHeaderArray{TValue}"/>.
@@ -39,7 +34,7 @@ namespace HeaderArrayConverter.IO
         /// <summary>
         /// Gets the number of items in the collection.
         /// </summary>
-        public int Count => _items.Length;
+        public int Total => _headerArray.Total;
 
         /// <summary>
         /// Gets the size limit of each partition.
@@ -49,7 +44,7 @@ namespace HeaderArrayConverter.IO
         /// <summary>
         /// Gets the size of the last partition.
         /// </summary>
-        public int LastSize => Count / Size;
+        public int LastSize => Total / Size;
         
         /// <summary>
         /// Constructs a <see cref="Partition{TValue}"/>.
@@ -66,13 +61,6 @@ namespace HeaderArrayConverter.IO
 
             _headerArray = source;
 
-            _items =
-                source.GetLogicalEnumerable()
-                      .AsParallel()
-                      .AsOrdered()
-                      .Select(x => (x.Key.Select((y, i) => _headerArray.Sets[i].Value.IndexOf(y) + 1).ToArray(), x.Value))
-                      .ToArray();
-
             int test = 1;
             foreach (int dimension in source.Dimensions)
             {
@@ -88,9 +76,9 @@ namespace HeaderArrayConverter.IO
                 Size = 1;
             }
 
-            Partitions = Count / Size;
+            Partitions = Total / Size;
 
-            if (Count % Size > 0)
+            if (Total % Size > 0)
             {
                 Partitions++;
             }
@@ -104,31 +92,44 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        public IEnumerator<(int VectorIndex, IReadOnlyList<int> Min, IReadOnlyList<int> Max, IReadOnlyCollection<T> Values)> GetEnumerator()
+        public IEnumerator<(int VectorIndex, IReadOnlyList<(int Lower, int Upper)> Ranges, IReadOnlyList<T> Values)> GetEnumerator()
         {
             // Corner case where a valid header does not have any data, such as marker headers.
             if (Partitions == 0)
             {
-                yield return (1, new int[0], new int[0], new T[0]);
+                yield return (1, new (int, int)[0], new T[0]);
             }
+            
+            KeyValuePair<KeySequence<string>, T>[] items = _headerArray.GetLogicalEnumerable().ToArray();
+
+            IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets = _headerArray.Sets;
+
+            int dimensions = _headerArray.Dimensions.Count;
 
             for (int i = 0; i < Partitions; i++)
             {
-                ArraySegment<(int[] position, T value)> temp = new ArraySegment<(int[] position, T value)>(_items, i * Size, Size);
+                ArraySegment<KeyValuePair<KeySequence<string>, T>> temp = new ArraySegment<KeyValuePair<KeySequence<string>, T>>(items, i * Size, Size);
 
-                int[][] indexes = temp.Select(x => x.position.Concat(Enumerable.Repeat(1, 7)).Take(7).ToArray()).ToArray();
+                int[][] indexes =
+                    temp.Select(x => x.Key)
+                        .Select(
+                            x =>
+                                x.Select((y, j) => sets[j].Value.IndexOf(y) + 1)
+                                 .Concat(Enumerable.Repeat(1, dimensions))
+                                 .Take(dimensions)
+                                 .ToArray())
+                        .ToArray();
 
-                int[] min = new int[_headerArray.Dimensions.Count];
-                int[] max = new int[_headerArray.Dimensions.Count];
-                for (int j = 0; j < _headerArray.Dimensions.Count; j++)
+                (int Lower, int Upper)[] ranges = new(int Lower, int Upper)[dimensions];
+
+                for (int j = 0; j < dimensions; j++)
                 {
-                    min[j] = indexes.Select(x => x[j]).Min();
-                    max[j] = indexes.Select(x => x[j]).Max();
+                    ranges[j] = (indexes.Select(x => x[j]).Min(), indexes.Select(x => x[j]).Max());
                 }
                 
                 if (temp.Any() || Size == 0)
                 {
-                    yield return (Partitions - i, min, max, temp.Select(x => x.value).ToArray());
+                    yield return (Partitions - i, ranges, temp.Select(x => x.Value).ToArray());
                 }
             }
         }

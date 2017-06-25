@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using HeaderArrayConverter.Collections;
 using JetBrains.Annotations;
 
@@ -11,7 +12,7 @@ namespace HeaderArrayConverter
     /// The type of element in the array.
     /// </typeparam>
     [PublicAPI]
-    public interface IHeaderArray<TValue> : IHeaderArray, ISequenceIndexer<string, TValue>
+    public interface IHeaderArray<TValue> : IHeaderArray, ISequenceIndexer<string, TValue> where TValue : IEquatable<TValue>
     {
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.

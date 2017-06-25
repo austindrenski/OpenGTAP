@@ -155,8 +155,6 @@ namespace HeaderArrayConverter.IO
 
                 IEnumerable<KeyValuePair<KeySequence<string>, float>> entries =
                     set.AsExpandedSet()
-                       .AsParallel()
-                       .AsOrdered()
                        .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]));
 
                 return
@@ -230,27 +228,28 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
-            IHeaderArray<int> numberOfSets = arrayFile["VCNI"].As<int>();
-            IHeaderArray<string> names = arrayFile["VCNM"].As<string>();
-            IHeaderArray<string> descriptions = arrayFile["VCL0"].As<string>();
-            IHeaderArray<string> unitTypes = arrayFile["VCLE"].As<string>();
-            IHeaderArray<ModelChangeType> changeTypes = arrayFile["VCT0"].As<ModelChangeType>();
-            IHeaderArray<ModelVariableType> variableTypes = arrayFile["VCS0"].As<ModelVariableType>();
+            int[] numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            string[] names = arrayFile["VCNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            string[] descriptions = arrayFile["VCL0"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            string[] unitTypes = arrayFile["VCLE"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            string[] changeTypes = arrayFile["VCT0"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            string[] variableTypes = arrayFile["VCS0"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
-            IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
+            IImmutableList<SetInformation>[] sets = VariableIndexedCollectionsOfSets(arrayFile).ToArray();
 
-            return
-                names.Select(
-                    x =>
-                        new SolutionArray(
-                            int.Parse(x.Key.Single()),
-                            numberOfSets[x.Key].SingleOrDefault().Value,
-                            x.Value,
-                            descriptions[x.Key].SingleOrDefault().Value,
-                            unitTypes[x.Key].SingleOrDefault().Value,
-                            changeTypes[x.Key].SingleOrDefault().Value,
-                            variableTypes[x.Key].SingleOrDefault().Value,
-                            sets[x.Key]));
+            for (int i = 0; i < names.Length; i++)
+            {
+                yield return 
+                    new SolutionArray(
+                        i,
+                        numberOfSets[i],
+                        names[i],
+                        descriptions[i],
+                        unitTypes[i],
+                        ModelChange.Parse(changeTypes[i]),
+                        ModelVariable.Parse(variableTypes[i]),
+                        sets[i]);
+            }
         }
 
         /// <summary>
@@ -266,17 +265,12 @@ namespace HeaderArrayConverter.IO
         /// </remarks>
         [Pure]
         [NotNull]
-        private static IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> VariableIndexedCollectionsOfSets(HeaderArrayFile arrayFile)
+        private static IEnumerable<IImmutableList<SetInformation>> VariableIndexedCollectionsOfSets(HeaderArrayFile arrayFile)
         {
-            IImmutableList<SetInformation> setInformation = BuildAllSets(arrayFile);
-
+            SetInformation[] setInformation = BuildAllSets(arrayFile).ToArray();
             int[] pointerIntoVcstn = arrayFile["VCSP"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
             int[] setsPerVariable = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
             int[] setPositions = arrayFile["VCSN"].As<int>().GetLogicalValuesEnumerable().ToArray();
-
-            IDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = new Dictionary<KeySequence<string>, IImmutableList<SetInformation>>();
 
             for (int i = 0; i < pointerIntoVcstn.Length; i++)
             {
@@ -291,10 +285,8 @@ namespace HeaderArrayConverter.IO
                     arraySetInfo[j] = setInformation[setPosition];
                 }
 
-                sets.Add(i.ToString(), arraySetInfo.ToImmutableArray());
+                yield return arraySetInfo.ToImmutableArray();
             }
-
-            return sets.ToImmutableDictionary();
         }
 
         /// <summary>
@@ -315,24 +307,18 @@ namespace HeaderArrayConverter.IO
         /// </remarks>
         [Pure]
         [NotNull]
-        private static IImmutableList<SetInformation> BuildAllSets(HeaderArrayFile arrayFile)
+        private static IEnumerable<SetInformation> BuildAllSets(HeaderArrayFile arrayFile)
         {
-            string[] names = arrayFile["STNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
-
-            string[] descriptions = arrayFile["STLB"].As<string>().GetLogicalValuesEnumerable().ToArray();
-
-            bool[] intertemporal = arrayFile["STTP"].As<string>().GetLogicalValuesEnumerable().Select(x => x == "i").ToArray();
-
             int[] sizes = arrayFile["SSZ "].As<int>().GetLogicalValuesEnumerable().ToArray();
-
+            bool[] intertemporal = arrayFile["STTP"].As<string>().GetLogicalValuesEnumerable().Select(x => x == "i").ToArray();
+            string[] names = arrayFile["STNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            string[] descriptions = arrayFile["STLB"].As<string>().GetLogicalValuesEnumerable().ToArray();
             string[] elements = arrayFile["STEL"].As<string>().GetLogicalValuesEnumerable().ToArray();
-
-            SetInformation[] setInformation = new SetInformation[names.Length];
 
             int counter = 0;
             for (int i = 0; i < names.Length; i++)
             {
-                setInformation[i] =
+                yield return
                     new SetInformation(
                         names[i],
                         descriptions[i],
@@ -342,8 +328,6 @@ namespace HeaderArrayConverter.IO
 
                 counter += sizes[i];
             }
-
-            return setInformation.ToImmutableArray();
         }
     }
 }

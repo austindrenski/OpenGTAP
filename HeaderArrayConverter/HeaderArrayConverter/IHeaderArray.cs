@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using HeaderArrayConverter.Collections;
@@ -42,7 +43,7 @@ namespace HeaderArrayConverter
         /// The type of the array.
         /// </summary>
         HeaderArrayType Type { get; }
-
+        
         /// <summary>
         /// The dimensions of the array.
         /// </summary>
@@ -95,7 +96,7 @@ namespace HeaderArrayConverter
         /// </returns>
         [Pure]
         [NotNull]
-        IHeaderArray<TResult> As<TResult>();
+        IHeaderArray<TResult> As<TResult>() where TResult : IEquatable<TResult>;
 
         /// <summary>
         /// Returns a copy of this <see cref="IHeaderArray"/> with the header modified.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
@@ -72,7 +73,14 @@ namespace HeaderArrayConverter.IO
             {
                 foreach (IHeaderArray array in ValidateHeaders(source))
                 {
-                    await WriteArrayAsync(writer, array);
+                    foreach (Task<byte[]> bytes in WriteArray(array))
+                    {
+                        Task<int> length = bytes.ContinueWith(x => x.Result.Length);
+
+                        writer.Write(await length);
+                        writer.Write(await bytes);
+                        writer.Write(await length);
+                    }
                 }
             }
         }
@@ -128,29 +136,6 @@ namespace HeaderArrayConverter.IO
         }
 
         /// <summary>
-        /// Asynchronously writes the next array from the <see cref="BinaryWriter"/>.
-        /// </summary>
-        /// <param name="writer">
-        /// The <see cref="BinaryWriter"/> to which the array is written.
-        /// </param>
-        /// <param name="array">
-        /// The array to write.
-        /// </param>
-        [NotNull]
-        private static async Task WriteArrayAsync([NotNull] BinaryWriter writer, [NotNull] IHeaderArray array)
-        {
-
-            foreach (byte[] bytes in WriteArray(array))
-            {
-                writer.Write(bytes.Length);
-                writer.Write(bytes);
-                writer.Write(bytes.Length);
-            }
-
-            await Task.CompletedTask;
-        }
-
-        /// <summary>
         /// Returns an enumerable of <see cref="byte"/> arrays representing the serialized <see cref="IHeaderArray"/>.
         /// </summary>
         /// <param name="array">
@@ -159,21 +144,21 @@ namespace HeaderArrayConverter.IO
         [Pure]
         [NotNull]
         [ItemNotNull]
-        private static IEnumerable<byte[]> WriteArray([NotNull] IHeaderArray array)
+        private static IEnumerable<Task<byte[]>> WriteArray([NotNull] IHeaderArray array)
         {
-            yield return WriteHeader(array);
+            yield return Task.FromResult(Encoding.ASCII.GetBytes(array.Header.PadRight(4).Substring(0, 4)));
             yield return WriteMetadata(array);
 
             switch (array.Type)
             {
                 case HeaderArrayType.C1:
                 {
-                    yield return Write1CArrayValues(array.As<string>());
+                    yield return WriteCharacterArray(array.Total, array.Dimensions.Last(), array.As<string>().GetLogicalValuesEnumerable());
                     yield break;
                 }
                 case HeaderArrayType.RE:
                 {
-                    foreach (byte[] values in WriteReArrayValues(array.As<float>()))
+                    foreach (Task<byte[]> values in WriteRealArrayWithSetLabels(array.As<float>()))
                     {
                         yield return values;
                     }
@@ -182,7 +167,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.I2:
                 {
-                    foreach (byte[] values in Write2_ArrayValues(array.As<int>(), (writer, value) => writer.Write(value)))
+                    foreach (Task<byte[]> values in WriteTwoDimensionalNumericArray(array.As<int>(), (writer, value) => writer.Write(value)))
                     {
                         yield return values;
                     }                    
@@ -191,7 +176,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.R2:
                 {
-                    foreach (byte[] values in Write2_ArrayValues(array.As<float>(), (writer, value) => writer.Write(value)))
+                    foreach (Task<byte[]> values in WriteTwoDimensionalNumericArray(array.As<float>(), (writer, value) => writer.Write(value)))
                     {
                         yield return values;
                     }
@@ -206,25 +191,45 @@ namespace HeaderArrayConverter.IO
         }
 
         /// <summary>
-        /// Writes the <see cref="IHeaderArray.Header"/>.
+        /// Writes the next array component on a background thread.
         /// </summary>
-        /// <param name="array">
-        /// The <see cref="IHeaderArray"/> to write.
+        /// <param name="write">
+        /// A delegate that writes to a <see cref="BinaryWriter"/>.
         /// </param>
         /// <returns>
-        /// A byte array containing the serialized data.
+        /// A <see cref="byte"/> array containing the serialized data written by <paramref name="write"/>.,
         /// </returns>
         [Pure]
         [NotNull]
-        private static byte[] WriteHeader([NotNull] IHeaderArray array)
+        [ItemNotNull]
+        private static Task<byte[]> WriteComponentAsync(Action<BinaryWriter> write)
+        {
+            return Task.Run(() => WriteComponent(write));
+        }
+
+        /// <summary>
+        /// Writes the next array component.
+        /// </summary>
+        /// <param name="write">
+        /// A delegate that writes to a <see cref="BinaryWriter"/>.
+        /// </param>
+        /// <returns>
+        /// A <see cref="byte"/> array containing the serialized data written by <paramref name="write"/>.,
+        /// </returns>
+        [Pure]
+        [NotNull]
+        private static byte[] WriteComponent(Action<BinaryWriter> write)
         {
             using (MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(array.Header.PadRight(4).Take(4).ToArray());
+                    writer.Write(Padding);
+
+                    write(writer);
+
+                    return stream.ToArray();
                 }
-                return stream.ToArray();
             }
         }
 
@@ -239,70 +244,22 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static byte[] WriteMetadata([NotNull] IHeaderArray array)
+        private static Task<byte[]> WriteMetadata([NotNull] IHeaderArray array)
         {
-           using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(Padding);
-                    writer.Write((short)array.Type);
-                    writer.Write("FULL".ToCharArray());
-                    writer.Write(array.Description.PadRight(70).Take(70).ToArray());
-                    writer.Write(array.Dimensions.Count);
-
-                    foreach (int dimension in array.Dimensions)
+            return
+                WriteComponentAsync(
+                    writer =>
                     {
-                        writer.Write(dimension);
-                    }
-                }
-                return stream.ToArray();
-            }
-        }
+                        writer.Write((short)array.Type);
+                        writer.Write("FULL".ToCharArray());
+                        writer.Write(array.Description.PadRight(70).Substring(0, 70).ToCharArray());
+                        writer.Write(array.Dimensions.Count);
 
-        /// <summary>
-        /// Writes the entries of <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <param name="array">
-        /// The <see cref="IHeaderArray"/> to write.
-        /// </param>
-        /// <returns>
-        /// A byte array containing the serialized data.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        private static IEnumerable<byte[]> WriteSetEntries([NotNull] IHeaderArray array)
-        {
-            HashSet<string> setsUsed = new HashSet<string>();
-
-            foreach (KeyValuePair<string, IImmutableList<string>> set in array.Sets)
-            {
-                if (!setsUsed.Add(set.Key))
-                {
-                    continue;
-                }
-
-                yield return WriteSetsLocal(set);
-            }
-
-            byte[] WriteSetsLocal(KeyValuePair<string, IImmutableList<string>> set)
-            {
-                using (MemoryStream stream = new MemoryStream())
-                {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        writer.Write(Padding);
-                        writer.Write(1);
-                        writer.Write(set.Value.Count);
-                        writer.Write(set.Value.Count);
-                        foreach (string value in set.Value)
+                        foreach (int dimension in array.Dimensions)
                         {
-                            writer.Write(value.PadRight(12).ToCharArray());
+                            writer.Write(dimension);
                         }
-                    }
-                    return stream.ToArray();
-                }
-            }
+                    });
         }
 
         /// <summary>
@@ -316,35 +273,44 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static byte[] WriteSetNames(IHeaderArray array)
+        private static IEnumerable<Task<byte[]>> WriteSets(IHeaderArray array)
         {
-            using (MemoryStream stream = new MemoryStream())
+            HashSet<string> setsUsed = new HashSet<string>();
+
+            yield return 
+                WriteComponentAsync(
+                    writer =>
+                    {
+                        writer.Write(array.Sets.Select(x => x.Key).Distinct().Count());
+                        writer.Write(Spacer);
+                        writer.Write(array.Sets.Count);
+                        writer.Write(array.Coefficient.PadRight(12).Substring(0, 12).ToCharArray());
+                        writer.Write(Spacer);
+
+                        for (int i = 0; i < array.Sets.Count; i++)
+                        {
+                            writer.Write(array.Sets[i].Key.PadRight(12).Substring(0, 12).ToCharArray());
+                        }
+
+                        for (int i = 0; i < array.Sets.Count; i++)
+                        {
+                            writer.Write((byte)0x6B);
+                        }
+
+                        for (int i = 0; i < array.Sets.Count + 1; i++)
+                        {
+                            writer.Write(0x00_00_00_00);
+                        }
+                    });
+
+            foreach (KeyValuePair<string, IImmutableList<string>> set in array.Sets)
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                if (!setsUsed.Add(set.Key))
                 {
-                    writer.Write(Padding);
-                    writer.Write(array.Sets.Select(x => x.Key).Distinct().Count());
-                    writer.Write(Spacer);
-                    writer.Write(array.Sets.Select(x => x.Key).Count());
-                    writer.Write(array.Coefficient.PadRight(12).Take(12).ToArray());
-                    writer.Write(Spacer);
-
-                    foreach (string name in array.Sets.Select(x => x.Key))
-                    {
-                        writer.Write(name.PadRight(12).ToCharArray());
-                    }
-
-                    for (int i = 0; i < array.Sets.Count; i++)
-                    {
-                        writer.Write((byte)0x6B);
-                    }
-
-                    for (int i = 0; i < array.Sets.Count + 1; i++)
-                    {
-                        writer.Write(0x00_00_00_00);
-                    }
+                    continue;
                 }
-                return stream.ToArray();
+
+                yield return WriteCharacterArray(set.Value.Count, 12, set.Value);
             }
         }
 
@@ -362,23 +328,54 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static byte[] WriteDimensions([NotNull] IHeaderArray array, int vectorIndex)
+        private static Task<byte[]> WriteDimensions([NotNull] IHeaderArray array, int vectorIndex)
         {
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(Padding);
-                    writer.Write(vectorIndex);
-                    writer.Write(array.Dimensions.Count);
-
-                    foreach (int dimension in array.Dimensions)
+            return
+                WriteComponentAsync(
+                    writer =>
                     {
-                        writer.Write(dimension);
-                    }
-                }
-                return stream.ToArray();
-            }
+                        writer.Write(vectorIndex);
+                        writer.Write(array.Dimensions.Count);
+
+                        foreach (int dimension in array.Dimensions)
+                        {
+                            writer.Write(dimension);
+                        }
+                    });
+        }
+        
+        /// <summary>
+        /// Writes the contents of an <see cref="IHeaderArray{String}"/> with type '1C'.
+        /// </summary>
+        /// <param name="count">
+        /// The number of items to write.
+        /// </param>
+        /// <param name="itemLength">
+        /// The length of each item.
+        /// </param>
+        /// <param name="items">
+        /// The items to write.
+        /// </param>
+        /// <returns>
+        /// A byte array containing the serialized data.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        private static Task<byte[]> WriteCharacterArray(int count, int itemLength, IEnumerable<string> items)
+        {
+            return
+                WriteComponentAsync(
+                    writer =>
+                    {
+                        writer.Write(1);
+                        writer.Write(count);
+                        writer.Write(count);
+
+                        foreach (string item in items)
+                        {
+                            writer.Write((item ?? string.Empty).PadRight(itemLength).Substring(0, itemLength).ToCharArray());
+                        }
+                    });
         }
 
         /// <summary>
@@ -392,102 +389,48 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static IEnumerable<byte[]> WriteReArrayValues([NotNull] IHeaderArray<float> array)
+        private static IEnumerable<Task<byte[]>> WriteRealArrayWithSetLabels([NotNull] IHeaderArray<float> array)
         {
-            yield return WriteSetNames(array);
-
-            foreach (byte[] setEntries in WriteSetEntries(array))
+            foreach (Task<byte[]> component in WriteSets(array))
             {
-                yield return setEntries;
+                yield return component;
             }
-            
-           Partition<float> partitions = new Partition<float>(array);
+
+            Partition<float> partitions = new Partition<float>(array);
 
             yield return WriteDimensions(array, 2 * partitions.Partitions + 1);
-
-            foreach ((int vectorIndex, IReadOnlyList<int> min, IReadOnlyList<int> max, IReadOnlyCollection<float> values) in partitions)
+            
+            foreach ((int vectorIndex, IReadOnlyList<(int Lower, int Upper)> ranges, IReadOnlyList<float> values) in partitions)
             {
-                yield return WriteNextExtents(2 * vectorIndex, min, max);
-
-                yield return WriteSegment(2 * vectorIndex - 1, values);
-            }
-
-            // Writes the extent array that describes the positions in the logical array that the next array represents.
-            byte[] WriteNextExtents(int vectorIndex, IReadOnlyList<int> min, IReadOnlyList<int> max)
-            {
-                using (MemoryStream stream = new MemoryStream())
-                {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        writer.Write(Padding);
-                        writer.Write(vectorIndex);
-
-                        for (int i = 0; i < min.Count; i++)
+                yield return
+                    WriteComponentAsync(
+                        writer =>
                         {
-                            writer.Write(min[i] > 0 ? min[i] : 1);
-                            writer.Write(max[i] > 0 ? max[i] : 1);
-                        }
+                            writer.Write(2 * vectorIndex);
 
-                        return stream.ToArray();
-                    }
-                }
-            }
+                            for (int i = 0; i < ranges.Count; i++)
+                            {
+                                writer.Write(ranges[i].Lower > 0 ? ranges[i].Lower : 1);
+                                writer.Write(ranges[i].Upper > 0 ? ranges[i].Upper : 1);
+                            }
+                        });
 
-            // Writes the next array segment.
-            byte[] WriteSegment(int vectorIndex, IEnumerable<float> values)
-            {
-                using (MemoryStream stream = new MemoryStream())
-                {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        writer.Write(Padding);
-                        writer.Write(vectorIndex);
-
-                        foreach (float item in values)
+                yield return 
+                    WriteComponentAsync(
+                        writer =>
                         {
-                            writer.Write(item);
-                        }
+                            writer.Write(2 * vectorIndex - 1);
 
-                        return stream.ToArray();
-                    }
-                }
+                            for (int i = 0; i < values.Count; i++)
+                            {
+                                writer.Write(values[i]);
+                            }
+                        });
             }
         }
 
         /// <summary>
-        /// Writes the contents of an <see cref="IHeaderArray{String}"/> with type '1C'.
-        /// </summary>
-        /// <param name="array">
-        /// The <see cref="IHeaderArray"/> to write.
-        /// </param>
-        /// <returns>
-        /// A byte array containing the serialized data.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        private static byte[] Write1CArrayValues([NotNull] IHeaderArray<string> array)
-        {
-            int recordLength = array.Dimensions.Last();
-
-            using (MemoryStream stream = new MemoryStream())
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(Padding);
-                    writer.Write(1);
-                    writer.Write(array.Total);
-                    writer.Write(array.Total);
-                    foreach (string item in array.GetLogicalValuesEnumerable())
-                    {
-                        writer.Write((item ?? string.Empty).PadRight(recordLength).ToCharArray());
-                    }
-                }
-                return stream.ToArray();
-            }
-        }
-
-        /// <summary>
-        /// Writes the contents of an <see cref="IHeaderArray{Single}"/> with type '2R' or '2I'.
+        /// Writes the contents of a two dimensional numeric <see cref="IHeaderArray{T}"/> with type '2R' or '2I'.
         /// </summary>
         /// <param name="array">
         /// The <see cref="IHeaderArray"/> to write.
@@ -500,51 +443,41 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static IEnumerable<byte[]> Write2_ArrayValues<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write)
+        private static IEnumerable<Task<byte[]>> WriteTwoDimensionalNumericArray<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write) where T : IEquatable<T>
         {
             int counter = 0;
 
-            foreach ((int vectorIndex, _, _, IReadOnlyCollection<T> values) in new Partition<T>(array))
+            foreach ((int vectorIndex, _, IReadOnlyCollection<T> values) in new Partition<T>(array))
             {
-                yield return ProcessNext(values, vectorIndex);
+                int closureCounter = counter;
+
+                yield return
+                    WriteComponentAsync(
+                        writer =>
+                        {
+                            writer.Write(vectorIndex);
+                            foreach (int item in array.Dimensions)
+                            {
+                                writer.Write(item);
+                            }
+
+                            // counter is tracking total elements written.
+                            // so 1 + counter is the next element in a single dimensional context.
+                            // but this may have n-dimensions.
+
+                            writer.Write(1 + closureCounter);
+                            writer.Write(closureCounter + values.Count);
+
+                            writer.Write(1);
+                            writer.Write(1);
+
+                            foreach (T item in values)
+                            {
+                                write(writer, item);
+                            }
+                        });
+
                 counter += values.Count;
-            }
-
-            // <summary>
-            // Returns a byte array representing the source collection.
-            // </summary>
-            byte[] ProcessNext(IReadOnlyCollection<T> source, int vectorIndex)
-            {
-                using (MemoryStream stream = new MemoryStream())
-                {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        writer.Write(Padding);
-
-                        writer.Write(vectorIndex);
-                        foreach (int item in array.Dimensions)
-                        {
-                            writer.Write(item);
-                        }
-
-                        // counter is tracking total elements written.
-                        // so 1 + counter is the next element in a single dimensional context.
-                        // but this may have n-dimensions.
-
-                        writer.Write(1 + counter);
-                        writer.Write(counter + source.Count);
-
-                        writer.Write(1);
-                        writer.Write(1);
-
-                        foreach (T item in source)
-                        {
-                            write(writer, item);
-                        }
-
-                        return stream.ToArray();
-                    }
-                }
             }
         }
     }

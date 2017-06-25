@@ -125,7 +125,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// An <see cref="IHeaderArray{TResult}"/>.
         /// </returns>
-        public virtual IHeaderArray<TResult> As<TResult>()
+        public virtual IHeaderArray<TResult> As<TResult>() where TResult : IEquatable<TResult>
         {
             return (IHeaderArray<TResult>)this;
         }
@@ -361,7 +361,7 @@ namespace HeaderArrayConverter
             /// </param>
             [Pure]
             [NotNull]
-            private static IHeaderArray Create<TValue>(JObject jObject, HeaderArrayType type)
+            private static IHeaderArray Create<TValue>(JObject jObject, HeaderArrayType type) where TValue : IEquatable<TValue>
             {
                 return
                     new HeaderArray<TValue>(

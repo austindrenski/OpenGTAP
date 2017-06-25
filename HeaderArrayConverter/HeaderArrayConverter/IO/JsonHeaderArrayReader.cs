@@ -80,7 +80,7 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         public override IEnumerable<Task<IHeaderArray>> ReadArraysAsync(FilePath file)
         {
-            using (ZipArchive archive = new ZipArchive(File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read)))
+            using (ZipArchive archive = new ZipArchive(File.Open(file, FileMode.Open)))
             {
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {

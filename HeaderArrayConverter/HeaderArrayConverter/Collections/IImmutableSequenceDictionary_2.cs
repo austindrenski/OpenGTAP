@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using JetBrains.Annotations;
@@ -15,13 +16,13 @@ namespace HeaderArrayConverter.Collections
     /// </typeparam>
     [PublicAPI]
     // ReSharper disable once PossibleInterfaceMemberAmbiguity
-    public interface IImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey>, ISequenceIndexer<TKey, TValue>, IImmutableDictionary<KeySequence<TKey>, TValue>, IDictionary<KeySequence<TKey>, TValue>
+    public interface IImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey>, ISequenceIndexer<TKey, TValue>, IImmutableDictionary<KeySequence<TKey>, TValue>, IDictionary<KeySequence<TKey>, TValue> where TKey : IEquatable<TKey> where TValue : IEquatable<TValue>
     {
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
         /// </summary>
         [NotNull]
-        new ImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys] { get; }
+        new IImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys] { get; }
 
         /// <summary>
         /// Gets the number of entries stored in the dictionary.
