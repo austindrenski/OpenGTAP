@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.Types
@@ -16,13 +17,13 @@ namespace HeaderArrayConverter.Types
 
         public IImmutableList<string> Elements { get; }
 
-        public SetInformation(string name, string description, bool isTemporal, int count, IImmutableList<string> elements)
+        public SetInformation(string name, string description, bool isTemporal, int count, IEnumerable<string> elements)
         {
             Name = name;
             Description = description;
             IsTemporal = isTemporal;
             Count = count;
-            Elements = elements;
+            Elements = elements.ToImmutableArray();
         }
     }
 }

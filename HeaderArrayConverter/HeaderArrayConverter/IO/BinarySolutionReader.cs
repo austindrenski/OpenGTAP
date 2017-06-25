@@ -18,12 +18,6 @@ namespace HeaderArrayConverter.IO
     public class BinarySolutionReader : HeaderArrayReader
     {
         /// <summary>
-        /// A <see cref="BinaryHeaderArrayReader"/> that reads the SL4 file in literal format.
-        /// </summary>
-        [NotNull]
-        private static HeaderArrayReader BinaryReader { get; } = new BinaryHeaderArrayReader();
-
-        /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
         /// <param name="file">
@@ -111,7 +105,7 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private IEnumerable<IHeaderArray> BuildHeaderArrays(FilePath file)
         {
-            HeaderArrayFile arrayFile = BinaryReader.Read(file);
+            HeaderArrayFile arrayFile = HeaderArrayFile.BinaryReader.Read(file);
 
             // Variable information.
             int[] countOfComponentsInVariable = arrayFile["VNCP"].As<int>().GetLogicalValuesEnumerable().ToArray();
@@ -159,12 +153,11 @@ namespace HeaderArrayConverter.IO
                          .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
                          .ToImmutableArray();
 
-                ImmutableArray<KeySequence<string>> expandedSets =
-                    set.AsExpandedSet().ToImmutableArray();
-
-                IImmutableList<KeyValuePair<KeySequence<string>, float>> entries =
-                    expandedSets.Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]))
-                                .ToImmutableArray();
+                IEnumerable<KeyValuePair<KeySequence<string>, float>> entries =
+                    set.AsExpandedSet()
+                       .AsParallel()
+                       .AsOrdered()
+                       .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]));
 
                 return
                     new HeaderArray<float>(
@@ -173,7 +166,7 @@ namespace HeaderArrayConverter.IO
                         array.Description,
                         HeaderArrayType.RE,
                         entries,
-                        array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7).ToImmutableArray(),
+                        array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7),
                         set);
 
 
@@ -245,19 +238,20 @@ namespace HeaderArrayConverter.IO
             IHeaderArray<ModelVariableType> variableTypes = arrayFile["VCS0"].As<ModelVariableType>();
 
             IImmutableDictionary<KeySequence<string>, IImmutableList<SetInformation>> sets = VariableIndexedCollectionsOfSets(arrayFile);
-            
+
             return
-                names.Select(
-                    x =>
-                        new SolutionArray(
-                            int.Parse(x.Key.Single()),
-                            numberOfSets[x.Key].SingleOrDefault().Value,
-                            x.Value,
-                            descriptions[x.Key].SingleOrDefault().Value,
-                            unitTypes[x.Key].SingleOrDefault().Value,
-                            changeTypes[x.Key].SingleOrDefault().Value,
-                            variableTypes[x.Key].SingleOrDefault().Value,
-                            sets[x.Key]));
+                names.AsParallel()
+                     .Select(
+                         x =>
+                             new SolutionArray(
+                                 int.Parse(x.Key.Single()),
+                                 numberOfSets[x.Key].SingleOrDefault().Value,
+                                 x.Value,
+                                 descriptions[x.Key].SingleOrDefault().Value,
+                                 unitTypes[x.Key].SingleOrDefault().Value,
+                                 changeTypes[x.Key].SingleOrDefault().Value,
+                                 variableTypes[x.Key].SingleOrDefault().Value,
+                                 sets[x.Key]));
         }
 
         /// <summary>
@@ -345,7 +339,7 @@ namespace HeaderArrayConverter.IO
                         descriptions[i],
                         intertemporal[i],
                         sizes[i],
-                        elements.Skip(counter).Take(sizes[i]).ToImmutableArray());
+                        new ArraySegment<string>(elements, counter, sizes[i]));
 
                 counter += sizes[i];
             }

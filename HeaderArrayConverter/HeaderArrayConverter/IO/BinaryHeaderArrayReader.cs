@@ -125,7 +125,7 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IHeaderArray ReadNext(BinaryReader reader)
         {
-            (string description, string header, bool sparse, HeaderArrayType type, IImmutableList<int> dimensions) = GetDescription(reader);
+            (string description, string header, bool sparse, HeaderArrayType type, IEnumerable<int> dimensions) = GetDescription(reader);
 
             switch (type)
             {
