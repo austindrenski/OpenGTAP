@@ -12,7 +12,7 @@ To install the HeaderArrayConverter library, run the following command in the Pa
 
 ### Reading a binary header array file (.har) 
 
-The following methods read the entire header array file and return a `HeaderArrayFile`:
+The following methods read the entire file and return a `HeaderArrayFile`:
 
 #### Synchronously:
 
@@ -38,7 +38,7 @@ foreach (IHeaderArray array in source)
 
 ### Reading a binary solution file (.sl4)
 
-The following methods read the entire solution file and return a `HeaderArrayFile`:
+The following methods read the entire file and return a `HeaderArrayFile`:
 
 #### Synchronously:
 
@@ -62,14 +62,16 @@ foreach (IHeaderArray array in source)
 }
 ```
 
-### Enumerating header arrays from a binary header array file (.har)
+### Reading a zipped JSON header array file (.harx) 
 
-The following methods yield one array at a time:
+The following methods read the entire file and return a `HeaderArrayFile`:
 
 #### Synchronously:
 
 ```c#
-foreach (IHeaderArray array in HeaderArrayFile.BinaryReader.ReadArrays("filePath"))
+HeaderArrayFile source = HeaderArrayFile.BinaryReader.Read("filePath");
+
+foreach (IHeaderArray array in source)
 {
     Console.WriteLine(array);
 }
@@ -78,9 +80,54 @@ foreach (IHeaderArray array in HeaderArrayFile.BinaryReader.ReadArrays("filePath
 #### Asynchronously:
 
 ```c#
-foreach (Task<IHeaderArray> array in HeaderArrayFile.BinaryReader.ReadArraysAsync("filePath"))
+HeaderArrayFile source = await HeaderArrayFile.BinaryReader.ReadAsync("filePath");
+
+foreach (IHeaderArray array in source)
+{
+    Console.WriteLine(array);
+}
+```
+
+### Enumerating header arrays from a binary header array file (.har)
+
+The following methods yield one array at a time:
+
+#### Synchronously:
+
+```c#
+foreach (IHeaderArray array in HeaderArrayFile.JsonReader.ReadArrays("filePath"))
+{
+    Console.WriteLine(array);
+}
+```
+
+#### Asynchronously:
+
+```c#
+foreach (Task<IHeaderArray> array in HeaderArrayFile.JsonReader.ReadArraysAsync("filePath"))
 {
     Console.WriteLine(await array);
 }
 ```
 
+### Enumerating header arrays from a zipped JSON header array file (.harx)
+
+The following methods yield one array at a time:
+
+#### Synchronously:
+
+```c#
+foreach (IHeaderArray array in HeaderArrayFile.JsonReader.ReadArrays("filePath"))
+{
+    Console.WriteLine(array);
+}
+```
+
+#### Asynchronously:
+
+```c#
+foreach (Task<IHeaderArray> array in HeaderArrayFile.JsonReader.ReadArraysAsync("filePath"))
+{
+    Console.WriteLine(await array);
+}
+```
