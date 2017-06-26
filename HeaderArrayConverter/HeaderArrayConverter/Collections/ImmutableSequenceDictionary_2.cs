@@ -28,18 +28,20 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         private static KeyComparer DistinctKeyComparer { get; } = new KeyComparer();
 
+        private readonly KeyComparison _comparer;
+
         /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
         /// </summary>
         [NotNull]
         [JsonProperty]
-        private readonly IImmutableDictionary<KeySequence<TKey>, TValue> _dictionary;
+        private readonly IDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>
         /// Gets the number of entries stored in the dictionary.
         /// </summary>
         public int Count => _dictionary.Count;
-        
+
         /// <summary>
         /// Gets the total number of entries represented by the dictionary.
         /// </summary>
@@ -53,7 +55,7 @@ namespace HeaderArrayConverter.Collections
             get
             {
                 KeySequence<TKey> key = new KeySequence<TKey>(keys);
-                
+
                 if (_dictionary.ContainsKey(key))
                 {
                     return Create(Sets, new KeyValuePair<KeySequence<TKey>, TValue>(key, _dictionary[key]));
@@ -72,7 +74,7 @@ namespace HeaderArrayConverter.Collections
         }
 
         IImmutableSequenceDictionary<TKey> IImmutableSequenceDictionary<TKey>.this[params TKey[] keys] => this[keys];
-        
+
         IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> ISequenceIndexer<TKey, TValue>.this[params TKey[] keys] => this[keys];
 
         IEnumerable ISequenceIndexer<TKey>.this[params TKey[] keys] => this[keys];
@@ -110,11 +112,11 @@ namespace HeaderArrayConverter.Collections
                 throw new ArgumentNullException(nameof(source));
             }
 
-            Sets = sets.ToImmutableArray();
+            Sets = sets as IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> ?? sets.ToImmutableArray();
 
-            TValue skipValue = default(TValue);
+            //_comparer = new KeyComparison(Sets);
 
-            _dictionary = source.AsParallel().Where(x => !x.Value.Equals(skipValue)).ToImmutableDictionary();
+            _dictionary = source.AsParallel().Where(x => !x.Value.Equals(default(TValue))).ToDictionary(x => x.Key, x => x.Value);
         }
 
         /// <summary>
@@ -224,7 +226,7 @@ namespace HeaderArrayConverter.Collections
         {
             if (Sets.Count == 0)
             {
-                return _dictionary.ToDictionary(x => x.Key, x => (object)x.Value);
+                return _dictionary.Select(x => new KeyValuePair<KeySequence<TKey>, object>(x.Key, x.Value));
             }
 
             return
@@ -248,6 +250,7 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<TValue> GetLogicalValuesEnumerable()
         {
+
             if (Sets.Count == 0)
             {
                 return _dictionary.Values;
@@ -338,136 +341,6 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
-        /// Searches the dictionary for a given key and returns the equal key it finds, if any.
-        /// </summary>
-        /// <param name="equalKey">
-        /// The key to search for.
-        /// </param>
-        /// <param name="actualKey">
-        /// The key from the dictionary that the search found, or <paramref name="equalKey" /> if the search yielded no match.
-        /// </param>
-        /// <returns>
-        /// A value indicating whether the search was successful.
-        /// </returns>
-        [Pure]
-        public bool TryGetKey(KeySequence<TKey> equalKey, out KeySequence<TKey> actualKey)
-        {
-            return _dictionary.TryGetKey(equalKey, out actualKey);
-        }
-
-        /// <summary>
-        /// Gets an empty dictionary with equivalent ordering and key/value comparison rules.
-        /// </summary>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> Clear()
-        {
-            return _dictionary.Any() ? Create(Enumerable.Empty<KeyValuePair<string, IImmutableList<TKey>>>(), Enumerable.Empty<KeyValuePair<KeySequence<TKey>, TValue>>()) : this;
-        }
-
-        /// <summary>
-        /// Adds the specified key and value to the dictionary.
-        /// </summary>
-        /// <param name="key">
-        /// The key of the entry to add.
-        /// </param>
-        /// <param name="value">
-        /// The value of the entry to add.
-        /// </param>
-        /// <returns>
-        /// The new dictionary containing the additional key-value pair.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> Add(KeySequence<TKey> key, TValue value)
-        {
-            return _dictionary.Add(key, value);
-        }
-
-        /// <summary>
-        /// Adds the specified key-value pairs to the dictionary.
-        /// </summary>
-        /// <param name="pairs"
-        /// >The pairs to add.
-        /// </param>
-        /// <returns>
-        /// The new dictionary containing the additional key-value pairs.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> AddRange(IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> pairs)
-        {
-            return _dictionary.AddRange(pairs);
-        }
-
-        /// <summary>
-        /// Sets the specified key and value to the dictionary, possibly overwriting an existing value for the given key.
-        /// </summary>
-        /// <param name="key">
-        /// The key of the entry to add.
-        /// </param>
-        /// <param name="value">
-        /// The value of the entry to add.
-        /// </param>
-        /// <returns>
-        /// The new dictionary containing the additional key-value pair.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> SetItem(KeySequence<TKey> key, TValue value)
-        {
-            return _dictionary.SetItem(key, value);
-        }
-
-        /// <summary>
-        /// Applies a given set of key=value pairs to an immutable dictionary, replacing any conflicting keys in the resulting dictionary.
-        /// </summary>
-        /// <param name="items">
-        /// The key=value pairs to set on the dictionary.  Any keys that conflict with existing keys will overwrite the previous values.
-        /// </param>
-        /// <returns>
-        /// An immutable dictionary.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> SetItems(IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> items)
-        {
-            return _dictionary.SetItems(items);
-        }
-
-        /// <summary>
-        /// Removes the specified key from the dictionary with its associated value.
-        /// </summary>
-        /// <param name="key">
-        /// The key to remove.
-        /// </param>
-        /// <returns>
-        /// A new dictionary with the matching entry removed; or this instance if the key is not in the dictionary.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> Remove(KeySequence<TKey> key)
-        {
-            return _dictionary.Remove(key);
-        }
-
-        /// <summary>
-        /// Removes the specified keys from the dictionary with their associated values.
-        /// </summary>
-        /// <param name="keys">
-        /// The keys to remove.
-        /// </param>
-        /// <returns>
-        /// A new dictionary with those keys removed; or this instance if those keys are not in the dictionary.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        public IImmutableDictionary<KeySequence<TKey>, TValue> RemoveRange(IEnumerable<KeySequence<TKey>> keys)
-        {
-            return _dictionary.RemoveRange(keys);
-        }
-        
-        /// <summary>
         /// Determines whether this dictionary contains the specified key-value pair.
         /// </summary>
         /// <param name="pair">
@@ -538,6 +411,43 @@ namespace HeaderArrayConverter.Collections
             public int GetHashCode(KeyValuePair<KeySequence<TKey>, TValue> obj)
             {
                 return obj.Key.GetHashCode();
+            }
+        }
+
+        private sealed class KeyComparison : IComparer<KeyValuePair<KeySequence<TKey>, TValue>>
+        {
+            private readonly Dictionary<TKey, int>[] _sets;
+
+            public KeyComparison(IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> sets)
+            {
+                _sets = sets.Select(x => x.Value.Select((y, i) => new KeyValuePair<TKey, int>(y, i)).ToDictionary(y => y.Key, y => y.Value)).ToArray();
+            }
+
+            /// <summary>
+            /// Compares two objects and returns a value indicating whether one is less than, equal to, or greater than the other.
+            /// </summary>
+            /// <returns>
+            /// A signed integer that indicates the relative values of <paramref name="x" /> and <paramref name="y" />, as shown in the following table.
+            /// Value Meaning Less than zero<paramref name="x" /> is less than <paramref name="y" />.
+            /// Zero<paramref name="x" /> equals <paramref name="y" />.
+            /// Greater than zero<paramref name="x" /> is greater than <paramref name="y" />.
+            /// </returns>
+            public int Compare(KeyValuePair<KeySequence<TKey>, TValue> x, KeyValuePair<KeySequence<TKey>, TValue> y)
+            {
+                Comparer<int> comparer = Comparer<int>.Default;
+                int test = 0;
+                for (int i = _sets.Length; i > 0; i--)
+                {
+                    test = comparer.Compare(_sets[i][x.Key[i]], _sets[i][y.Key[i]]);
+
+                    if (test == 0)
+                    {
+                        continue;
+                    }
+
+                    return test;
+                }
+                return test;
             }
         }
     }

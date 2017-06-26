@@ -151,7 +151,7 @@ namespace HeaderArrayConverter.IO
             {
                 case HeaderArrayType.C1:
                 {
-                    yield return WriteCharacterArray(array.Total, array.Dimensions.Last(), array.As<string>().GetLogicalValuesEnumerable());
+                    yield return WriteCharacterArray(array.Count, array.Dimensions.Last(), array.As<string>().GetLogicalValuesEnumerable());
                     yield break;
                 }
                 case HeaderArrayType.RE:

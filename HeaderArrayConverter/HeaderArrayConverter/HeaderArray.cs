@@ -62,11 +62,11 @@ namespace HeaderArrayConverter
         /// The sets of the array.
         /// </summary>
         public abstract IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
-        
+
         /// <summary>
         /// Gets the total number of entries in the array.
         /// </summary>
-        public abstract int Total { get; }
+        public abstract int Count { get; }
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -78,18 +78,7 @@ namespace HeaderArrayConverter
         /// The value stored by the given key.
         /// </returns>
         IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => throw new NotSupportedException();
-
-        /// <summary>
-        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
-        /// </summary>
-        /// <param name="key">
-        /// The components that define the key whose value is returned.
-        /// </param>
-        /// <returns>
-        /// The value stored by the given key.
-        /// </returns>
-        object IHeaderArray.this[int key] => throw new NotSupportedException();
-        
+       
         /// <summary>
         /// Gets an <see cref="IEnumerable"/> for the given keys.
         /// </summary>

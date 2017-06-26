@@ -74,12 +74,12 @@ namespace HeaderArrayConverter
         /// </summary>
         [JsonProperty]
         public override IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
-        
+
         /// <summary>
         /// Gets the total number of entries in the array.
         /// </summary>
-        public override int Total => _entries.Total;
-        
+        public override int Count => _entries.Total;
+
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
@@ -105,17 +105,6 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
-        /// <param name="key">
-        /// The components that define the key whose value is returned.
-        /// </param>
-        /// <returns>
-        /// The value stored by the given key.
-        /// </returns>
-        public TValue this[int key] => _entries.GetValueOrDefault(key.ToString());
-
-        /// <summary>
-        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
-        /// </summary>
         /// <param name="keys">
         /// The components that define the key whose value is returned.
         /// </param>
@@ -123,17 +112,6 @@ namespace HeaderArrayConverter
         /// The value stored by the given key.
         /// </returns>
         IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => this[(KeySequence<string>)keys];
-
-        /// <summary>
-        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
-        /// </summary>
-        /// <param name="key">
-        /// The components that define the key whose value is returned.
-        /// </param>
-        /// <returns>
-        /// The value stored by the given key.
-        /// </returns>
-        object IHeaderArray.this[int key] => this[key.ToString()];
 
         /// <summary>
         /// Gets an <see cref="IEnumerable{T}"/> for the given keys.

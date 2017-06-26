@@ -34,7 +34,7 @@ namespace HeaderArrayConverter.IO
         /// <summary>
         /// Gets the number of items in the collection.
         /// </summary>
-        public int Total => _headerArray.Total;
+        public int Total => _headerArray.Count;
 
         /// <summary>
         /// Gets the size limit of each partition.

@@ -39,18 +39,6 @@ namespace HeaderArrayConverter
         new IImmutableSequenceDictionary<string, TValue> this[params string[] keys] { get; }
 
         /// <summary>
-        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
-        /// </summary>
-        /// <param name="key">
-        /// The components that define the key whose value is returned.
-        /// </param>
-        /// <returns>
-        /// The value stored by the given key.
-        /// </returns>
-        [NotNull]
-        new TValue this[int key] { get; }
-
-        /// <summary>
         /// Returns a copy of this <see cref="IHeaderArray"/> with the header modified.
         /// </summary>
         /// <param name="header">

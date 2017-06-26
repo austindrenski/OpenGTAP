@@ -13,7 +13,7 @@ namespace HeaderArrayConverter.Collections
     /// The type of value in the sequence.
     /// </typeparam>
     [PublicAPI]
-    public interface ISequenceIndexer<TKey, TValue> : ISequenceIndexer<TKey>, IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>
+    public interface ISequenceIndexer<TKey, TValue> : ISequenceIndexer<TKey>
     {
         /// <summary>
         /// Gets an <see cref="IEnumerable{T}"/> for the given keys.

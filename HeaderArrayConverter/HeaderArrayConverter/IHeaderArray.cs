@@ -55,11 +55,11 @@ namespace HeaderArrayConverter
         /// </summary>
         [NotNull]
         IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
-        
+
         /// <summary>
         /// Gets the total number of entries in the array.
         /// </summary>
-        int Total { get; }
+        int Count { get; }
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -72,18 +72,6 @@ namespace HeaderArrayConverter
         /// </returns>
         [NotNull]
         new IImmutableSequenceDictionary<string> this[params string[] keys] { get; }
-
-        /// <summary>
-        /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
-        /// </summary>
-        /// <param name="key">
-        /// The components that define the key whose value is returned.
-        /// </param>
-        /// <returns>
-        /// The value stored by the given key.
-        /// </returns>
-        [NotNull]
-        object this[int key] { get; }
 
         /// <summary>
         /// Casts the <see cref="IHeaderArray"/> as an <see cref="IHeaderArray{TResult}"/>.
