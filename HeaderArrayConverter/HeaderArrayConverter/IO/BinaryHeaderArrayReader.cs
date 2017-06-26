@@ -85,10 +85,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            foreach (Task<IHeaderArray> array in ReadArraysAsync(file))
-            {
-                yield return array.Result;
-            }
+            return Task.WhenAll(ReadArraysAsync(file)).Result;
         }
 
         /// <summary>

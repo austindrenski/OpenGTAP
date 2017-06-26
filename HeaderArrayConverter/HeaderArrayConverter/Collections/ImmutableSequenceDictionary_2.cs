@@ -202,6 +202,11 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerable()
         {
+            if (Sets.Count == 0)
+            {
+                return _dictionary;
+            }
+
             return
                 Sets.AsExpandedSet()
                     .AsParallel()
@@ -217,6 +222,11 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         IEnumerable<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerable()
         {
+            if (Sets.Count == 0)
+            {
+                return _dictionary.ToDictionary(x => x.Key, x => (object)x.Value);
+            }
+
             return
                 Sets.AsExpandedSet()
                     .AsParallel()
@@ -238,6 +248,11 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<TValue> GetLogicalValuesEnumerable()
         {
+            if (Sets.Count == 0)
+            {
+                return _dictionary.Values;
+            }
+
             return
                 Sets.AsExpandedSet()
                     .AsParallel()
@@ -265,8 +280,14 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<TValue> GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
         {
+            if (Sets.Count == 0)
+            {
+                return _dictionary.Values;
+            }
+
             return
                 Sets.AsExpandedSet()
+                    .DefaultIfEmpty()
                     .AsParallel()
                     .OrderBy(x => x, keyComparer)
                     .Select(

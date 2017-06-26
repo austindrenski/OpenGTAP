@@ -96,14 +96,22 @@ namespace HeaderArrayConverter.IO
         {
             int dimensions = _headerArray.Dimensions.Count;
 
+            (int, (int, int)[], T[]) cornerCase = (1, new(int, int)[dimensions], new T[0]);
+
             // Corner case where a valid header does not have any data, such as marker headers.
             if (Partitions == 0)
             {
-                yield return (1, new (int, int)[dimensions], new T[0]);
+                yield return cornerCase;
                 yield break;
             }
             
             KeyValuePair<KeySequence<string>, T>[] items = _headerArray.GetLogicalEnumerable().ToArray();
+
+            if (items.Length == 0)
+            {
+                yield return cornerCase;
+                yield break;
+            }
 
             IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets = _headerArray.Sets;
             

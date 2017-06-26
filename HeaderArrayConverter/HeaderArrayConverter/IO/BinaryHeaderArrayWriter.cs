@@ -46,7 +46,18 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(source));
             }
 
-            WriteAsync(file, source).Wait();
+            using (BinaryWriter writer = new BinaryWriter(File.Open(file, FileMode.Create, FileAccess.Write, FileShare.Read)))
+            {
+                foreach (IHeaderArray array in ValidateHeaders(source))
+                {
+                    foreach (byte[] bytes in ComposeArray(array))
+                    {
+                        writer.Write(bytes.Length);
+                        writer.Write(bytes);
+                        writer.Write(bytes.Length);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -69,20 +80,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(source));
             }
 
-            using (BinaryWriter writer = new BinaryWriter(File.Open(file, FileMode.Create, FileAccess.Write, FileShare.Read)))
-            {
-                foreach (IHeaderArray array in ValidateHeaders(source))
-                {
-                    foreach (Task<byte[]> bytes in WriteArray(array))
-                    {
-                        Task<int> length = bytes.ContinueWith(x => x.Result.Length);
-
-                        writer.Write(await length);
-                        writer.Write(await bytes);
-                        writer.Write(await length);
-                    }
-                }
-            }
+            await Task.Run(() => Write(file, source));
         }
 
         /// <summary>
@@ -144,9 +142,9 @@ namespace HeaderArrayConverter.IO
         [Pure]
         [NotNull]
         [ItemNotNull]
-        private static IEnumerable<Task<byte[]>> WriteArray([NotNull] IHeaderArray array)
+        private static IEnumerable<byte[]> ComposeArray([NotNull] IHeaderArray array)
         {
-            yield return Task.FromResult(Encoding.ASCII.GetBytes(array.Header.PadRight(4).Substring(0, 4)));
+            yield return Encoding.ASCII.GetBytes(array.Header.PadRight(4).Substring(0, 4));
             yield return WriteMetadata(array);
 
             switch (array.Type)
@@ -158,7 +156,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.RE:
                 {
-                    foreach (Task<byte[]> values in WriteRealArrayWithSetLabels(array.As<float>()))
+                    foreach (byte[] values in WriteRealArrayWithSetLabels(array.As<float>()))
                     {
                         yield return values;
                     }
@@ -167,7 +165,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.I2:
                 {
-                    foreach (Task<byte[]> values in WriteTwoDimensionalNumericArray(array.As<int>(), (writer, value) => writer.Write(value)))
+                    foreach (byte[] values in WriteTwoDimensionalNumericArray(array.As<int>(), (writer, value) => writer.Write(value)))
                     {
                         yield return values;
                     }                    
@@ -176,7 +174,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.R2:
                 {
-                    foreach (Task<byte[]> values in WriteTwoDimensionalNumericArray(array.As<float>(), (writer, value) => writer.Write(value)))
+                    foreach (byte[] values in WriteTwoDimensionalNumericArray(array.As<float>(), (writer, value) => writer.Write(value)))
                     {
                         yield return values;
                     }
@@ -191,7 +189,7 @@ namespace HeaderArrayConverter.IO
         }
 
         /// <summary>
-        /// Writes the next array component on a background thread.
+        /// Writes the next array component.
         /// </summary>
         /// <param name="write">
         /// A delegate that writes to a <see cref="BinaryWriter"/>.
@@ -201,24 +199,19 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        [ItemNotNull]
-        private static Task<byte[]> WriteComponentAsync(Action<BinaryWriter> write)
+        private static byte[] WriteComponent(Action<BinaryWriter> write)
         {
-            return
-                Task.Run(() =>
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    using (MemoryStream stream = new MemoryStream())
-                    {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
-                        {
-                            writer.Write(Padding);
+                    writer.Write(Padding);
 
-                            write(writer);
+                    write(writer);
 
-                            return stream.ToArray();
-                        }
-                    }
-                });
+                    return stream.ToArray();
+                }
+            }
         }
 
         /// <summary>
@@ -232,10 +225,10 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static Task<byte[]> WriteMetadata([NotNull] IHeaderArray array)
+        private static byte[] WriteMetadata([NotNull] IHeaderArray array)
         {
             return
-                WriteComponentAsync(
+                WriteComponent(
                     writer =>
                     {
                         writer.Write((short)array.Type);
@@ -261,12 +254,12 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static IEnumerable<Task<byte[]>> WriteSets(IHeaderArray array)
+        private static IEnumerable<byte[]> WriteSets(IHeaderArray array)
         {
             HashSet<string> setsUsed = new HashSet<string>();
 
             yield return 
-                WriteComponentAsync(
+                WriteComponent(
                     writer =>
                     {
                         writer.Write(array.Sets.Select(x => x.Key).Distinct().Count());
@@ -316,10 +309,10 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static Task<byte[]> WriteDimensions([NotNull] IHeaderArray array, int vectorIndex)
+        private static byte[] WriteDimensions([NotNull] IHeaderArray array, int vectorIndex)
         {
             return
-                WriteComponentAsync(
+                WriteComponent(
                     writer =>
                     {
                         writer.Write(vectorIndex);
@@ -344,10 +337,10 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A <see cref="byte"/> array of the serialized daya.
         /// </returns>
-        private static Task<byte[]> WriteExtents(int vectorIndex, IReadOnlyList<(int Lower, int Upper)> ranges)
+        private static byte[] WriteExtents(int vectorIndex, IReadOnlyList<(int Lower, int Upper)> ranges)
         {
             return
-                WriteComponentAsync(
+                WriteComponent(
                     writer =>
                     {
                         writer.Write(vectorIndex);
@@ -377,10 +370,10 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static Task<byte[]> WriteCharacterArray(int count, int itemLength, IEnumerable<string> items)
+        private static byte[] WriteCharacterArray(int count, int itemLength, IEnumerable<string> items)
         {
             return
-                WriteComponentAsync(
+                WriteComponent(
                     writer =>
                     {
                         writer.Write(1);
@@ -405,9 +398,9 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static IEnumerable<Task<byte[]>> WriteRealArrayWithSetLabels([NotNull] IHeaderArray<float> array)
+        private static IEnumerable<byte[]> WriteRealArrayWithSetLabels([NotNull] IHeaderArray<float> array)
         {
-            foreach (Task<byte[]> component in WriteSets(array))
+            foreach (byte[] component in WriteSets(array))
             {
                 yield return component;
             }
@@ -421,7 +414,7 @@ namespace HeaderArrayConverter.IO
                 yield return WriteExtents(2 * vectorIndex, ranges);
 
                 yield return 
-                    WriteComponentAsync(
+                    WriteComponent(
                         writer =>
                         {
                             writer.Write(2 * vectorIndex - 1);
@@ -450,12 +443,12 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         [Pure]
         [NotNull]
-        private static IEnumerable<Task<byte[]>> WriteTwoDimensionalNumericArray<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write) where T : IEquatable<T>
+        private static IEnumerable<byte[]> WriteTwoDimensionalNumericArray<T>([NotNull] IHeaderArray<T> array, Action<BinaryWriter, T> write) where T : IEquatable<T>
         {
             foreach ((int vectorIndex, IReadOnlyList<(int Lower, int Upper)> ranges, IReadOnlyCollection<T> values) in new Partition<T>(array))
             {
                 yield return
-                    WriteComponentAsync(
+                    WriteComponent(
                         writer =>
                         {
                             writer.Write(vectorIndex);

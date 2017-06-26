@@ -126,7 +126,8 @@ namespace HeaderArrayConverter.IO
             IReadOnlyList<float> shockValues = arrayFile["SHOC"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
             return
-                BuildSolutionArrays(arrayFile).Where(x => x.IsBacksolvedOrCondensed)
+                BuildSolutionArrays(arrayFile).AsParallel()
+                                              .Where(x => x.IsBacksolvedOrCondensed)
                                               .OrderBy(x => x.VariableIndex)
                                               .Select(BuildNextArray);
 
@@ -142,11 +143,9 @@ namespace HeaderArrayConverter.IO
                     Array.Copy((float[])cumulativeResults, pointer, values, 0, countInCumulative[index]);
                 }
                 
-                // Not pure -- value is modified!
-                ShiftExogenous(values);
+                values = ShiftExogenous(values);
 
-                // Not pure -- value is modified!
-                Shocks(values);
+                values = Shocks(values);
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
@@ -155,7 +154,7 @@ namespace HeaderArrayConverter.IO
 
                 IEnumerable<KeyValuePair<KeySequence<string>, float>> entries =
                     set.AsExpandedSet()
-                       .Zip(values, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
+                       .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]));
 
                 return
                     new HeaderArray<float>(
@@ -167,15 +166,15 @@ namespace HeaderArrayConverter.IO
                         array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7),
                         set);
 
-
                 // Shifts existing entries to their appropriate positions to create gaps for exogenous values.
-                void ShiftExogenous(float[] inputArray)
+                float[] ShiftExogenous(IEnumerable<float> inputArray)
                 {
                     if (array.Count == countOfExogenous[index])
                     {
-                        Array.Clear(inputArray, 0, inputArray.Length);
-                        return;
+                        return new float[inputArray.Count()];
                     }
+
+                    float[] withGaps = inputArray.ToArray();
 
                     int nextValidPosition =
                         countOfExogenous.Take(index)
@@ -185,43 +184,47 @@ namespace HeaderArrayConverter.IO
                     for (int i = 0; i < countOfExogenous[index]; i++)
                     {
                         int position = positionsOfExogenous[nextValidPosition + i] - 1;
-
-                        Array.Copy(inputArray, position, inputArray, position + 1, inputArray.Length - position - 1);
-
-                        inputArray[position] = default(float);
+                        Array.Copy(withGaps, position, withGaps, position + 1, withGaps.Length - position - 1);
+                        withGaps[position] = default(float);
                     }
+
+                    return withGaps;
                 }
 
                 // Adds shocks to open positions to a copy of the input array.
-                void Shocks(float[] inputArray)
+                float[] Shocks(IEnumerable<float> inputArray)
                 {
+                    float[] withShocks = inputArray.ToArray();
+
                     int shockedCount = numberOfShockedComponents[index];
 
                     if (shockedCount == 0)
                     {
-                        return;
+                        return withShocks;
                     }
 
                     int shockPointer = pointersToShockValues[index] - 1;
 
                     int nextValidPosition =
                         numberOfShockedComponents.Take(index - 1)
-                                                 .Where((x, i) => x > 1 && x != numberOfShockedComponents[i])
+                                                 .Where((x, i) => x > 1 && x != countOfComponentsInVariable[i])
                                                  .Sum();
-                    
+
                     for (int i = 0; i < shockedCount; i++)
                     {
-                        int position = array.Count == shockedCount ? i : position = positionsOfShockValues[nextValidPosition + i];
+                        int position = array.Count == shockedCount ? i : positionsOfShockValues[nextValidPosition + i] - 1;
                         float value = shockValues[shockPointer + i];
-                        inputArray[position] = value;
+                        withShocks[position] = value;
                     }
+
+                    return withShocks;
                 }
             }
         }
 
         [Pure]
         [NotNull]
-        private static ParallelQuery<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
+        private static IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
             IReadOnlyList<int> numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
             IReadOnlyList<string> names = arrayFile["VCNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
@@ -232,18 +235,19 @@ namespace HeaderArrayConverter.IO
 
             IImmutableList<SetInformation>[] sets = VariableIndexedCollectionsOfSets(arrayFile).ToArray();
 
-            return
-                ParallelEnumerable.Range(0, names.Count)
-                                  .Select(
-                                      (x, i) => new SolutionArray(
-                                          i,
-                                          numberOfSets[i],
-                                          names[i],
-                                          descriptions[i],
-                                          unitTypes[i],
-                                          ModelChange.Parse(changeTypes[i]),
-                                          ModelVariable.Parse(variableTypes[i]),
-                                          sets[i]));
+            for (int i = 0; i < names.Count; i++)
+            {
+                yield return
+                    new SolutionArray(
+                        i,
+                        numberOfSets[i],
+                        names[i],
+                        descriptions[i],
+                        unitTypes[i],
+                        ModelChange.Parse(changeTypes[i]),
+                        ModelVariable.Parse(variableTypes[i]),
+                        sets[i]);
+            }
         }
 
         /// <summary>
