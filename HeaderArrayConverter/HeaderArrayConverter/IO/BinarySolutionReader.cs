@@ -108,26 +108,25 @@ namespace HeaderArrayConverter.IO
             HeaderArrayFile arrayFile = HeaderArrayFile.BinaryReader.Read(file);
 
             // Variable information.
-            int[] countOfComponentsInVariable = arrayFile["VNCP"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> countOfComponentsInVariable = arrayFile["VNCP"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
             // Endogenous variable components and information.
-            int[] pointersToCumulative = arrayFile["PCUM"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            int[] countInCumulative = arrayFile["CMND"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            float[] cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> pointersToCumulative = arrayFile["PCUM"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> countInCumulative = arrayFile["CMND"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<float> cumulativeResults = arrayFile["CUMS"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
             // Exogenous variable components and list of positions (where OREX != array.Length).
-            int[] countOfExogenous = arrayFile["OREX"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            int[] positionsOfExogenous = arrayFile["OREL"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> countOfExogenous = arrayFile["OREX"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> positionsOfExogenous = arrayFile["OREL"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
             // Shocked variable information
-            int[] numberOfShockedComponents = arrayFile["SHCK"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            int[] pointersToShockValues = arrayFile["PSHK"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            int[] positionsOfShockValues = arrayFile["SHCL"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            float[] shockValues = arrayFile["SHOC"].As<float>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> numberOfShockedComponents = arrayFile["SHCK"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> pointersToShockValues = arrayFile["PSHK"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> positionsOfShockValues = arrayFile["SHCL"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<float> shockValues = arrayFile["SHOC"].As<float>().GetLogicalValuesEnumerable().ToArray();
 
             return
-                BuildSolutionArrays(arrayFile).AsParallel()
-                                              .Where(x => x.IsBacksolvedOrCondensed)
+                BuildSolutionArrays(arrayFile).Where(x => x.IsBacksolvedOrCondensed)
                                               .OrderBy(x => x.VariableIndex)
                                               .Select(BuildNextArray);
 
@@ -135,18 +134,19 @@ namespace HeaderArrayConverter.IO
             IHeaderArray BuildNextArray(SolutionArray array, int index)
             {
                 float[] values = new float[array.Count];
-
-
+                
                 // When the array is condensed/backsolved and the pointer is empty, its exogenous.
                 int pointer = pointersToCumulative[index] - 1;
                 if (pointer != -1)
                 {
-                    Array.Copy(cumulativeResults, pointer, values, 0, countInCumulative[index]);
+                    Array.Copy((float[])cumulativeResults, pointer, values, 0, countInCumulative[index]);
                 }
                 
-                values = ShiftExogenous(values);
+                // Not pure -- value is modified!
+                ShiftExogenous(values);
 
-                values = Shocks(values);
+                // Not pure -- value is modified!
+                Shocks(values);
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
@@ -155,7 +155,7 @@ namespace HeaderArrayConverter.IO
 
                 IEnumerable<KeyValuePair<KeySequence<string>, float>> entries =
                     set.AsExpandedSet()
-                       .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]));
+                       .Zip(values, (k, v) => new KeyValuePair<KeySequence<string>, float>(k, v));
 
                 return
                     new HeaderArray<float>(
@@ -169,14 +169,13 @@ namespace HeaderArrayConverter.IO
 
 
                 // Shifts existing entries to their appropriate positions to create gaps for exogenous values.
-                float[] ShiftExogenous(float[] inputArray)
+                void ShiftExogenous(float[] inputArray)
                 {
                     if (array.Count == countOfExogenous[index])
                     {
-                        return new float[inputArray.Length];
+                        Array.Clear(inputArray, 0, inputArray.Length);
+                        return;
                     }
-
-                    float[] withGaps = inputArray.ToArray();
 
                     int nextValidPosition =
                         countOfExogenous.Take(index)
@@ -186,23 +185,21 @@ namespace HeaderArrayConverter.IO
                     for (int i = 0; i < countOfExogenous[index]; i++)
                     {
                         int position = positionsOfExogenous[nextValidPosition + i] - 1;
-                        Array.Copy(withGaps, position, withGaps, position + 1, withGaps.Length - position - 1);
-                        withGaps[position] = default(float);
-                    }
 
-                    return withGaps;
+                        Array.Copy(inputArray, position, inputArray, position + 1, inputArray.Length - position - 1);
+
+                        inputArray[position] = default(float);
+                    }
                 }
 
                 // Adds shocks to open positions to a copy of the input array.
-                float[] Shocks(IEnumerable<float> inputArray)
+                void Shocks(float[] inputArray)
                 {
-                    float[] withShocks = inputArray.ToArray();
-
                     int shockedCount = numberOfShockedComponents[index];
 
                     if (shockedCount == 0)
                     {
-                        return withShocks;
+                        return;
                     }
 
                     int shockPointer = pointersToShockValues[index] - 1;
@@ -216,40 +213,37 @@ namespace HeaderArrayConverter.IO
                     {
                         int position = array.Count == shockedCount ? i : position = positionsOfShockValues[nextValidPosition + i];
                         float value = shockValues[shockPointer + i];
-                        withShocks[position] = value;
+                        inputArray[position] = value;
                     }
-
-                    return withShocks;
                 }
             }
         }
 
         [Pure]
         [NotNull]
-        private static IEnumerable<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
+        private static ParallelQuery<SolutionArray> BuildSolutionArrays(HeaderArrayFile arrayFile)
         {
-            int[] numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            string[] names = arrayFile["VCNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
-            string[] descriptions = arrayFile["VCL0"].As<string>().GetLogicalValuesEnumerable().ToArray();
-            string[] unitTypes = arrayFile["VCLE"].As<string>().GetLogicalValuesEnumerable().ToArray();
-            string[] changeTypes = arrayFile["VCT0"].As<string>().GetLogicalValuesEnumerable().ToArray();
-            string[] variableTypes = arrayFile["VCS0"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> numberOfSets = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<string> names = arrayFile["VCNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<string> descriptions = arrayFile["VCL0"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<string> unitTypes = arrayFile["VCLE"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<string> changeTypes = arrayFile["VCT0"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<string> variableTypes = arrayFile["VCS0"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
             IImmutableList<SetInformation>[] sets = VariableIndexedCollectionsOfSets(arrayFile).ToArray();
 
-            for (int i = 0; i < names.Length; i++)
-            {
-                yield return 
-                    new SolutionArray(
-                        i,
-                        numberOfSets[i],
-                        names[i],
-                        descriptions[i],
-                        unitTypes[i],
-                        ModelChange.Parse(changeTypes[i]),
-                        ModelVariable.Parse(variableTypes[i]),
-                        sets[i]);
-            }
+            return
+                ParallelEnumerable.Range(0, names.Count)
+                                  .Select(
+                                      (x, i) => new SolutionArray(
+                                          i,
+                                          numberOfSets[i],
+                                          names[i],
+                                          descriptions[i],
+                                          unitTypes[i],
+                                          ModelChange.Parse(changeTypes[i]),
+                                          ModelVariable.Parse(variableTypes[i]),
+                                          sets[i]));
         }
 
         /// <summary>
@@ -268,11 +262,11 @@ namespace HeaderArrayConverter.IO
         private static IEnumerable<IImmutableList<SetInformation>> VariableIndexedCollectionsOfSets(HeaderArrayFile arrayFile)
         {
             SetInformation[] setInformation = BuildAllSets(arrayFile).ToArray();
-            int[] pointerIntoVcstn = arrayFile["VCSP"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            int[] setsPerVariable = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
-            int[] setPositions = arrayFile["VCSN"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> pointerIntoVcstn = arrayFile["VCSP"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> setsPerVariable = arrayFile["VCNI"].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> setPositions = arrayFile["VCSN"].As<int>().GetLogicalValuesEnumerable().ToArray();
 
-            for (int i = 0; i < pointerIntoVcstn.Length; i++)
+            for (int i = 0; i < pointerIntoVcstn.Count; i++)
             {
                 SetInformation[] arraySetInfo = new SetInformation[setsPerVariable[i]];
 
@@ -309,14 +303,14 @@ namespace HeaderArrayConverter.IO
         [NotNull]
         private static IEnumerable<SetInformation> BuildAllSets(HeaderArrayFile arrayFile)
         {
-            int[] sizes = arrayFile["SSZ "].As<int>().GetLogicalValuesEnumerable().ToArray();
-            bool[] intertemporal = arrayFile["STTP"].As<string>().GetLogicalValuesEnumerable().Select(x => x == "i").ToArray();
-            string[] names = arrayFile["STNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
-            string[] descriptions = arrayFile["STLB"].As<string>().GetLogicalValuesEnumerable().ToArray();
-            string[] elements = arrayFile["STEL"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<int> sizes = arrayFile["SSZ "].As<int>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<bool> intertemporal = arrayFile["STTP"].As<string>().GetLogicalValuesEnumerable().Select(x => x == "i").ToArray();
+            IReadOnlyList<string> names = arrayFile["STNM"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<string> descriptions = arrayFile["STLB"].As<string>().GetLogicalValuesEnumerable().ToArray();
+            IReadOnlyList<string> elements = arrayFile["STEL"].As<string>().GetLogicalValuesEnumerable().ToArray();
 
             int counter = 0;
-            for (int i = 0; i < names.Length; i++)
+            for (int i = 0; i < names.Count; i++)
             {
                 yield return
                     new SetInformation(
@@ -324,7 +318,7 @@ namespace HeaderArrayConverter.IO
                         descriptions[i],
                         intertemporal[i],
                         sizes[i],
-                        new ArraySegment<string>(elements, counter, sizes[i]));
+                        new ArraySegment<string>((string[])elements, counter, sizes[i]));
 
                 counter += sizes[i];
             }
