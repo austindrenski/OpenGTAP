@@ -360,7 +360,7 @@ namespace HeaderArrayConverter.IO
                 sets[i] = new KeyValuePair<string, IImmutableList<string>>(setNames[i], labelStrings[i].ToImmutableArray());
             }
 
-            float[] data = sparse ? GetReSparseArray(reader, sets.Aggregate(1, (current, next) => current * next.Value.Count)) : GetReFullArray(reader);
+            float[] data = sparse ? GetReSparseArray(reader, sets.Aggregate(1, (current, next) => current * next.Value.Count)) : GetRealArrayWithSetLabelsFull(reader);
 
             if (!sets.Any())
             {
@@ -374,60 +374,136 @@ namespace HeaderArrayConverter.IO
         }
 
         [NotNull]
-        private static float[] GetReFullArray(BinaryReader reader)
+        private static float[] GetRealArrayWithSetLabelsFull(BinaryReader reader)
         {
-            byte[] meta = InitializeArray(reader);
-            int recordsFromEndOfThisHeaderArray = BitConverter.ToInt32(meta, 0 * sizeof(int));
-            int dimensionLimit = BitConverter.ToInt32(meta, 1 * sizeof(int));
-            int[] dimensions = new int[dimensionLimit];
+            ////|-----------------------------------------------------------------------------------------------|
+            ////| The dimension array contains the following:                                                   |
+            ////|                                                                                               |
+            ////| [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.           |
+            ////| [1 * sizeof(int)] = the count of dimensions for the record.                                   |
+            ////| [(2 + i) * sizeof(int)] = the count of elements in the 0-based i-th dimension of the record.  |
+            ////|-----------------------------------------------------------------------------------------------|            
 
-            const int offset = 8;
+            //byte[] dimensionArray = InitializeArray(reader);
 
-            for (int i = 0; i < dimensions.Length; i++)
-            {
-                dimensions[i] = BitConverter.ToInt32(meta, offset + i * sizeof(int));
-            }
-            int count = dimensions.Aggregate(1, (current, next) => current * next);
+            //int dimensions = BitConverter.ToInt32(dimensionArray, 0 * sizeof(int));
 
+            //int count = 1;
+
+            //for (int i = 0; i < dimensions; i++)
+            //{
+            //    count *= BitConverter.ToInt32(dimensionArray, (2 + i) * sizeof(int));
+            //}
+
+            int count = ReadDimensions(reader);
+           
             float[] results = new float[count];
-            bool test = true;
+
             int counter = 0;
-            while (test)
+
+            while (GetNextSegment(reader, out float[] floats, BitConverter.ToSingle))
             {
-                test = CalculateNextArraySegment(out float[] floats);
                 Array.Copy(floats, 0, results, counter, floats.Length);
                 counter += floats.Length;
             }
 
             return results;
 
-            bool CalculateNextArraySegment(out float[] segment)
+
+        }
+
+
+        private static bool GetNextSegment<T>([NotNull] BinaryReader reader, [NotNull] out T[] segment, [NotNull] Func<byte[], int, T> convert)
+        {
+            IReadOnlyList<int> extents = ReadExtents(reader);
+
+            int count = 1;
+            for (int i = 0; i < extents.Count; i++)
             {
-                byte[] dimDefinitons = InitializeArray(reader);
-                int x0 = dimDefinitons.Length / sizeof(int);
-                int[] dimDescriptions = new int[x0];
-                for (int i = 0; i < x0; i++)
-                {
-                    dimDescriptions[i] = BitConverter.ToInt32(dimDefinitons, i * sizeof(int));
-                }
-                int[] dimLengths = new int[x0 / 2];
-                for (int i = 0; i < x0 / 2; i++)
-                {
-                    dimLengths[i] = dimDescriptions[2 + 2 * i] - dimDescriptions[1 + 2 * i] + 1;
-                }
-
-                byte[] data = InitializeArray(reader);
-                int dataDim = BitConverter.ToInt32(data, 0 * sizeof(int));
-
-                segment = new float[dimLengths.Aggregate(1, (current, next) => current * next)];
-
-                for (int i = 0; i < segment.Length; i++)
-                {
-                    segment[i] = BitConverter.ToSingle(data, i * sizeof(int) + sizeof(int));
-                }
-
-                return dimDescriptions[0] != 2;
+                count *= extents[i];
             }
+
+            byte[] data = InitializeArray(reader);
+
+            int vectorIndex = BitConverter.ToInt32(data, 0 * sizeof(int));
+
+            segment = new T[count];
+            for (int i = 0; i < segment.Length; i++)
+            {
+                segment[i] = convert(data, i * sizeof(int) + sizeof(int));
+            }
+
+            return vectorIndex > 1;
+        }
+
+        /// <summary>
+        /// Calculates the count of elements in the record based on the dimensions.
+        /// </summary>
+        /// <param name="reader">
+        /// The reader from which the dimension definitions are read.
+        /// </param>
+        /// <returns>
+        /// An integer array indicating the count of elements in each dimension of the record.
+        /// </returns>
+        private static int ReadDimensions([NotNull] BinaryReader reader)
+        {
+            //|-----------------------------------------------------------------------------------------------|
+            //| The dimension array contains the following:                                                   |
+            //|                                                                                               |
+            //| [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.           |
+            //| [1 * sizeof(int)] = the count of dimensions for the record.                                   |
+            //| [(2 + i) * sizeof(int)] = the count of elements in the 0-based i-th dimension of the record.  |
+            //|-----------------------------------------------------------------------------------------------|            
+
+            byte[] dimensionArray = InitializeArray(reader);
+
+            int dimensions = BitConverter.ToInt32(dimensionArray, 0 * sizeof(int));
+
+            int count = 1;
+
+            for (int i = 0; i < dimensions; i++)
+            {
+                count *= BitConverter.ToInt32(dimensionArray, (2 + i) * sizeof(int));
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Calculates the extents of each dimension represented on the next vector.
+        /// </summary>
+        /// <param name="reader">
+        /// The reader from which the extent definitions are read.
+        /// </param>
+        /// <returns>
+        /// An integer array indicating the extents of each dimension represented on the next vector.
+        /// </returns>
+        [NotNull]
+        private static IReadOnlyList<int> ReadExtents([NotNull] BinaryReader reader)
+        {
+            //|--------------------------------------------------------------------------------------------------------------------|
+            //| The extents array contains the following:                                                                          |
+            //|                                                                                                                    |
+            //| [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.                                |
+            //| [(1 + i) * sizeof(int)] = the 0-based index indicating the first entry in the i-th set represented in this vector. |
+            //| [(2 + i) * sizeof(int)] = the 0-based index indicating the last entry in the i-th set represented in this vector.  |
+            //|                                                                                                                    |
+            //| The count of dimensions can be determined in-line as the length of the extents array divided by the byte-size of   |
+            //| an integer. The array length is actually the count of the dimensions + 1, but integer division rounds down.        |
+            //|                                                                                                                    |
+            //| Note that the extents must be deincremented by one to move from a 1-based index to a 0-based index.                |
+            //|--------------------------------------------------------------------------------------------------------------------|
+
+            byte[] extentsArray = InitializeArray(reader);
+
+            int[] extents = new int[extentsArray.Length / sizeof(int)];
+
+            for (int i = 0; i < extents.Length; i++)
+            {
+                extents[i] = BitConverter.ToInt32(extentsArray, (2 + 2 + i) * sizeof(int)) - BitConverter.ToInt32(extentsArray, (2 + 1 + i) * sizeof(int)) - 1;
+            }
+
+            return extents;
         }
 
         [NotNull]
