@@ -28,14 +28,12 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         private static KeyComparer DistinctKeyComparer { get; } = new KeyComparer();
 
-        private readonly KeyComparison _comparer;
-
         /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
         /// </summary>
         [NotNull]
         [JsonProperty]
-        private readonly IDictionary<KeySequence<TKey>, TValue> _dictionary;
+        private readonly IReadOnlyDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>
         /// Gets the number of entries stored in the dictionary.
@@ -45,7 +43,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Gets the total number of entries represented by the dictionary.
         /// </summary>
-        public int Total => Math.Max(Sets.Aggregate(1, (current, next) => current * next.Value.Count), _dictionary.Count);
+        public int LogicalCount => Math.Max(Sets.Aggregate(1, (current, next) => current * next.Value.Count), _dictionary.Count);
 
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
@@ -73,13 +71,84 @@ namespace HeaderArrayConverter.Collections
             }
         }
 
+        /// <summary>
+        /// Gets the entry that has the specified key or the entries that begin with the specified key.
+        /// </summary>
         IImmutableSequenceDictionary<TKey> IImmutableSequenceDictionary<TKey>.this[params TKey[] keys] => this[keys];
 
+        /// <summary>
+        /// Gets an <see cref="IEnumerable{T}"/> for the given keys.
+        /// </summary>
+        /// <param name="keys">
+        /// The collection of keys.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IEnumerable{T}"/> for the given keys.
+        /// </returns>
         IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> ISequenceIndexer<TKey, TValue>.this[params TKey[] keys] => this[keys];
 
+        /// <summary>
+        /// Gets an <see cref="IEnumerable"/> for the given keys.
+        /// </summary>
+        /// <param name="keys">
+        /// The collection of keys.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IEnumerable"/> for the given keys.
+        /// </returns>
         IEnumerable ISequenceIndexer<TKey>.this[params TKey[] keys] => this[keys];
 
+        /// <summary>
+        /// Gets the element that has the specified key in the read-only dictionary.
+        /// </summary>
+        /// <param name="key">
+        /// The key to locate.
+        /// </param>
+        /// <returns>
+        /// The element that has the specified key in the read-only dictionary.
+        /// </returns>
         TValue IReadOnlyDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key] => _dictionary[key];
+
+        /// <summary>
+        /// Gets or sets the element with the specified key.
+        /// </summary>
+        /// <param name="key">
+        /// The key of the element to get or set.
+        /// </param>
+        /// <returns>
+        /// The element with the specified key.
+        /// </returns>
+        TValue IDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key]
+        {
+            get => _dictionary[key];
+            set => throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the <see cref="ICollection{T}" /> is read-only.
+        /// </summary>
+        /// <returns>
+        /// True if the <see cref="ICollection{T}"/> is read-only; otherwise, false.
+        /// </returns>
+        bool ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.IsReadOnly => true;
+
+        /// <summary>
+        /// Gets an <see cref="ICollection{T}"/> containing the values in the <see cref="IDictionary{TKey, TValue}" />.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="ICollection{T}" /> containing the values in the object that implements <see cref="IDictionary{TKey, TValue}" />.
+        /// </returns>
+        [NotNull]
+        ICollection<TValue> IDictionary<KeySequence<TKey>, TValue>.Values => Values.ToArray();
+
+        /// <summary>
+        /// Gets an <see cref="ICollection{T}" /> containing the keys of the <see cref="IDictionary{TKey, TValue}" />.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="ICollection{T}" /> containing the keys of the object that implements <see cref="IDictionary{TKey, TValue}" />.
+        /// </returns>
+        [NotNull]
+        ICollection<KeySequence<TKey>> IDictionary<KeySequence<TKey>, TValue>.Keys => Keys.ToArray();
 
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
@@ -114,9 +183,12 @@ namespace HeaderArrayConverter.Collections
 
             Sets = sets as IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> ?? sets.ToImmutableArray();
 
-            //_comparer = new KeyComparison(Sets);
-
-            _dictionary = source.AsParallel().Where(x => !x.Value.Equals(default(TValue))).ToDictionary(x => x.Key, x => x.Value);
+            _dictionary =
+                source is IDictionary<KeySequence<TKey>, TValue> dictionary
+                    ? new Dictionary<KeySequence<TKey>, TValue>(dictionary)
+                    : source.AsParallel()
+                            .Where(x => !x.Value.Equals(default(TValue)))
+                            .ToDictionary(x => x.Key, x => x.Value);
         }
 
         /// <summary>
@@ -170,6 +242,8 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Returns a string representation of the contents of the header array.
         /// </summary>
+        [Pure]
+        [NotNull]
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this);
@@ -188,6 +262,12 @@ namespace HeaderArrayConverter.Collections
             return _dictionary.GetEnumerator();
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the collection.
+        /// </returns>
         [Pure]
         [NotNull]
         IEnumerator IEnumerable.GetEnumerator()
@@ -221,6 +301,12 @@ namespace HeaderArrayConverter.Collections
                         });
         }
 
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </returns>
         [Pure]
         IEnumerable<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerable()
         {
@@ -250,7 +336,6 @@ namespace HeaderArrayConverter.Collections
         [Pure]
         public IEnumerable<TValue> GetLogicalValuesEnumerable()
         {
-
             if (Sets.Count == 0)
             {
                 return _dictionary.Values;
@@ -268,6 +353,12 @@ namespace HeaderArrayConverter.Collections
                         });
         }
 
+        /// <summary>
+        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </returns>
         [Pure]
         IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
         {
@@ -301,6 +392,12 @@ namespace HeaderArrayConverter.Collections
                         });
         }
 
+        /// <summary>
+        /// Returns an enumerable collection iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </summary>
+        /// <returns>
+        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// </returns>
         [Pure]
         IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable()
         {
@@ -350,36 +447,49 @@ namespace HeaderArrayConverter.Collections
         /// True if this dictionary contains the key-value pair; otherwise, false.
         /// </returns>
         [Pure]
-        public bool Contains(KeyValuePair<KeySequence<TKey>, TValue> pair)
+        bool ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Contains(KeyValuePair<KeySequence<TKey>, TValue> pair)
         {
             return _dictionary.Contains(pair);
         }
 
+        /// <summary>
+        /// Provides comparisons between entries based on the keys.
+        /// </summary>
+        private sealed class KeyComparer : IEqualityComparer<KeyValuePair<KeySequence<TKey>, TValue>>
+        {
+            /// <summary>
+            /// Determines whether the specified objects are equal.
+            /// </summary>
+            /// <param name="x">
+            /// The first object to compare.
+            /// </param>
+            /// <param name="y">
+            /// The second object to compare.
+            /// </param>
+            /// <returns>
+            /// True if the specified objects are equal; otherwise, false.
+            /// </returns>
+            public bool Equals(KeyValuePair<KeySequence<TKey>, TValue> x, KeyValuePair<KeySequence<TKey>, TValue> y)
+            {
+                return x.Key.Equals(y.Key);
+            }
+
+            /// <summary>
+            /// Returns a hash code for the specified object.
+            /// </summary>
+            /// <param name="obj">
+            /// The <see cref="object"/> for which a hash code is to be returned.
+            /// </param>
+            /// <returns>
+            /// A hash code for the specified object.
+            /// </returns>
+            public int GetHashCode(KeyValuePair<KeySequence<TKey>, TValue> obj)
+            {
+                return obj.Key.GetHashCode();
+            }
+        }
+
         #region IDictionary implementation for serialization
-
-        bool ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.IsReadOnly => throw new NotSupportedException();
-
-        ICollection<TValue> IDictionary<KeySequence<TKey>, TValue>.Values => throw new NotSupportedException();
-
-        ICollection<KeySequence<TKey>> IDictionary<KeySequence<TKey>, TValue>.Keys => throw new NotSupportedException();
-
-        void IDictionary<KeySequence<TKey>, TValue>.Add(KeySequence<TKey> key, TValue value)
-        {
-            throw new NotSupportedException();
-        }
-        bool IDictionary<KeySequence<TKey>, TValue>.Remove(KeySequence<TKey> key)
-        {
-            throw new NotSupportedException();
-        }
-        TValue IDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key]
-        {
-            get => throw new NotSupportedException();
-            set => throw new NotSupportedException();
-        }
-        void ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Add(KeyValuePair<KeySequence<TKey>, TValue> item)
-        {
-            throw new NotSupportedException();
-        }
 
         void ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Clear()
         {
@@ -391,64 +501,26 @@ namespace HeaderArrayConverter.Collections
             throw new NotSupportedException();
         }
 
+        void ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Add(KeyValuePair<KeySequence<TKey>, TValue> item)
+        {
+            throw new NotSupportedException();
+        }
+
         bool ICollection<KeyValuePair<KeySequence<TKey>, TValue>>.Remove(KeyValuePair<KeySequence<TKey>, TValue> item)
         {
             throw new NotSupportedException();
         }
 
+        void IDictionary<KeySequence<TKey>, TValue>.Add(KeySequence<TKey> key, TValue value)
+        {
+            throw new NotSupportedException();
+        }
+
+        bool IDictionary<KeySequence<TKey>, TValue>.Remove(KeySequence<TKey> key)
+        {
+            throw new NotSupportedException();
+        }
+
         #endregion IDictionary implementation for serialization
-
-        /// <summary>
-        /// Provides comparisons between entries based on the keys.
-        /// </summary>
-        private sealed class KeyComparer : IEqualityComparer<KeyValuePair<KeySequence<TKey>, TValue>>
-        {
-            public bool Equals(KeyValuePair<KeySequence<TKey>, TValue> x, KeyValuePair<KeySequence<TKey>, TValue> y)
-            {
-                return x.Key.Equals(y.Key);
-            }
-
-            public int GetHashCode(KeyValuePair<KeySequence<TKey>, TValue> obj)
-            {
-                return obj.Key.GetHashCode();
-            }
-        }
-
-        private sealed class KeyComparison : IComparer<KeyValuePair<KeySequence<TKey>, TValue>>
-        {
-            private readonly Dictionary<TKey, int>[] _sets;
-
-            public KeyComparison(IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> sets)
-            {
-                _sets = sets.Select(x => x.Value.Select((y, i) => new KeyValuePair<TKey, int>(y, i)).ToDictionary(y => y.Key, y => y.Value)).ToArray();
-            }
-
-            /// <summary>
-            /// Compares two objects and returns a value indicating whether one is less than, equal to, or greater than the other.
-            /// </summary>
-            /// <returns>
-            /// A signed integer that indicates the relative values of <paramref name="x" /> and <paramref name="y" />, as shown in the following table.
-            /// Value Meaning Less than zero<paramref name="x" /> is less than <paramref name="y" />.
-            /// Zero<paramref name="x" /> equals <paramref name="y" />.
-            /// Greater than zero<paramref name="x" /> is greater than <paramref name="y" />.
-            /// </returns>
-            public int Compare(KeyValuePair<KeySequence<TKey>, TValue> x, KeyValuePair<KeySequence<TKey>, TValue> y)
-            {
-                Comparer<int> comparer = Comparer<int>.Default;
-                int test = 0;
-                for (int i = _sets.Length; i > 0; i--)
-                {
-                    test = comparer.Compare(_sets[i][x.Key[i]], _sets[i][y.Key[i]]);
-
-                    if (test == 0)
-                    {
-                        continue;
-                    }
-
-                    return test;
-                }
-                return test;
-            }
-        }
     }
 }

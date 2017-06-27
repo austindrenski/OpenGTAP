@@ -22,7 +22,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Gets the total number of entries represented by the dictionary.
         /// </summary>
-        int Total { get; }
+        int LogicalCount { get; }
 
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.

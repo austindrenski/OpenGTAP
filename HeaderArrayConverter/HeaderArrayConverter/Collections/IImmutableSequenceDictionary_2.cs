@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+// ReSharper disable PossibleInterfaceMemberAmbiguity
 
 namespace HeaderArrayConverter.Collections
 {
@@ -14,8 +15,13 @@ namespace HeaderArrayConverter.Collections
     /// The item type.
     /// </typeparam>
     [PublicAPI]
-    // ReSharper disable once PossibleInterfaceMemberAmbiguity
-    public interface IImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey>, ISequenceIndexer<TKey, TValue>, IReadOnlyDictionary<KeySequence<TKey>, TValue>, IDictionary<KeySequence<TKey>, TValue> where TKey : IEquatable<TKey> where TValue : IEquatable<TValue>
+    public interface IImmutableSequenceDictionary<TKey, TValue>
+        : IImmutableSequenceDictionary<TKey>,
+          ISequenceIndexer<TKey, TValue>,
+          IReadOnlyDictionary<KeySequence<TKey>, TValue>,
+          IDictionary<KeySequence<TKey>, TValue>
+        where TKey : IEquatable<TKey>
+        where TValue : IEquatable<TValue>
     {
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.

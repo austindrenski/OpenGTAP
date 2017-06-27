@@ -25,6 +25,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets the <see cref="IHeaderArray.JsonSchema"/> for this object.
         /// </summary>
+        [NotNull]
         public static JSchema JsonSchema { get; } = GetJsonSchema();
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// Gets the total number of entries in the array.
         /// </summary>
-        public override int Count => _entries.Total;
+        public override int Count => _entries.LogicalCount;
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
