@@ -17,7 +17,7 @@ OpenGTAP provides open-source tooling for the GTAP (Global Trade Analysis Projec
 - Planning is underway for a lightweight cross-platform viewer application (ViewHARX?) capable of reading and writing HAR, SL4, and HARX files.
 
 ## The idea
-The GTAP model provides a popular framework for conducting global economic analysis. Currently, the model is written in the GEMPACK (General Equilibrium Modeling PACKage) modeling software. This project is exploring areas in which open-source tooling can be developed to bring the standard GTAP model to the .NET Standard Framework.
+The GTAP model provides a popular framework for conducting global economic analysis. This project is exploring areas in which open-source tooling can be developed to bring the standard GTAP model to the .NET Standard Framework.
 
 OpenGTAP does not replace the standard GTAP model. Rather, it aims provide a modern, object-oriented tooling to encourage new developments from the open-source community.
 
