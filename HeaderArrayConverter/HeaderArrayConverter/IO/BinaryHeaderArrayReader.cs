@@ -311,7 +311,7 @@ namespace HeaderArrayConverter.IO
             }
 
             float[] data = sparse ? GetReSparseArray(reader, dimensions) : GetRealArrayWithSetLabelsFull(reader);
-            
+
             return (coefficient, data, sets);
         }
 

@@ -13,18 +13,18 @@ namespace HeaderArrayConverter.Collections
     /// The type of key in the sequence.
     /// </typeparam>
     [PublicAPI]
-    public struct KeySequence<TKey> : IEnumerable<TKey>, IEquatable<KeySequence<TKey>>, IEquatable<TKey>, IStructuralEquatable
+    public struct KeySequence<TKey> : IReadOnlyList<TKey>, IEquatable<KeySequence<TKey>>, IEquatable<TKey>, IStructuralEquatable
     {
         /// <summary>
-        /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
+        /// An empty <see cref="KeySequence{TKey}"/> with the specified type argument.
         /// </summary>
         [NotNull]
         private static readonly TKey[] EmptyArray = new TKey[0];
 
         /// <summary>
-        /// Returns an empty <see cref="KeySequence{TKey}"/> with the specified type argument.
+        /// An empty <see cref="KeySequence{TKey}"/> with the specified type argument.
         /// </summary>
-        public static KeySequence<TKey> Empty { get; } = new KeySequence<TKey>(EmptyArray);
+        private static readonly KeySequence<TKey> Empty = new KeySequence<TKey>(EmptyArray);
 
         /// <summary>
         /// Compares sequences with <see cref="StringComparison.OrdinalIgnoreCase"/> semantics.
@@ -64,10 +64,21 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Constructs a <see cref="KeySequence{TKey}"/> from the collection.
         /// </summary>
+        /// <param name="key">
+        /// The key collection.
+        /// </param>
+        public KeySequence(KeySequence<TKey> key)
+        {
+            _keys = key._keys ?? EmptyArray;
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="KeySequence{TKey}"/> from the collection.
+        /// </summary>
         /// <param name="keys">
         /// The key collection.
         /// </param>
-        public KeySequence([NotNull] IEnumerable<TKey> keys) 
+        public KeySequence([NotNull] params TKey[] keys)
         {
             if (keys is null)
             {
@@ -83,7 +94,99 @@ namespace HeaderArrayConverter.Collections
         /// <param name="keys">
         /// The key collection.
         /// </param>
-        public KeySequence(params TKey[] keys) : this(keys as IEnumerable<TKey>) { }
+        public KeySequence([NotNull] IEnumerable<TKey> keys) 
+        {
+            if (keys is null)
+            {
+                throw new ArgumentNullException(nameof(keys));
+            }
+
+            _keys = keys is KeySequence<TKey> sequence ? sequence._keys :  keys.ToArray();
+        }
+        
+        /// <summary>
+        /// Constructs a <see cref="KeySequence{TKey}"/> from the collection.
+        /// </summary>
+        /// <param name="a">
+        /// The key collection.
+        /// </param>
+        /// <param name="b">
+        /// A second key collection to combine.
+        /// </param>
+        public KeySequence(KeySequence<TKey> a, KeySequence<TKey> b)
+        {
+            if (a._keys is null && b._keys is null)
+            {
+                _keys = EmptyArray;
+            }
+            else if (a._keys is null)
+            {
+                _keys = b._keys;
+            }
+            else if (b._keys is null)
+            {
+                _keys = a._keys;
+            }
+            else
+            {
+                _keys = new TKey[a._keys.Length + b._keys.Length];
+                Array.Copy(a._keys, 0, _keys, 0, a._keys.Length);
+                Array.Copy(b._keys, 0, _keys, a._keys.Length, b._keys.Length);
+            }
+        }
+
+        /// <summary>
+        /// Constructs a <see cref="KeySequence{TKey}"/> from the collection.
+        /// </summary>
+        /// <param name="keys">
+        /// The key collection.
+        /// </param>
+        /// <param name="other">
+        /// A second key collection to combine.
+        /// </param>
+        public KeySequence([CanBeNull] IEnumerable<TKey> keys, [CanBeNull] IEnumerable<TKey> other)
+        {
+            if (keys is null && other is null)
+            {
+                _keys = EmptyArray;
+            }
+            else if (keys is null)
+            {
+                _keys = other is KeySequence<TKey> test ? test._keys : other.ToArray();
+            }
+            else if (other is null)
+            {
+                _keys = keys is KeySequence<TKey> test ? test._keys : keys.ToArray();
+            }
+            else if (keys is KeySequence<TKey> a && other is KeySequence<TKey> b)
+            {
+                _keys = new TKey[a._keys.Length + b._keys.Length];
+                Array.Copy(a._keys, 0, _keys, 0, a._keys.Length);
+                Array.Copy(b._keys, 0, _keys, a._keys.Length, b._keys.Length);
+            }
+            else if (keys is KeySequence<TKey> c)
+            {
+                TKey[] right = other.ToArray();
+                _keys = new TKey[c._keys.Length + right.Length];
+                Array.Copy(c._keys, 0, _keys, 0, c._keys.Length);
+                Array.Copy(right, 0, _keys, c._keys.Length, right.Length);
+            }
+            else if (other is KeySequence<TKey> d)
+            {
+                TKey[] left = other.ToArray();
+                _keys = new TKey[left.Length + d._keys.Length];
+                Array.Copy(left, 0, _keys, 0, left.Length);
+                Array.Copy(d._keys, 0, _keys, left.Length, d._keys.Length);
+            }
+            else
+            {
+                TKey[] left = keys as TKey[] ?? keys.ToArray();
+                TKey[] right = other as TKey[] ?? other.ToArray();
+                _keys = new TKey[left.Length + right.Length];
+                Array.Copy(left, 0, _keys, 0, left.Length);
+                Array.Copy(right, 0, _keys, left.Length, right.Length);
+            }
+        }
 
         /// <summary>
         /// Implicitly casts the value to a <see cref="KeySequence{TKey}"/>.
@@ -141,44 +244,11 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
-        /// Returns a new <see cref="KeySequence{TKey}"/> that is a combination of this and the next sequence.
-        /// </summary>
-        /// <param name="next">
-        /// The next keys to combine.
-        /// </param>
-        /// <returns>
-        /// Returns a new <see cref="KeySequence{TKey}"/> that is a combination of this and the next sequence.
-        /// </returns>
-        public KeySequence<TKey> Combine([NotNull] IEnumerable<TKey> next)
-        {
-            if (next is null)
-            {
-                throw new ArgumentNullException(nameof(next));
-            }
-
-            return new KeySequence<TKey>(_keys?.Concat(next) ?? next);
-        }
-
-        /// <summary>
-        /// Returns a new <see cref="KeySequence{TKey}"/> that is a combination of this and the next sequence.
-        /// </summary>
-        /// <param name="next">
-        /// The next keys to combine.
-        /// </param>
-        /// <returns>
-        /// Returns a new <see cref="KeySequence{TKey}"/> that is a combination of this and the next sequence.
-        /// </returns>
-        public KeySequence<TKey> Combine(params TKey[] next)
-        {
-            return Combine(next as IEnumerable<TKey>);
-        }
-
-        /// <summary>
         /// Returns a string representation of this sequence.
         /// </summary>
         public override string ToString()
         {
-            return ToString(x => x);
+            return _keys?.Aggregate(default(string), (current, next) => $"{current}[{next}]");
         }
 
         /// <summary>
@@ -186,7 +256,7 @@ namespace HeaderArrayConverter.Collections
         /// </summary>
         public string ToString(Func<IEnumerable<TKey>, IEnumerable<TKey>> transform)
         {
-            return transform(_keys ?? Empty).Aggregate(string.Empty, (current, next) => $"{current}[{next}]");
+            return _keys is null ? null : transform(_keys).Aggregate(default(string), (current, next) => $"{current}[{next}]");
         }
 
         /// <summary>
