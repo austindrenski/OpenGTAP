@@ -248,7 +248,7 @@ namespace HeaderArrayConverter
         /// </returns>
         public IEnumerable<KeyValuePair<KeySequence<string>, TValue>> GetLogicalEnumerable()
         {
-            return _entries.GetLogicalEnumerable();
+            return _entries;
         }
 
         /// <summary>

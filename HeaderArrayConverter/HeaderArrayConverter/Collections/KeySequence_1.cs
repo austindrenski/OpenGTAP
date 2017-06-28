@@ -60,6 +60,17 @@ namespace HeaderArrayConverter.Collections
         /// </summary>
         [NotNull]
         public TKey this[int index] => _keys is null ? throw new IndexOutOfRangeException() : _keys[index];
+        
+        /// <summary>
+        /// Constructs a <see cref="KeySequence{TKey}"/> from the collection.
+        /// </summary>
+        /// <param name="keys">
+        /// The key collection.
+        /// </param>
+        public KeySequence(TKey keys)
+        {
+            _keys = new TKey[] { keys };
+        }
 
         /// <summary>
         /// Constructs a <see cref="KeySequence{TKey}"/> from the collection.
@@ -78,13 +89,8 @@ namespace HeaderArrayConverter.Collections
         /// <param name="keys">
         /// The key collection.
         /// </param>
-        public KeySequence([NotNull] params TKey[] keys)
+        public KeySequence(params TKey[] keys)
         {
-            if (keys is null)
-            {
-                throw new ArgumentNullException(nameof(keys));
-            }
-
             _keys = keys.ToArray();
         }
 

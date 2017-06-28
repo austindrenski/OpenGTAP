@@ -143,9 +143,9 @@ namespace HeaderArrayConverter.IO
                     Array.Copy((float[])cumulativeResults, pointer, values, 0, countInCumulative[index]);
                 }
                 
-                values = ShiftExogenous(values);
+                ShiftExogenous(values);
 
-                values = Shocks(values);
+                Shocks(values);
 
                 IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
                     array.Sets
@@ -167,19 +167,24 @@ namespace HeaderArrayConverter.IO
                         set);
 
                 // Shifts existing entries to their appropriate positions to create gaps for exogenous values.
-                float[] ShiftExogenous(IEnumerable<float> inputArray)
+                void ShiftExogenous(float[] inputArray)
                 {
                     if (array.Count == countOfExogenous[index])
                     {
-                        return new float[inputArray.Count()];
+                        Array.Clear(inputArray, 0, inputArray.Length);
+                        return;
                     }
 
-                    float[] withGaps = inputArray.ToArray();
+                    float[] withGaps = inputArray;
 
-                    int nextValidPosition =
-                        countOfExogenous.Take(index)
-                                        .Where((x, i) => x != countOfComponentsInVariable[i])
-                                        .Sum();
+                    int nextValidPosition = 0;
+                    for (int i = 0; i < index; i++)
+                    {
+                        if (countOfExogenous[i] != countOfComponentsInVariable[i])
+                        {
+                            nextValidPosition += countOfExogenous[i];
+                        }
+                    }
 
                     for (int i = 0; i < countOfExogenous[index]; i++)
                     {
@@ -187,28 +192,30 @@ namespace HeaderArrayConverter.IO
                         Array.Copy(withGaps, position, withGaps, position + 1, withGaps.Length - position - 1);
                         withGaps[position] = default(float);
                     }
-
-                    return withGaps;
                 }
 
                 // Adds shocks to open positions to a copy of the input array.
-                float[] Shocks(IEnumerable<float> inputArray)
+                void Shocks(float[] inputArray)
                 {
-                    float[] withShocks = inputArray.ToArray();
+                    float[] withShocks = inputArray;
 
                     int shockedCount = numberOfShockedComponents[index];
 
                     if (shockedCount == 0)
                     {
-                        return withShocks;
+                        return;
                     }
 
                     int shockPointer = pointersToShockValues[index] - 1;
 
-                    int nextValidPosition =
-                        numberOfShockedComponents.Take(index - 1)
-                                                 .Where((x, i) => x > 1 && x != countOfComponentsInVariable[i])
-                                                 .Sum();
+                    int nextValidPosition = 0;
+                    for (int i = 0; i < index - 1; i++)
+                    {
+                        if (numberOfShockedComponents[i] != countOfComponentsInVariable[i])
+                        {
+                            nextValidPosition += numberOfShockedComponents[i];
+                        }
+                    }
 
                     for (int i = 0; i < shockedCount; i++)
                     {
@@ -216,8 +223,6 @@ namespace HeaderArrayConverter.IO
                         float value = shockValues[shockPointer + i];
                         withShocks[position] = value;
                     }
-
-                    return withShocks;
                 }
             }
         }
