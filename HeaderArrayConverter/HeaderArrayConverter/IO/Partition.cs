@@ -105,7 +105,7 @@ namespace HeaderArrayConverter.IO
                 yield break;
             }
             
-            KeyValuePair<KeySequence<string>, T>[] items = _headerArray.GetLogicalEnumerable().ToArray();
+            KeyValuePair<KeySequence<string>, T>[] items = _headerArray.ToArray();
 
             if (items.Length == 0)
             {

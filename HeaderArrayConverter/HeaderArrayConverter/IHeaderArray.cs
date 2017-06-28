@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using HeaderArrayConverter.Collections;
@@ -105,35 +104,5 @@ namespace HeaderArrayConverter
         [Pure]
         [NotNull]
         string Serialize(bool indent);
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        IEnumerable<KeyValuePair<KeySequence<string>, object>> GetLogicalEnumerable();
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical values collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical values collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        IEnumerable GetLogicalValuesEnumerable();
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical values collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical values collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        IEnumerable GetLogicalValuesEnumerable([NotNull] IComparer<KeySequence<string>> keyComparer);
     }
 }

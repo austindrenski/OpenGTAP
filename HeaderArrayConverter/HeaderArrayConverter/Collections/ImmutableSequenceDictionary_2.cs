@@ -36,14 +36,19 @@ namespace HeaderArrayConverter.Collections
         private readonly IReadOnlyDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>
-        /// Gets the number of entries stored in the dictionary.
+        /// Gets the number of logical entries in the dictionary.
         /// </summary>
-        public int Count => _dictionary.Count;
+        public int Count => Math.Max(Sets.Aggregate(1, (current, next) => current * next.Value.Count), _dictionary.Count);
 
         /// <summary>
         /// Gets the total number of entries represented by the dictionary.
         /// </summary>
-        public int LogicalCount => Math.Max(Sets.Aggregate(1, (current, next) => current * next.Value.Count), _dictionary.Count);
+        public int StoredCount => _dictionary.Count;
+
+        /// <summary>
+        /// Gets the element that has the specified key.
+        /// </summary>
+        public TValue this[KeySequence<TKey> key] => _dictionary[key];
 
         /// <summary>
         /// Gets the entry that has the specified key or the entries that begin with the specified key.
@@ -99,17 +104,6 @@ namespace HeaderArrayConverter.Collections
         IEnumerable ISequenceIndexer<TKey>.this[params TKey[] keys] => this[keys];
 
         /// <summary>
-        /// Gets the element that has the specified key in the read-only dictionary.
-        /// </summary>
-        /// <param name="key">
-        /// The key to locate.
-        /// </param>
-        /// <returns>
-        /// The element that has the specified key in the read-only dictionary.
-        /// </returns>
-        TValue IReadOnlyDictionary<KeySequence<TKey>, TValue>.this[KeySequence<TKey> key] => _dictionary[key];
-
-        /// <summary>
         /// Gets or sets the element with the specified key.
         /// </summary>
         /// <param name="key">
@@ -153,12 +147,33 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
         /// </summary>
-        public IEnumerable<KeySequence<TKey>> Keys => _dictionary.Keys;
+        public IEnumerable<KeySequence<TKey>> Keys => Sets.AsExpandedSet();
 
         /// <summary>
         /// Gets an enumerable collection that contains the values in the read-only dictionary.
         /// </summary>
-        public IEnumerable<TValue> Values => _dictionary.Values;
+        public IEnumerable<TValue> Values
+        {
+            get
+            {
+                if (Sets.Count == 0)
+                {
+                    return _dictionary.Values;
+                }
+
+                return
+                    Sets.AsExpandedSet()
+                        .DefaultIfEmpty()
+                        .AsParallel()
+                        .AsOrdered()
+                        .Select(
+                            x =>
+                            {
+                                _dictionary.TryGetValue(x, out TValue value);
+                                return value;
+                            });
+            }
+        }
 
         /// <summary>
         /// Gets the sets that define this dictionary.
@@ -250,7 +265,7 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the collection.
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
         /// </summary>
         /// <returns>
         /// An enumerator that can be used to iterate through the collection.
@@ -259,34 +274,9 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         public IEnumerator<KeyValuePair<KeySequence<TKey>, TValue>> GetEnumerator()
         {
-            return _dictionary.GetEnumerator();
-        }
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// An enumerator that can be used to iterate through the collection.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        public IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> GetLogicalEnumerable()
-        {
             if (Sets.Count == 0)
             {
-                return _dictionary;
+                return _dictionary.GetEnumerator();
             }
 
             return
@@ -298,110 +288,21 @@ namespace HeaderArrayConverter.Collections
                         {
                             _dictionary.TryGetValue(x, out TValue value);
                             return new KeyValuePair<KeySequence<TKey>, TValue>(x, value);
-                        });
+                        })
+                    .GetEnumerator();
         }
 
         /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
         /// </summary>
         /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
+        /// An enumerator that can be used to iterate through the collection.
         /// </returns>
         [Pure]
-        IEnumerable<KeyValuePair<KeySequence<TKey>, object>> IImmutableSequenceDictionary<TKey>.GetLogicalEnumerable()
+        [NotNull]
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            if (Sets.Count == 0)
-            {
-                return _dictionary.Select(x => new KeyValuePair<KeySequence<TKey>, object>(x.Key, x.Value));
-            }
-
-            return
-                Sets.AsExpandedSet()
-                    .AsParallel()
-                    .AsOrdered()
-                    .Select(
-                        x =>
-                        {
-                            _dictionary.TryGetValue(x, out TValue value);
-                            return new KeyValuePair<KeySequence<TKey>, object>(x, value);
-                        });
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        public IEnumerable<TValue> GetLogicalValuesEnumerable()
-        {
-            if (Sets.Count == 0)
-            {
-                return _dictionary.Values;
-            }
-
-            return
-                Sets.AsExpandedSet()
-                    .AsParallel()
-                    .AsOrdered()
-                    .Select(
-                        x =>
-                        {
-                            _dictionary.TryGetValue(x, out TValue value);
-                            return value;
-                        });
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </returns>
-        [Pure]
-        IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
-        {
-            return GetLogicalValuesEnumerable(keyComparer);
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        public IEnumerable<TValue> GetLogicalValuesEnumerable(IComparer<KeySequence<TKey>> keyComparer)
-        {
-            if (Sets.Count == 0)
-            {
-                return _dictionary.Values;
-            }
-
-            return
-                Sets.AsExpandedSet()
-                    .DefaultIfEmpty()
-                    .AsParallel()
-                    .OrderBy(x => x, keyComparer)
-                    .Select(
-                        x =>
-                        {
-                            _dictionary.TryGetValue(x, out TValue value);
-                            return value;
-                        });
-        }
-
-        /// <summary>
-        /// Returns an enumerable collection iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </returns>
-        [Pure]
-        IEnumerable IImmutableSequenceDictionary<TKey>.GetLogicalValuesEnumerable()
-        {
-            return GetLogicalValuesEnumerable();
+            return GetEnumerator();
         }
 
         /// <summary>

@@ -185,39 +185,6 @@ namespace HeaderArrayConverter
         public abstract string Serialize(bool indent);
 
         /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        IEnumerable<KeyValuePair<KeySequence<string>, object>> IHeaderArray.GetLogicalEnumerable()
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        IEnumerable IHeaderArray.GetLogicalValuesEnumerable()
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        IEnumerable IHeaderArray.GetLogicalValuesEnumerable(IComparer<KeySequence<string>> keyComparer)
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
         /// Returns an enumerator that iterates through a collection.
         /// </summary>
         [Pure]

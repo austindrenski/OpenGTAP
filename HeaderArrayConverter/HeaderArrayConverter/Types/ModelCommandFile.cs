@@ -83,7 +83,7 @@ namespace HeaderArrayConverter.Types
         public ModelCommandFile(IHeaderArray<string> commandFile, IEnumerable<KeyValuePair<string, IImmutableList<string>>> sets)
         {
             CommandText =
-                commandFile.GetLogicalValuesEnumerable()
+                commandFile.Values
                            .AsParallel()
                            .AsOrdered()
                            .Select(x => RemoveComments.Replace(x, string.Empty))

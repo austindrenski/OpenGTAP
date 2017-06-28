@@ -77,9 +77,14 @@ namespace HeaderArrayConverter
         public override IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
 
         /// <summary>
-        /// Gets the total number of entries in the array.
+        /// Gets the number of logical entries in the header.
         /// </summary>
-        public override int Count => _entries.LogicalCount;
+        public override int Count => _entries.Count;
+
+        /// <summary>
+        /// Gets a collection of the logical values in the header.
+        /// </summary>
+        public IEnumerable<TValue> Values => _entries.Values;
 
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
@@ -238,39 +243,6 @@ namespace HeaderArrayConverter
         IHeaderArray IHeaderArray.With(string header)
         {
             return With(header);
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        public IEnumerable<KeyValuePair<KeySequence<string>, TValue>> GetLogicalEnumerable()
-        {
-            return _entries;
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        public IEnumerable<TValue> GetLogicalValuesEnumerable()
-        {
-            return _entries.GetLogicalValuesEnumerable();
-        }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        public IEnumerable<TValue> GetLogicalValuesEnumerable(IComparer<KeySequence<string>> keyComparer)
-        {
-            return _entries.GetLogicalValuesEnumerable(keyComparer);
         }
 
         /// <summary>

@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using JetBrains.Annotations;
 
@@ -20,9 +19,9 @@ namespace HeaderArrayConverter.Collections
         int Count { get; }
 
         /// <summary>
-        /// Gets the total number of entries represented by the dictionary.
+        /// Gets the number of entries stored in the dictionary.
         /// </summary>
-        int LogicalCount { get; }
+        int StoredCount { get; }
 
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
@@ -41,35 +40,5 @@ namespace HeaderArrayConverter.Collections
         /// </summary>
         [NotNull]
         new IImmutableSequenceDictionary<TKey> this[params TKey[] keys] { get; }
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        IEnumerable<KeyValuePair<KeySequence<TKey>, object>> GetLogicalEnumerable();
-
-        /// <summary>
-        /// Returns an enumerable collection iterates through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        IEnumerable GetLogicalValuesEnumerable();
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical value collection as defined by the <see cref="IImmutableSequenceDictionary{TKey}.Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        IEnumerable GetLogicalValuesEnumerable([NotNull] IComparer<KeySequence<TKey>> keyComparer);
     }
 }

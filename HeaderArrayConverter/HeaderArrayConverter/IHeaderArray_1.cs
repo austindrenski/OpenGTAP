@@ -12,8 +12,13 @@ namespace HeaderArrayConverter
     /// The type of element in the array.
     /// </typeparam>
     [PublicAPI]
-    public interface IHeaderArray<TValue> : IHeaderArray, ISequenceIndexer<string, TValue> where TValue : IEquatable<TValue>
+    public interface IHeaderArray<TValue> : IHeaderArray, ISequenceIndexer<string, TValue>, IEnumerable<KeyValuePair<KeySequence<string>, TValue>> where TValue : IEquatable<TValue>
     {
+        /// <summary>
+        /// Gets a collection of the values in the header.
+        /// </summary>
+        IEnumerable<TValue> Values { get; }
+
         /// <summary>
         /// Returns the value with the key defined by the key components or throws an exception if the key is not found.
         /// </summary>
@@ -50,35 +55,5 @@ namespace HeaderArrayConverter
         [Pure]
         [NotNull]
         new IHeaderArray<TValue> With([NotNull] string header);
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        new IEnumerable<KeyValuePair<KeySequence<string>, TValue>> GetLogicalEnumerable();
-
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        new IEnumerable<TValue> GetLogicalValuesEnumerable();
-        
-        /// <summary>
-        /// Returns an enumerable that iterates through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </summary>
-        /// <returns>
-        /// An enumerable that can be used to iterate through the logical values collection as defined by the <see cref="IHeaderArray.Sets"/>.
-        /// </returns>
-        [Pure]
-        [NotNull]
-        new IEnumerable<TValue> GetLogicalValuesEnumerable([NotNull] IComparer<KeySequence<string>> keyComparer);
     }
 }
