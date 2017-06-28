@@ -102,7 +102,6 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            //using (BinaryReader reader = new BinaryReader(new MemoryStream(File.ReadAllBytes(file))))
             using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open)))
             {
                 long length = reader.BaseStream.Length;
@@ -576,37 +575,47 @@ namespace HeaderArrayConverter.IO
             return floats;
         }
 
+        /// <summary>
+        /// Calculates the next string array.
+        /// </summary>
+        /// <param name="reader">
+        /// The reader from which the string array is read.
+        /// </param>
+        /// <returns>
+        /// An array of string values.
+        /// </returns>
+        /// <remarks>
+        /// 
+        /// </remarks>
         [NotNull]
-        private static string[] GetStringArray(BinaryReader reader)
+        private static string[] GetStringArray([NotNull] BinaryReader reader)
         {
             byte[] data = InitializeArray(reader);
 
-            int x0 = BitConverter.ToInt32(data, 0 * sizeof(int));
-            int x1 = BitConverter.ToInt32(data, 1 * sizeof(int));
-            int x2 = BitConverter.ToInt32(data, 2 * sizeof(int));
+            int vectorIndex = BitConverter.ToInt32(data, 0 * sizeof(int));
+            int extent0 = BitConverter.ToInt32(data, 1 * sizeof(int));
+            int extent1 = BitConverter.ToInt32(data, 2 * sizeof(int));
 
-            const int offset = 12;
+            const int offset = 3 * sizeof(int);
 
-            int elementSize = (data.Length - offset) / x2;
+            int elementSize = (data.Length - offset) / extent1;
 
-            byte[][] record = new byte[x1][];
-            string[] strings = new string[x1];
+            string[] strings = new string[extent0];
 
-            for (int i = 0; i < x0; i++)
+            for (int i = 0; i < vectorIndex; i++)
             {
                 if (i > 0)
                 {
                     data = InitializeArray(reader);
                 }
-                for (int j = 0; j < x2; j++)
+                for (int j = 0; j < extent1; j++)
                 {
-                    int item = i * x2 + j;
-                    if (item >= x1)
+                    int item = i * extent1 + j;
+                    if (extent0 <= item)
                     {
                         break;
                     }
-                    record[item] = data.Skip(offset).Skip(j * elementSize).Take(elementSize).ToArray();
-                    strings[item] = Encoding.ASCII.GetString(record[item]).Trim();
+                    strings[item] = Encoding.ASCII.GetString(data, offset + j * elementSize, elementSize).Trim();
                 }
             }
 
@@ -636,7 +645,7 @@ namespace HeaderArrayConverter.IO
         ///
         ///     [segment] = <see cref="GetNextTwoDimensionalSegment{T}(BinaryReader, Func{byte[], int, T}, out T[])"/>.   
         /// </remarks>
-
+        [NotNull]
         private static TValue[] GetTwoDimensionalNumericArray<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, int count)
         {
             TValue[] results = new TValue[count];
@@ -658,7 +667,7 @@ namespace HeaderArrayConverter.IO
         }
 
         /// <summary>
-        /// Calculates the next array segment for the record.
+        /// Calculates the next array segment for a two dimensional numeric record (e.g. 2I, 2R).
         /// </summary>
         /// <typeparam name="T">
         /// The type of data in the array.
