@@ -250,8 +250,6 @@ namespace HeaderArrayConverter.IO
             // Read header
             string header = Encoding.ASCII.GetString(reader.ReadBytes(length));
 
-            Console.WriteLine(header);
-
             int closingLength = reader.ReadInt32();
 
             // Verify the length of the header
