@@ -596,9 +596,7 @@ namespace HeaderArrayConverter.IO
             int extent0 = BitConverter.ToInt32(data, 1 * sizeof(int));
             int extent1 = BitConverter.ToInt32(data, 2 * sizeof(int));
 
-            const int offset = 3 * sizeof(int);
-
-            int elementSize = (data.Length - offset) / extent1;
+            int elementSize = (data.Length - 3 * sizeof(int)) / extent1;
 
             string[] strings = new string[extent0];
 
@@ -615,7 +613,7 @@ namespace HeaderArrayConverter.IO
                     {
                         break;
                     }
-                    strings[item] = Encoding.ASCII.GetString(data, offset + j * elementSize, elementSize).Trim();
+                    strings[item] = Encoding.ASCII.GetString(data, 3 * sizeof(int) + j * elementSize, elementSize).Trim();
                 }
             }
 
