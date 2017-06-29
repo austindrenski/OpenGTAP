@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -25,11 +26,6 @@ namespace HeaderArrayConverter.IO
         private static readonly int Padding = 0x20_20_20_20;
 
         /// <summary>
-        /// The spacer sequence used in binary HAR files.
-        /// </summary>
-        private static readonly int Spacer = unchecked((int) 0xFF_FF_FF_FF);
-
-        /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
         /// <param name="file">
@@ -45,7 +41,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return ReadAsync(file).Result;
+            return new HeaderArrayFile(ReadArrays(file));
         }
 
         /// <summary>
@@ -83,7 +79,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return Task.WhenAll(ReadArraysAsync(file)).Result;
+            return ReadArraysAsync(file).Select(x => x.Result);
         }
 
         /// <summary>
@@ -102,12 +98,58 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open)))
+            //using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open)))
+            //{
+            //    long length = reader.BaseStream.Length;
+            //    while (reader.BaseStream.Position < length)
+            //    {
+            //        yield return Task.FromResult(ReadNext(reader));
+            //    }
+            //}
+            //yield break;
+
+            byte[] buffer = File.ReadAllBytes(file);
+            using (Stream stream = new MemoryStream(buffer))
             {
-                long length = reader.BaseStream.Length;
-                while (reader.BaseStream.Position < length)
+                List<byte> temp = new List<byte>();
+
+                while (stream.Position < stream.Length)
                 {
-                    yield return Task.FromResult(ReadNext(reader));
+                    byte[] data = new byte[sizeof(int) + BitConverter.ToInt32(buffer, (int)stream.Position) + sizeof(int)];
+
+                    Buffer.BlockCopy(buffer, (int) stream.Position, data, 0, data.Length);
+
+                    stream.Seek(data.Length, SeekOrigin.Current);
+
+                    if (!temp.Any())
+                    {
+                        temp.AddRange(data);
+                        if (stream.Position < stream.Length)
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (data[4] == 0x20 && data[5] == 0x20 && data[6] == 0x20 && data[7] == 0x20)
+                    {
+                        temp.AddRange(data);
+                        if (stream.Position < stream.Length)
+                        {
+                            continue;
+                        }
+                    }
+
+                    byte[] bytes = temp.ToArray();
+
+                    yield return Task.Factory.StartNew(() => ReadNext(new BinaryReader(new MemoryStream(bytes))));
+
+                    temp.Clear();
+                    temp.AddRange(data);
+                  
+                    if (stream.Position == stream.Length)
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -313,14 +355,11 @@ namespace HeaderArrayConverter.IO
             // number of labels?
             int a = BitConverter.ToInt32(setDimensions, 0 * sizeof(int));
 
-            int possibleSpacer0 = BitConverter.ToInt32(setDimensions, 1 * sizeof(int));
+            bool knownSets = BitConverter.ToBoolean(setDimensions, 1 * sizeof(int));
 
-            if (Spacer != possibleSpacer0)
+            if (!knownSets && a != 0)
             {
-                if (a != 0 && BitConverter.ToInt32(setDimensions, 1 * sizeof(int)) != 1)
-                {
-                    throw new DataValidationException("Binary spacer check", Spacer, possibleSpacer0);
-                }
+                throw new DataValidationException("Binary boolean check", true, false);
             }
 
             // number of labels...again?
@@ -329,14 +368,11 @@ namespace HeaderArrayConverter.IO
             // Read coefficient
             string coefficient = Encoding.ASCII.GetString(setDimensions, 3 * sizeof(int), 3 * sizeof(int)).Trim();
 
-            int possibleSpacer1 = BitConverter.ToInt32(setDimensions, 6 * sizeof(int));
+            bool check = BitConverter.ToBoolean(setDimensions, 6 * sizeof(int));
 
-            if (Spacer != possibleSpacer1)
+            if (!check && a != 0)
             {
-                if (a != 0 && BitConverter.ToInt32(setDimensions, 1 * sizeof(int)) != 1)
-                {
-                    throw new DataValidationException("Binary spacer check", Spacer, possibleSpacer1);
-                }
+                throw new DataValidationException("Binary boolean check", true, false);
             }
 
             // Read set names

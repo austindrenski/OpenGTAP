@@ -33,7 +33,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return ReadAsync(file).Result;
+            return new HeaderArrayFile(ReadArrays(file));
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return new HeaderArrayFile(await Task.WhenAll(ReadArraysAsync(file)));
+            return await Task.FromResult(Read(file));
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return ReadArraysAsync(file).Select(x => x.Result);
+            return BuildHeaderArrays(file);
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return BuildHeaderArrays(file).Select(Task.FromResult);
+            return ReadArrays(file).Select(Task.FromResult);
         }
 
         /// <summary>
