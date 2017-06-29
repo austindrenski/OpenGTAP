@@ -151,11 +151,13 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.RE:
                 {
-                    (string coefficient, float[] floats, IReadOnlyList<KeyValuePair<string, IImmutableList<string>>> sets) = GetRealArrayWithSetLabels(reader, sparse);
+                    (string coefficient, float[] floats, IReadOnlyList<KeyValuePair<string, IImmutableList<string>>> sets) = 
+                            GetNumericArrayWithSetLabels(reader, sparse);
 
-                    KeySequence<string>[] expandedSets = sets.AsExpandedSet().ToArray();
+                    KeySequence<string>[] expandedSets = 
+                            sets.AsExpandedSet().ToArray();
                     
-                    KeyValuePair<KeySequence<string>, float>[] items =
+                    KeyValuePair<KeySequence<string>, float>[] items = 
                             new KeyValuePair<KeySequence<string>, float>[floats.Length];
 
                     for (int i = 0; i < items.Length; i++)
@@ -167,13 +169,11 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.I2:
                 {
-                    int[] ints = GetTwoDimensionalNumericArray(reader, BitConverter.ToInt32, count);
+                    int[] ints =
+                            GetFullNumericArray(reader, BitConverter.ToInt32, 7, count);
 
-                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
-                        ImmutableArray.Create(
-                            new KeyValuePair<string, IImmutableList<string>>(
-                                "INDEX",
-                                Enumerable.Range(0, ints.Length).Select(x => x.ToString()).ToImmutableArray()));
+                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets = 
+                            ImmutableArray.Create(new KeyValuePair<string, IImmutableList<string>>("INDEX", Enumerable.Range(0, ints.Length).Select(x => x.ToString()).ToImmutableArray()));
 
                     KeyValuePair<KeySequence<string>, int>[] items =
                             new KeyValuePair<KeySequence<string>, int>[ints.Length];
@@ -187,13 +187,11 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.R2:
                 {
-                    float[] floats = GetTwoDimensionalNumericArray(reader, BitConverter.ToSingle, count);
+                    float[] floats =
+                            GetFullNumericArray(reader, BitConverter.ToSingle, 7, count);
 
-                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets =
-                        ImmutableArray.Create(
-                            new KeyValuePair<string, IImmutableList<string>>(
-                                "INDEX",
-                                Enumerable.Range(0, floats.Length).Select(x => x.ToString()).ToImmutableArray()));
+                    ImmutableArray<KeyValuePair<string, IImmutableList<string>>> sets = 
+                            ImmutableArray.Create(new KeyValuePair<string, IImmutableList<string>>("INDEX", Enumerable.Range(0, floats.Length).Select(x => x.ToString()).ToImmutableArray()));
 
                     KeyValuePair<KeySequence<string>, float>[] items = 
                             new KeyValuePair<KeySequence<string>, float>[floats.Length];
@@ -219,36 +217,28 @@ namespace HeaderArrayConverter.IO
         /// The <see cref="BinaryReader"/> from which the array is read.
         /// </param>
         /// <returns>
-        /// The next array from the <see cref="BinaryReader"/> starting after the initial padding (e.g. 0x20_20_20_20).
+        /// The next array from the <see cref="BinaryReader"/> positioned after the initial padding (e.g. <see cref="Padding"/>).
         /// </returns>
         [NotNull]
         private static byte[] InitializeArray(BinaryReader reader)
         {
-            // Read array length
             int length = reader.ReadInt32();
-
-            // Check padding
             int padding = reader.ReadInt32();
 
-            // Read array
             byte[] data = reader.ReadBytes(length - sizeof(int));
 
-            // Check closing
             int closingLength = reader.ReadInt32();
 
-            // Verify array length
             if (length != closingLength)
             {
                 throw new DataValidationException("Binary length check", length, closingLength);
             }
 
-            // Verify the padding
             if (Padding != padding)
             {
                 throw new DataValidationException("Binary padding check", Padding, padding);
             }
 
-            // Skip padding and return
             return data;
         }
 
@@ -259,6 +249,8 @@ namespace HeaderArrayConverter.IO
             
             // Read header
             string header = Encoding.ASCII.GetString(reader.ReadBytes(length));
+
+            Console.WriteLine(header);
 
             int closingLength = reader.ReadInt32();
 
@@ -289,7 +281,7 @@ namespace HeaderArrayConverter.IO
             return (description, header, sparse, type, dimensions);
         }
 
-        private static (string Coefficient, float[] Data, IReadOnlyList<KeyValuePair<string, IImmutableList<string>>> Sets) GetRealArrayWithSetLabels(BinaryReader reader, bool sparse)
+        private static (string Coefficient, float[] Data, IReadOnlyList<KeyValuePair<string, IImmutableList<string>>> Sets) GetNumericArrayWithSetLabels(BinaryReader reader, bool sparse)
         {
             (string coefficient, string[] setNames, string[][] labelStrings) = ReadSets(reader);
 
@@ -310,7 +302,7 @@ namespace HeaderArrayConverter.IO
                 };
             }
 
-            float[] data = sparse ? GetReSparseArray(reader, dimensions) : GetRealArrayWithSetLabelsFull(reader);
+            float[] data = sparse ? GetReSparseArray(reader, dimensions) : GetFullRealArrayWithSets(reader, BitConverter.ToSingle, 1);
 
             return (coefficient, data, sets);
         }
@@ -333,13 +325,11 @@ namespace HeaderArrayConverter.IO
                 }
             }
 
-            const int offset = 12;
-
             // number of labels...again?
             int c = BitConverter.ToInt32(setDimensions, 2 * sizeof(int));
 
             // Read coefficient
-            string coefficient = Encoding.ASCII.GetString(setDimensions, offset, offset).Trim();
+            string coefficient = Encoding.ASCII.GetString(setDimensions, 3 * sizeof(int), 3 * sizeof(int)).Trim();
 
             int possibleSpacer1 = BitConverter.ToInt32(setDimensions, 6 * sizeof(int));
 
@@ -355,7 +345,7 @@ namespace HeaderArrayConverter.IO
             string[] setNames = new string[a];
             for (int i = 0; i < a; i++)
             {
-                setNames[i] = Encoding.ASCII.GetString(setDimensions, 4 * sizeof(int) + i * offset, offset).Trim();
+                setNames[i] = Encoding.ASCII.GetString(setDimensions, 4 * sizeof(int) + i * 3 * sizeof(int), 3 * sizeof(int)).Trim();
             }
 
             string[][] labelStrings = new string[setNames.Length][];
@@ -371,7 +361,7 @@ namespace HeaderArrayConverter.IO
                 labelStrings[h] = new string[labelX1];
                 for (int i = 0; i < labelX2; i++)
                 {
-                    labelStrings[h][i] = Encoding.ASCII.GetString(labels, offset + i * offset, offset).Trim();
+                    labelStrings[h][i] = Encoding.ASCII.GetString(labels, 3 * sizeof(int) + i * 3 * sizeof(int), 3 * sizeof(int)).Trim();
                 }
             }
 
@@ -384,34 +374,39 @@ namespace HeaderArrayConverter.IO
             return (coefficient, setNames, labelStrings);
         }
 
-        /// <summary>
-        /// Calculates the next array of data for a real array with set labels stored as non-sparse.
-        /// </summary>
-        /// <param name="reader">
-        /// The reader from which the data is read.
+        ///  <summary>
+        ///  Calculates the next array of data for an array stored as non-sparse and with sets.
+        ///  </summary>
+        ///  <param name="reader">
+        ///  The reader from which the data is read.
+        ///  </param>
+        ///  <param name="converter">
+        ///  A delegate returning a value from an index inside a byte array.
+        ///  </param>
+        /// <param name="offset">
+        /// The offset to move from the zero-th position to the first value position.
         /// </param>
         /// <returns>
-        /// An array of data.
-        /// </returns>
-        /// <remarks>
-        /// The array is composed of:
-        ///
-        ///      [dimensions] = <see cref="ReadDimensions(BinaryReader)"/>.
+        ///  An array of data.
+        ///  </returns>
+        ///  <remarks>
+        ///  The array is composed of one or more:
+        ///  
+        ///      [extents] = <see cref="ReadExtents(BinaryReader)"/>.
+        ///      [segment] = <see cref="GetNextSegment{T}(BinaryReader, Func{byte[], int, T}, int, out T[])"/>.
         /// 
-        /// Followed by one or more:
-        /// 
-        ///     [segment] = <see cref="GetNextSegment{T}(BinaryReader, Func{byte[], int, T}, out T[])"/>.
-        /// </remarks>
+        ///  </remarks>
         [NotNull]
-        private static float[] GetRealArrayWithSetLabelsFull([NotNull] BinaryReader reader)
+        private static TValue[] GetFullRealArrayWithSets<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, int offset)
         {
             int count = ReadDimensions(reader);
-           
-            float[] results = new float[count];
-
+            TValue[] results = new TValue[count];
             int counter = 0;
-            while (GetNextSegment(reader, BitConverter.ToSingle, out float[] floats))
+            bool test = true;
+            while (test)
             {
+                ReadExtents(reader);
+                test = GetNextSegment(reader, converter, offset, out TValue[] floats);
                 Array.Copy(floats, 0, results, counter, floats.Length);
                 counter += floats.Length;
             }
@@ -419,49 +414,44 @@ namespace HeaderArrayConverter.IO
             return results;
         }
 
-        /// <summary>
-        /// Calculates the next segment of the record.
-        /// </summary>
-        /// <typeparam name="T">
-        /// The type of data in the segment.
-        /// </typeparam>
-        /// <param name="reader">
-        /// The reader from which the segment is read.
+        ///  <summary>
+        ///  Calculates the next array of data for an array stored as non-sparse and with sets.
+        ///  </summary>
+        ///  <param name="reader">
+        ///  The reader from which the data is read.
+        ///  </param>
+        ///  <param name="converter">
+        ///  A delegate returning a value from an index inside a byte array.
+        ///  </param>
+        /// <param name="offset">
+        /// The offset to move from the zero-th position to the first value position.
         /// </param>
-        /// <param name="convert">
-        /// A delegate that converts byte data at an index into a value.
-        /// </param>
-        /// <param name="segment">
-        /// The array into which the segment is read.
+        /// <param name="count">
+        /// The number of items in the segment.
         /// </param>
         /// <returns>
-        /// True if there is another segment; false otherwise. 
-        /// </returns>
-        /// <remarks>
-        /// The next segment contains:
-        ///
-        ///     [extents] = <see cref="ReadExtents(BinaryReader)"/>.
+        ///  An array of data.
+        ///  </returns>
+        ///  <remarks>
+        ///  The array is composed of one or more:
+        ///  
+        ///      [segment] = <see cref="GetNextSegment{T}(BinaryReader, Func{byte[], int, T}, int, out T[])"/>.
         /// 
-        /// Followed by:
-        /// 
-        ///     [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.
-        ///     [(1 + i) * sizeof(int)] = the i-th value of the segment. 
-        /// </remarks>
-        private static bool GetNextSegment<T>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, T> convert, [NotNull] out T[] segment)
+        ///  </remarks>
+        [NotNull]
+        private static TValue[] GetFullNumericArray<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, int offset, int count)
         {
-            (int count, _) = ReadExtents(reader);
-
-            byte[] data = InitializeArray(reader);
-
-            int vectorIndex = BitConverter.ToInt32(data, 0 * sizeof(int));
-
-            segment = new T[count];
-            for (int i = 0; i < segment.Length; i++)
+            TValue[] results = new TValue[count];
+            int counter = 0;
+            bool test = true;
+            while (test)
             {
-                segment[i] = convert(data, (1 + i) * sizeof(int));
+                test = GetNextSegment(reader, converter, offset, out TValue[] floats);
+                Array.Copy(floats, 0, results, counter, floats.Length);
+                counter += floats.Length;
             }
 
-            return vectorIndex > 1;
+            return results;
         }
 
         /// <summary>
@@ -484,7 +474,7 @@ namespace HeaderArrayConverter.IO
         {
             byte[] dimensionArray = InitializeArray(reader);
 
-            int dimensions = BitConverter.ToInt32(dimensionArray, 0 * sizeof(int));
+            int dimensions = BitConverter.ToInt32(dimensionArray, 1 * sizeof(int));
 
             int count = 1;
             for (int i = 0; i < dimensions; i++)
@@ -496,13 +486,13 @@ namespace HeaderArrayConverter.IO
         }
 
         /// <summary>
-        /// Calculates the extents of each dimension represented on the next vector and the number of items therein.
+        /// Calculates the extents of each dimension represented on the next vector.
         /// </summary>
         /// <param name="reader">
         /// The reader from which the extent definitions are read.
         /// </param>
         /// <returns>
-        /// The count of items and an integer array indicating the extents of each dimension represented on the next vector.
+        /// An integer array indicating the extents of each dimension represented on the next vector.
         /// </returns>
         /// <remarks>
         ///  The extents array contains the following:
@@ -516,24 +506,18 @@ namespace HeaderArrayConverter.IO
         /// 
         /// Note that the extents must be deincremented by one to move from a 1-based index to a 0-based index. 
         /// </remarks>
-        private static (int Count, IReadOnlyList<int> Extents) ReadExtents([NotNull] BinaryReader reader)
+        private static IReadOnlyList<int> ReadExtents([NotNull] BinaryReader reader)
         {
             byte[] extentsArray = InitializeArray(reader);
 
-            int[] extents = new int[extentsArray.Length / sizeof(int)];
+            int[] extents = new int[(extentsArray.Length - sizeof(int)) / 2 / sizeof(int)];
 
             for (int i = 0; i < extents.Length; i++)
             {
-                extents[i] = BitConverter.ToInt32(extentsArray, (2 + 2 + i) * sizeof(int)) - BitConverter.ToInt32(extentsArray, (2 + 1 + i) * sizeof(int)) - 1;
+                extents[i] = BitConverter.ToInt32(extentsArray, (2 + i) * sizeof(int)) - BitConverter.ToInt32(extentsArray, (1 + i) * sizeof(int));
             }
 
-            int count = 1;
-            for (int i = 0; i < extents.Length; i++)
-            {
-                count *= extents[i];
-            }
-
-            return (count, extents);
+            return extents;
         }
 
         [NotNull]
@@ -620,95 +604,57 @@ namespace HeaderArrayConverter.IO
             return strings;
         }
 
-        /// <summary>
-        /// Returns a <typeparamref name="TValue"/> array and the number of binary vectors from which the array was read.
-        /// </summary>
-        /// <typeparam name="TValue">
-        /// The type of data in the array.
-        /// </typeparam>
-        /// <param name="reader">
-        /// A binary reader positioned immediately before the start of the data array.
-        /// </param>
-        /// <param name="converter">
-        /// A function delegate that returns a <typeparamref name="TValue"/> from a <see cref="Byte"/> array based on an index.
-        /// </param>
-        /// <param name="count">
-        /// The total count of entries in the result array.
-        /// </param>
-        /// <returns>
-        /// A tuple with a <typeparamref name="TValue"/> array and the number of binary vectors from which the array was read.
-        /// </returns>
-        /// <remarks>
-        /// The array is composed of one or more:
-        ///
-        ///     [segment] = <see cref="GetNextTwoDimensionalSegment{T}(BinaryReader, Func{byte[], int, T}, out T[])"/>.   
-        /// </remarks>
-        [NotNull]
-        private static TValue[] GetTwoDimensionalNumericArray<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, int count)
-        {
-            TValue[] results = new TValue[count];
-
-            int counter = 0;
-
-            bool test = true;
-
-            while (test)
-            {
-                test = GetNextTwoDimensionalSegment(reader, converter, out TValue[] floats);
-
-                Array.Copy(floats, 0, results, counter, floats.Length);
-
-                counter += floats.Length;
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// Calculates the next array segment for a two dimensional numeric record (e.g. 2I, 2R).
-        /// </summary>
-        /// <typeparam name="T">
-        /// The type of data in the array.
-        /// </typeparam>
-        /// <param name="reader">
-        /// The reader from which the segment is read.
-        /// </param>
-        /// <param name="converter">
-        /// A delegate returning a value from an index inside a byte array.
+        ///  <summary>
+        ///  Calculates the next value segment.
+        ///  </summary>
+        ///  <typeparam name="TValue">
+        ///  The type of data in the array.
+        ///  </typeparam>
+        ///  <param name="reader">
+        ///  The reader from which the segment is read.
+        ///  </param>
+        ///  <param name="converter">
+        ///  A delegate returning a value from an index inside a byte array.
+        ///  </param>
+        /// <param name="offset">
+        /// The offset to move from the zero-th position to the first value position.
         /// </param>
         /// <param name="results">
-        /// The values of the array segment.
-        /// </param>
-        /// <returns>
-        /// True if there are additional segments; otherwise false.
-        /// </returns>
-        /// <remarks>
-        /// The next array segment is composed of:
-        ///
-        ///      [0 * sizeof(int)] = vector index.
-        ///      [1 * sizeof(int)] = the number of elements in the first dimension.
-        ///      [2 * sizeof(int)] = the number of elements in the second dimension.
-        ///      [3 * sizeof(int)] = the starting index of the first dimension in the segment on the logical array.
-        ///      [4 * sizeof(int)] = the ending index of the first dimension in the segment on the logical array.
-        ///      [5 * sizeof(int)] = the starting index of the second dimension in the segment on the logical array.
-        ///      [6 * sizeof(int)] = the ending index of the second dimension in the segment on the logical array.
-        ///      [(7 + i) * sizeof(int)] = the i-th data value in the segment. 
+        ///  The values of the array segment.
+        ///  </param>
+        ///  <returns>
+        ///  True if there are additional segments; otherwise false.
+        ///  </returns>
+        ///  <remarks>
+        ///  For two dimensional arrays, the next segment is composed of:
         /// 
-        /// The count of dimensions can be determined in-line as the length of the array after the first seven entries divided by the byte-size of an integer. 
+        ///       [0 * sizeof(int)] = vector index.
+        ///       [1 * sizeof(int)] = the number of elements in the first dimension.
+        ///       [2 * sizeof(int)] = the number of elements in the second dimension.
+        ///       [3 * sizeof(int)] = the starting index of the first dimension in the segment on the logical array.
+        ///       [4 * sizeof(int)] = the ending index of the first dimension in the segment on the logical array.
+        ///       [5 * sizeof(int)] = the starting index of the second dimension in the segment on the logical array.
+        ///       [6 * sizeof(int)] = the ending index of the second dimension in the segment on the logical array.
+        ///       [(7 + i) * sizeof(int)] = the i-th data value in the segment. 
+        ///  
+        ///  For seven dimensional arrays, the next segment is composed of:
         /// 
-        /// Note that the extents must be deincremented by one to move from a 1-based index to a 0-based index. 
-        /// </remarks>
-        private static bool GetNextTwoDimensionalSegment<T>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, T> converter, [NotNull] out T[] results)
+        ///      [extents] = <see cref="ReadExtents(BinaryReader)"/>.
+        ///      [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.
+        ///      [(1 + i) * sizeof(int)] = the i-th value of the segment. 
+        /// 
+        ///  </remarks>
+        private static bool GetNextSegment<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, int offset, [NotNull] out TValue[] results)
         {
             byte[] data = InitializeArray(reader);
 
             int vectorIndex = BitConverter.ToInt32(data, 0 * sizeof(int));
 
-            results = new T[(data.Length - 7 * sizeof(int)) / sizeof(int)];
+            results = new TValue[(data.Length - offset * sizeof(int)) / sizeof(int)];
 
             for (int i = 0; i < results.Length; i++)
             {
-                results[i] = converter(data, (i + 7) * sizeof(int));
+                results[i] = converter(data, (i + offset) * sizeof(int));
             }
 
             return vectorIndex > 1;
