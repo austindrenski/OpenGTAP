@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -60,7 +59,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return new HeaderArrayFile(await Task.WhenAll(ReadArraysAsync(file)));
+            return new HeaderArrayFile(await Task.Run(() => ReadArraysAsync(file).AsParallel().Select(x => x.Result)));
         }
 
         /// <summary>
@@ -79,7 +78,14 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return ReadArraysAsync(file).Select(x => x.Result);
+            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read)))
+            {
+                long length = reader.BaseStream.Length;
+                while (reader.BaseStream.Position < length)
+                {
+                    yield return ReadNext(reader);
+                }
+            }
         }
 
         /// <summary>
@@ -98,58 +104,12 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            //using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open)))
-            //{
-            //    long length = reader.BaseStream.Length;
-            //    while (reader.BaseStream.Position < length)
-            //    {
-            //        yield return Task.FromResult(ReadNext(reader));
-            //    }
-            //}
-            //yield break;
-
-            byte[] buffer = File.ReadAllBytes(file);
-            using (Stream stream = new MemoryStream(buffer))
+            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read)))
             {
-                List<byte> temp = new List<byte>();
-
-                while (stream.Position < stream.Length)
+                long length = reader.BaseStream.Length;
+                while (reader.BaseStream.Position < length)
                 {
-                    byte[] data = new byte[sizeof(int) + BitConverter.ToInt32(buffer, (int)stream.Position) + sizeof(int)];
-
-                    Buffer.BlockCopy(buffer, (int) stream.Position, data, 0, data.Length);
-
-                    stream.Seek(data.Length, SeekOrigin.Current);
-
-                    if (!temp.Any())
-                    {
-                        temp.AddRange(data);
-                        if (stream.Position < stream.Length)
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (data[4] == 0x20 && data[5] == 0x20 && data[6] == 0x20 && data[7] == 0x20)
-                    {
-                        temp.AddRange(data);
-                        if (stream.Position < stream.Length)
-                        {
-                            continue;
-                        }
-                    }
-
-                    byte[] bytes = temp.ToArray();
-
-                    yield return Task.Factory.StartNew(() => ReadNext(new BinaryReader(new MemoryStream(bytes))));
-
-                    temp.Clear();
-                    temp.AddRange(data);
-                  
-                    if (stream.Position == stream.Length)
-                    {
-                        break;
-                    }
+                    yield return Task.FromResult(ReadNext(reader));
                 }
             }
         }

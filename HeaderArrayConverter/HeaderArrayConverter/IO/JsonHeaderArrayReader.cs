@@ -30,7 +30,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return ReadAsync(file).Result;
+            return new HeaderArrayFile(ReadArrays(file));
         }
 
         /// <summary>
@@ -63,9 +63,17 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         public override IEnumerable<IHeaderArray> ReadArrays(FilePath file)
         {
-            foreach (Task<IHeaderArray> array in ReadArraysAsync(file))
+            if (file is null)
             {
-                yield return array.Result;
+                throw new ArgumentNullException(nameof(file));
+            }
+
+            using (ZipArchive archive = ZipFile.Open(file, ZipArchiveMode.Read))
+            {
+                foreach (ZipArchiveEntry entry in archive.Entries)
+                {
+                    yield return HeaderArray.Deserialize(new StreamReader(entry.Open()).ReadToEnd());
+                }
             }
         }
 
@@ -80,13 +88,11 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         public override IEnumerable<Task<IHeaderArray>> ReadArraysAsync(FilePath file)
         {
-            using (ZipArchive archive = new ZipArchive(File.Open(file, FileMode.Open)))
+            using (ZipArchive archive = ZipFile.Open(file, ZipArchiveMode.Read))
             {
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
-                    string json = new StreamReader(entry.Open()).ReadToEnd();
-
-                    yield return Task.FromResult(HeaderArray.Deserialize(json));
+                    yield return Task.Run(async () => HeaderArray.Deserialize(await new StreamReader(entry.Open()).ReadToEndAsync()));
                 }
             }
         }
