@@ -12,14 +12,14 @@ namespace HeaderArrayConsole
         public static void Main()
         {
             //string input = $"{CurrentDirectory}\\base\\sets original.har";
-            string input = $"{CurrentDirectory}\\base\\basedata original.har";
+            //string input = $"{CurrentDirectory}\\base\\basedata original.har";
             //string input = $"{CurrentDirectory}\\base\\baserate original.har";
             //string input = $"{CurrentDirectory}\\base\\baseview original.har";
 
             //string input = $"{CurrentDirectory}\\laborfd\\laborfd (sl4) original.sl4";
             //string input = $"{CurrentDirectory}\\laborfd\\laborfd (slc) original.slc";
 
-            //string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (sl4) original.sl4";
+            string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (sl4) original.sl4";
             //string input = $"{CurrentDirectory}\\reBAS11\\reBAS11 (slc) original.slc";
 
             // 1. Read the input file with SL4 semantics.
@@ -29,7 +29,7 @@ namespace HeaderArrayConsole
                 input: input,
                 binaryOutput: $"{CurrentDirectory}\\test6.har",
                 jsonOutput: $"{CurrentDirectory}\\test6.harx",
-                reader: HeaderArrayFile.BinaryReader,
+                reader: HeaderArrayFile.BinarySolutionReader,
                 writeBinary: true,
                 writeJson: true,
                 readJson: true,

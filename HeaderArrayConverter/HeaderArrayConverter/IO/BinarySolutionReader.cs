@@ -157,13 +157,13 @@ namespace HeaderArrayConverter.IO
                        .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]));
 
                 return
-                    new HeaderArray<float>(
+                    HeaderArray<float>.Create(
                         array.Name,
                         array.Name,
                         array.Description,
                         HeaderArrayType.RE,
-                        entries,
                         array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7),
+                        entries,
                         set);
 
                 // Shifts existing entries to their appropriate positions to create gaps for exogenous values.

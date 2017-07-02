@@ -320,13 +320,13 @@ namespace HeaderArrayConverter
             private static IHeaderArray Create<TValue>(JObject jObject, HeaderArrayType type) where TValue : IEquatable<TValue>
             {
                 return
-                    new HeaderArray<TValue>(
+                    HeaderArray<TValue>.Create(
                         jObject["Header"].Value<string>(),
                         jObject["Coefficient"].Value<string>(),
                         jObject["Description"].Value<string>(),
                         type,
-                        ParseEntries(jObject["Entries"]),
                         jObject["Dimensions"].Values<int>().ToImmutableArray(),
+                        ParseEntries(jObject["Entries"]),
                         ParseSets(jObject["Sets"]));
 
                 IEnumerable<KeyValuePair<KeySequence<string>, TValue>> ParseEntries(JToken entries)

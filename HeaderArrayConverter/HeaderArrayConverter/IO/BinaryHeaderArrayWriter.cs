@@ -275,12 +275,14 @@ namespace HeaderArrayConverter.IO
 
                         for (int i = 0; i < array.Sets.Count; i++)
                         {
-                            writer.Write((byte)0x6B);
+                            writer.Write('k');
                         }
 
-                        for (int i = 0; i < array.Sets.Count + 1; i++)
+                        writer.Write(0);
+
+                        for (int i = 0; i < array.Sets.Count; i++)
                         {
-                            writer.Write(0x00_00_00_00);
+                            writer.Write(0);
                         }
                     });
 

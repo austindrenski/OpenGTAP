@@ -255,6 +255,82 @@ namespace HeaderArrayConverter.Collections
         }
 
         /// <summary>
+        /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
+        /// </summary>
+        /// <param name="sets">
+        /// The index set that define this dictionary.
+        /// </param>
+        /// <param name="source">
+        /// The source collection.
+        /// </param>
+        /// <returns>
+        /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> created from the collection.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> sets, [NotNull] IEnumerable<TValue> source)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            TValue[] values = source as TValue[] ?? source.ToArray();
+
+            KeySequence<TKey>[] keys = sets.AsExpandedSet().ToArray();
+
+            KeyValuePair<KeySequence<TKey>, TValue>[] items = new KeyValuePair<KeySequence<TKey>, TValue>[values.Length];
+            for (int i = 0; i < items.Length; i++)
+            {
+                items[i] = new KeyValuePair<KeySequence<TKey>, TValue>(keys[i], values[i]);
+            }
+
+            return Create(sets, items);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
+        /// </summary>
+        /// <param name="name">
+        /// 
+        /// </param>
+        /// <param name="source">
+        /// The source collection.
+        /// </param>
+        /// <returns>
+        /// An <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> created from the collection.
+        /// </returns>
+        [Pure]
+        [NotNull]
+        public static ImmutableSequenceDictionary<string, TValue> Create([NotNull] string name, [NotNull] IEnumerable<TValue> source)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (name is null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            TValue[] values = source as TValue[] ?? source.ToArray();
+
+            IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets = 
+                ImmutableArray.Create(
+                    new KeyValuePair<string, IImmutableList<string>>(
+                        name, 
+                        Enumerable.Range(0, values.Length).Select(x => x.ToString()).ToImmutableArray()));
+
+            KeyValuePair<KeySequence<string>, TValue>[] items = new KeyValuePair<KeySequence<string>, TValue>[values.Length];
+            for (int i = 0; i < items.Length; i++)
+            {
+                items[i] = new KeyValuePair<KeySequence<string>, TValue>(i.ToString(), values[i]);
+            }
+            
+            return new ImmutableSequenceDictionary<string, TValue>(sets, items);
+        }
+
+        /// <summary>
         /// Returns a string representation of the contents of the header array.
         /// </summary>
         [Pure]

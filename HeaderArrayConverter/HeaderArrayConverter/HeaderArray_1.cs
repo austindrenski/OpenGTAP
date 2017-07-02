@@ -74,7 +74,7 @@ namespace HeaderArrayConverter
         /// The sets defined on the array.
         /// </summary>
         [JsonProperty]
-        public override IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets { get; }
+        public override IImmutableList<KeyValuePair<string, IImmutableList<string>>> Sets => _entries.Sets;
 
         /// <summary>
         /// Gets the number of logical entries in the header.
@@ -156,21 +156,14 @@ namespace HeaderArrayConverter
         /// <param name="type">
         /// The type of element stored in the array.
         /// </param>
-        /// <param name="entries">
-        /// The data in the array.
-        /// </param>
         /// <param name="dimensions">
         /// The dimensions of the array.
         /// </param>
-        /// <param name="sets">
-        /// The sets defined on the array.
+        /// <param name="entries">
+        /// The data in the array.
         /// </param>
-        public HeaderArray([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IEnumerable<int> dimensions, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
+        public HeaderArray([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IImmutableSequenceDictionary<string, TValue> entries)
         {
-            if (entries is null)
-            {
-                throw new ArgumentNullException(nameof(entries));
-            }
             if (header is null)
             {
                 throw new ArgumentNullException(nameof(header));
@@ -181,20 +174,162 @@ namespace HeaderArrayConverter
             }
             if (dimensions is null)
             {
-                throw new ArgumentNullException(nameof(type));
+                throw new ArgumentNullException(nameof(dimensions));
+            }
+            if (entries is null)
+            {
+                throw new ArgumentNullException(nameof(entries));
+            }
+
+            Header = header;
+            Coefficient = coefficient;
+            Description = description ?? string.Empty;
+            Type = type;
+            Dimensions = dimensions as IImmutableList<int> ?? dimensions.ToImmutableArray();
+            _entries = entries;
+        }
+
+        /// <summary>
+        /// Creates an <see cref="IHeaderArray{TValue}"/> from one entry from a Header Array (HAR) file.
+        /// </summary>
+        /// <param name="header">
+        /// The four character identifier for this <see cref="HeaderArray{TValue}"/>.
+        /// </param>
+        /// <param name="coefficient">
+        /// The coefficient related to the <see cref="HeaderArray{TValue}"/>
+        /// </param>
+        /// <param name="description">
+        /// The long name description of the <see cref="HeaderArray{TValue}"/>.
+        /// </param>
+        /// <param name="type">
+        /// The type of element stored in the array.
+        /// </param>
+        /// <param name="dimensions">
+        /// The dimensions of the array.
+        /// </param>
+        /// <param name="entries">
+        /// The data in the array.
+        /// </param>
+        /// <param name="sets">
+        /// The sets defined on the array.
+        /// </param>
+        public static IHeaderArray<TValue> Create([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
+        {
+            if (header is null)
+            {
+                throw new ArgumentNullException(nameof(header));
+            }
+            if (coefficient is null)
+            {
+                throw new ArgumentNullException(nameof(coefficient));
+            }
+            if (dimensions is null)
+            {
+                throw new ArgumentNullException(nameof(dimensions));
+            }
+            if (entries is null)
+            {
+                throw new ArgumentNullException(nameof(entries));
             }
             if (sets is null)
             {
                 throw new ArgumentNullException(nameof(sets));
             }
-            
-            Header = header;
-            Coefficient = coefficient;
-            Description = description ?? string.Empty;
-            Type = type;
-            Dimensions = dimensions.ToImmutableArray();
-            Sets = sets;
-            _entries = entries.ToImmutableSequenceDictionary(sets);
+
+            return new HeaderArray<TValue>(header, coefficient, description, type, dimensions, ImmutableSequenceDictionary<string, TValue>.Create(sets, entries));
+        }
+
+        /// <summary>
+        /// Creates an <see cref="IHeaderArray{TValue}"/> from one entry from a Header Array (HAR) file.
+        /// </summary>
+        /// <param name="header">
+        /// The four character identifier for this <see cref="HeaderArray{TValue}"/>.
+        /// </param>
+        /// <param name="coefficient">
+        /// The coefficient related to the <see cref="HeaderArray{TValue}"/>
+        /// </param>
+        /// <param name="description">
+        /// The long name description of the <see cref="HeaderArray{TValue}"/>.
+        /// </param>
+        /// <param name="type">
+        /// The type of element stored in the array.
+        /// </param>
+        /// <param name="dimensions">
+        /// The dimensions of the array.
+        /// </param>
+        /// <param name="entries">
+        /// The data in the array.
+        /// </param>
+        /// <param name="sets">
+        /// The sets defined on the array.
+        /// </param>
+        public static IHeaderArray<TValue> Create([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<TValue> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
+        {
+            if (header is null)
+            {
+                throw new ArgumentNullException(nameof(header));
+            }
+            if (coefficient is null)
+            {
+                throw new ArgumentNullException(nameof(coefficient));
+            }
+            if (dimensions is null)
+            {
+                throw new ArgumentNullException(nameof(dimensions));
+            }
+            if (entries is null)
+            {
+                throw new ArgumentNullException(nameof(entries));
+            }
+            if (sets is null)
+            {
+                throw new ArgumentNullException(nameof(sets));
+            }
+
+            return new HeaderArray<TValue>(header, coefficient, description, type, dimensions, ImmutableSequenceDictionary<string, TValue>.Create(sets, entries));
+        }
+
+        /// <summary>
+        /// Creates an <see cref="IHeaderArray{TValue}"/> from one entry from a Header Array (HAR) file.
+        /// </summary>
+        /// <param name="header">
+        /// The four character identifier for this <see cref="HeaderArray{TValue}"/>.
+        /// </param>
+        /// <param name="coefficient">
+        /// The coefficient related to the <see cref="HeaderArray{TValue}"/>
+        /// </param>
+        /// <param name="description">
+        /// The long name description of the <see cref="HeaderArray{TValue}"/>.
+        /// </param>
+        /// <param name="type">
+        /// The type of element stored in the array.
+        /// </param>
+        /// <param name="dimensions">
+        /// The dimensions of the array.
+        /// </param>
+        /// <param name="entries">
+        /// The data in the array.
+        /// </param>
+        public static IHeaderArray<TValue> Create([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<TValue> entries)
+        {
+            if (header is null)
+            {
+                throw new ArgumentNullException(nameof(header));
+            }
+            if (coefficient is null)
+            {
+                throw new ArgumentNullException(nameof(coefficient));
+            }
+            if (dimensions is null)
+            {
+                throw new ArgumentNullException(nameof(dimensions));
+            }
+            if (entries is null)
+            {
+                throw new ArgumentNullException(nameof(entries));
+            }
+
+            return new HeaderArray<TValue>(header, coefficient, description, type, dimensions, ImmutableSequenceDictionary<string, TValue>.Create("INDEX", entries));
         }
 
         /// <summary>
@@ -227,7 +362,7 @@ namespace HeaderArrayConverter
         [Pure]
         public IHeaderArray<TValue> With(string header)
         {
-            return new HeaderArray<TValue>(header, Coefficient, Description, Type, _entries, Dimensions, Sets);
+            return Create(header, Coefficient, Description, Type, Dimensions, _entries, Sets);
         }
 
         /// <summary>
