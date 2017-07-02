@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using HeaderArrayConverter.Collections;
 using HeaderArrayConverter.IO;
-using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

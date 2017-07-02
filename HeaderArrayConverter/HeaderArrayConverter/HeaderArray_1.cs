@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using HeaderArrayConverter.Collections;
-using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Schema;

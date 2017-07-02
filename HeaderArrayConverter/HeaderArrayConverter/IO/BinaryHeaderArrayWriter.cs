@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
@@ -232,7 +231,7 @@ namespace HeaderArrayConverter.IO
                     writer =>
                     {
                         writer.Write((short)array.Type);
-                        writer.Write("FULL".ToCharArray());
+                        writer.Write((int)HeaderArrayStorage.Full);
                         writer.Write(array.Description.PadRight(70).Substring(0, 70).ToCharArray());
                         writer.Write(array.Dimensions.Count);
 

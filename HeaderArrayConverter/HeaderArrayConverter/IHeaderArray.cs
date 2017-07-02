@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using HeaderArrayConverter.Collections;
-using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 using Newtonsoft.Json.Schema;
 

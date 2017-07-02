@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AD.IO;
-using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
@@ -126,25 +125,25 @@ namespace HeaderArrayConverter.IO
         {
             string header = GetHeader(reader);
 
-            (string description, bool sparse, HeaderArrayType type, int[] dimensions, int count) = GetMetadata(reader);
+            (string description, HeaderArrayStorage storage, HeaderArrayType type, int[] dimensions, int count) = GetMetadata(reader);
 
             switch (type)
             {
                 case HeaderArrayType.C1:
                 {
-                    string[] values = GetOneDimensionalArray(reader, count, (data, index, length) => Encoding.ASCII.GetString(data, index, length).Trim('\u0000', '\u0002', '\u0020'));
+                    string[] values = GetOneDimensionalArray(reader, storage, count, (data, index, length) => Encoding.ASCII.GetString(data, index, length).Trim('\u0000', '\u0002', '\u0020'));
 
                     return HeaderArray<string>.Create(header, header, description, type, dimensions, values);
                 }
                 case HeaderArrayType.I2:
                 {
-                    int[] values = GetTwoDimensionalArray(reader, count, BitConverter.ToInt32);
+                    int[] values = GetTwoDimensionalArray(reader, storage, count, BitConverter.ToInt32);
 
                     return HeaderArray<int>.Create(header, header, description, type, dimensions, values);
                 }
                 case HeaderArrayType.R2:
                 {
-                    float[] values = GetTwoDimensionalArray(reader, count, BitConverter.ToSingle);
+                    float[] values = GetTwoDimensionalArray(reader, storage, count, BitConverter.ToSingle);
 
                     return HeaderArray<float>.Create(header, header, description, type, dimensions, values);
                 }
@@ -152,7 +151,7 @@ namespace HeaderArrayConverter.IO
                 {
                     (string coefficient, KeyValuePair<string, IImmutableList<string>>[] sets) = ReadSets(reader, dimensions);
 
-                    float[] results = sparse ? GetSparseArrayWithSets(reader, count, BitConverter.ToSingle) : GetFullArrayWithSets(reader, BitConverter.ToSingle);
+                    float[] results = GetArrayWithSets(reader, storage, count, BitConverter.ToSingle);
 
                     return HeaderArray<float>.Create(header, coefficient, description, type, dimensions, results, sets.ToImmutableArray());
                 }
@@ -168,6 +167,9 @@ namespace HeaderArrayConverter.IO
         /// </summary>
         /// <param name="reader">
         /// The reader from which the array is read.
+        /// </param>
+        ///  <param name="storage">
+        /// The storage type of the array.
         /// </param>
         /// <param name="count">
         /// The total count of elements.
@@ -185,21 +187,36 @@ namespace HeaderArrayConverter.IO
         /// 
         /// </remarks>
         [NotNull]
-        private static TValue[] GetOneDimensionalArray<TValue>([NotNull] BinaryReader reader, int count, [NotNull] Func<byte[], int, int, TValue> converter)
+        private static TValue[] GetOneDimensionalArray<TValue>([NotNull] BinaryReader reader, HeaderArrayStorage storage, int count, [NotNull] Func<byte[], int, int, TValue> converter)
         {
             TValue[] results = new TValue[count];
-            int index = int.MaxValue;
-            int counter = 0;
-            while (index > 1)
+
+            switch (storage)
             {
-                index = GetNextOneDimensionalSegment(reader, converter, out TValue[] values);
+                case HeaderArrayStorage.Full:
+                {
+                    int index = int.MaxValue;
+                    int counter = 0;
+                    while (index > 1)
+                    {
+                        index = GetNextOneDimensionalSegment(reader, converter, out TValue[] values);
 
-                Array.Copy(values, 0, results, counter, values.Length);
+                        Array.Copy(values, 0, results, counter, values.Length);
 
-                counter += values.Length;
+                        counter += values.Length;
+                    }
+
+                    return results;
+                }
+                case HeaderArrayStorage.Sparse:
+                {
+                    throw new NotSupportedException("The storage SPSE is not supported for 2-dimensional arrays");
+                }
+                default:
+                {
+                    throw new DataValidationException("An unknown header array storage was encountered.", "FULL, SPSE", storage);
+                }
             }
-
-            return results;
         }
 
         /// <summary>
@@ -207,6 +224,9 @@ namespace HeaderArrayConverter.IO
         /// </summary>
         /// <param name="reader">
         /// The reader from which the data is read.
+        /// </param>
+        ///  <param name="storage">
+        /// The storage type of the array.
         /// </param>
         /// <param name="count">
         /// The number of items in the segment.
@@ -224,110 +244,120 @@ namespace HeaderArrayConverter.IO
         /// 
         /// </remarks>
         [NotNull]
-        private static TValue[] GetTwoDimensionalArray<TValue>([NotNull] BinaryReader reader, int count, [NotNull] Func<byte[], int, TValue> converter)
+        private static TValue[] GetTwoDimensionalArray<TValue>([NotNull] BinaryReader reader, HeaderArrayStorage storage, int count, [NotNull] Func<byte[], int, TValue> converter)
         {
             TValue[] results = new TValue[count];
-            int index = int.MaxValue;
-            int counter = 0;
-            while (index > 1)
+
+            switch (storage)
             {
-                index = GetNextTwoDimensionalSegment(reader, converter, out TValue[] values);
-
-                Array.Copy(values, 0, results, counter, values.Length);
-
-                counter += values.Length;
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// Calculates the next non-sparse array of data for an array and with sets.
-        /// </summary>
-        /// <param name="reader">
-        /// The reader from which the data is read.
-        /// </param>
-        /// <param name="converter">
-        /// A delegate returning a value from an index inside a byte array.
-        /// </param>
-        /// <returns>
-        /// An array of data.
-        /// </returns>
-        /// <remarks>
-        /// The array is composed of:
-        ///     
-        ///     [dimensions] = <see cref="ReadDimensions(BinaryReader)"/>.
-        ///
-        /// Followed by one or more:
-        /// 
-        ///     [extents] = <see cref="ReadExtents(BinaryReader)"/>.
-        ///     [segment] = <see cref="GetNextFullSegment{T}(BinaryReader, Func{byte[], int, T}, out T[])"/>.
-        ///
-        /// </remarks>
-        [NotNull]
-        private static TValue[] GetFullArrayWithSets<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter)
-        {
-            (int index, int count, int[] _) = ReadDimensions(reader);
-
-            TValue[] results = new TValue[count];
-
-            while (index > 1)
-            {
-                (int _, int offset, int[] _) = ReadExtents(reader);
-
-                index = GetNextFullSegment(reader, converter, out TValue[] floats);
-
-                Array.Copy(floats, 0, results, offset, floats.Length);
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// Calculates the next non-sparse array of data for an array and with sets.
-        /// </summary>
-        /// <param name="reader">
-        /// The reader from which the data is read.
-        /// </param>
-        /// <param name="count">
-        /// The total count of values in the logical array.
-        /// </param>
-        /// <param name="converter">
-        /// A delegate returning a value from an index inside a byte array.
-        /// </param>
-        /// <returns>
-        /// An array of data.
-        /// </returns>
-        /// <remarks>
-        /// The array is composed of:
-        ///  
-        ///     [metadata] = <see cref="GetExtraMetadata(BinaryReader)"/>.
-        /// 
-        /// Followed by one or more:
-        /// 
-        ///     [segment] = <see cref="GetNextSparseSegment{TValue}(BinaryReader, Func{byte[], int, TValue}, out TValue[], out int[])"/>.
-        /// 
-        ///  </remarks>
-        [NotNull]
-        private static TValue[] GetSparseArrayWithSets<TValue>([NotNull] BinaryReader reader, int count, [NotNull] Func<byte[], int, TValue> converter)
-        {
-            (int _, int _, int _, string _) = GetExtraMetadata(reader);
-
-            TValue[] results = new TValue[count];
-
-            int index = int.MaxValue;
-
-            while (index > 1)
-            {
-                index = GetNextSparseSegment(reader, converter, out TValue[] values, out int[] pointers);
-
-                for (int i = 0; i < pointers.Length; i++)
+                case HeaderArrayStorage.Full:
                 {
-                    results[pointers[i]] = values[i];
+                    int index = int.MaxValue;
+                    int counter = 0;
+                    while (index > 1)
+                    {
+                        index = GetNextTwoDimensionalSegment(reader, converter, out TValue[] values);
+
+                        Array.Copy(values, 0, results, counter, values.Length);
+
+                        counter += values.Length;
+                    }
+
+                    return results;
+                }
+                case HeaderArrayStorage.Sparse:
+                {
+                    throw new NotSupportedException("The storage SPSE is not supported for 2-dimensional arrays");
+                }
+                default:
+                {
+                    throw new DataValidationException("An unknown header array storage was encountered.", "FULL, SPSE", storage);
                 }
             }
+        }
 
-            return results;
+        ///  <summary>
+        ///  Calculates the next array with sets stored as either non-sparse or sparse.
+        ///  </summary>
+        ///  <param name="reader">
+        ///  The reader from which the data is read.
+        ///  </param>
+        ///  <param name="storage">
+        /// The storage type of the array.
+        /// </param>
+        ///  <param name="count">
+        ///  The total count of values in the logical array.
+        ///  </param>
+        /// <param name="converter">
+        ///  A delegate returning a value from an index inside a byte array.
+        ///  </param>
+        /// <returns>
+        ///  An array of data.
+        ///  </returns>
+        ///  <remarks>
+        ///  If the array is non-sparse, then it is composed of:
+        ///  
+        ///          [dimensions] = <see cref="ReadDimensions(BinaryReader)"/>.
+        /// 
+        ///      Followed by one or more:
+        ///  
+        ///          [extents] = <see cref="ReadExtents(BinaryReader)"/>.
+        ///          [segment] = <see cref="GetNextFullSegment{T}(BinaryReader, Func{byte[], int, T}, out T[])"/>.
+        ///  
+        ///  If the array is sparse, then it is composed of:
+        ///  
+        ///          [metadata] = <see cref="GetExtraMetadata(BinaryReader)"/>.
+        ///  
+        ///      Followed by one or more:
+        ///  
+        ///          [segment] = <see cref="GetNextSparseSegment{TValue}(BinaryReader, Func{byte[], int, TValue}, out TValue[], out int[])"/>.
+        ///  
+        ///   </remarks>
+        [NotNull]
+        private static TValue[] GetArrayWithSets<TValue>([NotNull] BinaryReader reader, HeaderArrayStorage storage, int count, [NotNull] Func<byte[], int, TValue> converter)
+        {
+            TValue[] results = new TValue[count];
+
+            switch (storage)
+            {
+                case HeaderArrayStorage.Full:
+                {
+                    (int index, int _, int[] _) = ReadDimensions(reader);
+
+                    while (index > 1)
+                    {
+                        (int _, int offset, int[] _) = ReadExtents(reader);
+
+                        index = GetNextFullSegment(reader, converter, out TValue[] floats);
+
+                        Array.Copy(floats, 0, results, offset, floats.Length);
+                    }
+
+                    return results;
+                }
+                case HeaderArrayStorage.Sparse:
+                {
+                    (int _, int _, int _, string _) = GetExtraMetadata(reader);
+
+                    int index = int.MaxValue;
+
+                    while (index > 1)
+                    {
+                        index = GetNextSparseSegment(reader, converter, out TValue[] values, out int[] pointers);
+
+                        for (int i = 0; i < pointers.Length; i++)
+                        {
+                            results[pointers[i]] = values[i];
+                        }
+                    }
+
+                    return results;
+                }
+                default:
+                {
+                    throw new DataValidationException("An unknown header array storage was encountered.", "FULL, SPSE", storage);
+                }
+            }
         }
 
         #region Segment constructors
@@ -587,22 +617,22 @@ namespace HeaderArrayConverter.IO
         /// <returns>
         /// A long-name description, a sparse indicator, the data type, the dimensions, and the count of values.
         /// </returns>
-        private static (string Description, bool Sparse, HeaderArrayType Type, int[] Dimensions, int Count) GetMetadata([NotNull] BinaryReader reader)
+        private static (string Description, HeaderArrayStorage Storage, HeaderArrayType Type, int[] Dimensions, int Count) GetMetadata([NotNull] BinaryReader reader)
         {
             byte[] descriptionBuffer = InitializeArray(reader);
 
-            HeaderArrayType type = (HeaderArrayType)BitConverter.ToInt16(descriptionBuffer, 0 * sizeof(short));
+            HeaderArrayType type = (HeaderArrayType) BitConverter.ToInt16(descriptionBuffer, default(short));
 
-            bool sparse = Encoding.ASCII.GetString(descriptionBuffer, sizeof(short), 4) != "FULL";
+            HeaderArrayStorage storage = (HeaderArrayStorage) BitConverter.ToInt32(descriptionBuffer, sizeof(short));
 
-            string description = Encoding.ASCII.GetString(descriptionBuffer, sizeof(short) + 4, 70).Trim('\u0000', '\u0002', '\u0020');
+            string description = Encoding.ASCII.GetString(descriptionBuffer, sizeof(short) + sizeof(int), 70).Trim('\u0000', '\u0002', '\u0020');
 
-            int[] dimensions = new int[BitConverter.ToInt32(descriptionBuffer, sizeof(short) + 4 + 70)];
+            int[] dimensions = new int[BitConverter.ToInt32(descriptionBuffer, sizeof(short) + sizeof(int) + 70)];
 
             int count = 1;
             for (int i = 0; i < dimensions.Length; i++)
             {
-                dimensions[i] = BitConverter.ToInt32(descriptionBuffer, sizeof(short) + 4 + 70 + sizeof(int) + i * sizeof(int));
+                dimensions[i] = BitConverter.ToInt32(descriptionBuffer, sizeof(short) + sizeof(int) + 70 + sizeof(int) + i * sizeof(int));
                 count *= dimensions[i];
             }
 
@@ -613,7 +643,7 @@ namespace HeaderArrayConverter.IO
                 count = dimensions[0];
             }
             
-            return (description, sparse, type, dimensions, count);
+            return (description, storage, type, dimensions, count);
         }
 
         /// <summary>
@@ -719,7 +749,7 @@ namespace HeaderArrayConverter.IO
         /// 
         /// Followed by one or more:
         ///     
-        ///     [set] = <see cref="GetOneDimensionalArray{TValue}(BinaryReader, int, Func{byte[], int, int, TValue})"/>.     
+        ///     [set] = <see cref="GetOneDimensionalArray{TValue}(BinaryReader, HeaderArrayStorage, int, Func{byte[], int, int, TValue})"/>.     
         /// 
         /// </remarks>
         private static (string Coefficient, KeyValuePair<string, IImmutableList<string>>[] Sets) ReadSets([NotNull] BinaryReader reader, [NotNull] int[] dimensions)
@@ -729,7 +759,12 @@ namespace HeaderArrayConverter.IO
             string[][] setItems = new string[setNames.Length][];
             for (int i = 0; i < distinctSetCount; i++)
             {
-                setItems[i] = GetOneDimensionalArray(reader, dimensions[i], (data, index, length) => Encoding.ASCII.GetString(data, index, length).Trim('\u0000', '\u0002', '\u0020'));
+                setItems[i] = 
+                    GetOneDimensionalArray(
+                        reader, 
+                        HeaderArrayStorage.Full, 
+                        dimensions[i], 
+                        (data, index, length) => Encoding.ASCII.GetString(data, index, length).Trim('\u0000', '\u0002', '\u0020'));
             }
 
             if (distinctSetCount > 0 && setNames.Length > 0 && setNames.Length - distinctSetCount == 1)
