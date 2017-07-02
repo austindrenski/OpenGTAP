@@ -396,13 +396,13 @@ namespace HeaderArrayConverter.IO
             int index = BitConverter.ToInt32(data, 0 * sizeof(int));
             int extent1 = BitConverter.ToInt32(data, 2 * sizeof(int));
 
-            int count = (data.Length - 3 * sizeof(int)) / extent1;
+            int bytesPerItem = (data.Length - 3 * sizeof(int)) / extent1;
 
-            results = new TValue[count];
+            results = new TValue[extent1];
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < extent1; i++)
             {
-                results[i] = converter(data, 3 * sizeof(int) + i * count, count);
+                results[i] = converter(data, 3 * sizeof(int) + i * bytesPerItem, bytesPerItem);
             }
 
             return index;
