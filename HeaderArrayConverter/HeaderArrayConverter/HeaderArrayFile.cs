@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using HeaderArrayConverter.IO;
@@ -50,7 +49,7 @@ namespace HeaderArrayConverter
         /// The contents of the HAR file.
         /// </summary>
         [NotNull]
-        private readonly IImmutableDictionary<string, IHeaderArray> _arrays;
+        private readonly IReadOnlyDictionary<string, IHeaderArray> _arrays;
 
         /// <summary>
         /// Gets the count of arrays in the file, including metadata arrays.
@@ -82,7 +81,7 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(arrays));
             }
 
-            _arrays = arrays.ToImmutableSortedDictionary(x => x.Header, x => x);
+            _arrays = arrays.ToDictionary(x => x.Header, x => x);
         }
 
         /// <summary>
@@ -116,7 +115,7 @@ namespace HeaderArrayConverter
         [NotNull]
         public IEnumerator<IHeaderArray> GetEnumerator()
         {
-            return _arrays.Select(x => x.Value).GetEnumerator();
+            return _arrays.OrderBy(x => x.Key).Select(x => x.Value).GetEnumerator();
         }
 
         /// <summary>
