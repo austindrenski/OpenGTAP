@@ -189,7 +189,7 @@ namespace HeaderArrayConverter.Collections
         /// <param name="source">
         /// The collection from which to create the 
         /// </param>
-        private ImmutableSequenceDictionary([NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
+        public ImmutableSequenceDictionary([NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets, [NotNull] IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>> source)
         {
             if (source is null)
             {
@@ -251,7 +251,7 @@ namespace HeaderArrayConverter.Collections
                 throw new ArgumentNullException(nameof(source));
             }
 
-            return Create(sets, source as IEnumerable<KeyValuePair<KeySequence<TKey>, TValue>>);
+            return new ImmutableSequenceDictionary<TKey, TValue>(sets, source);
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> sets, [NotNull] IEnumerable<TValue> source)
+        public static ImmutableSequenceDictionary<TKey, TValue> Create([NotNull] IEnumerable<KeyValuePair<string, IImmutableList<TKey>>> sets, [NotNull] IEnumerable<TValue> source)
         {
             if (source is null)
             {
@@ -277,7 +277,9 @@ namespace HeaderArrayConverter.Collections
 
             TValue[] values = source as TValue[] ?? source.ToArray();
 
-            KeySequence<TKey>[] keys = sets.AsExpandedSet().ToArray();
+            KeyValuePair<string, IImmutableList<TKey>>[] setsArray = sets as KeyValuePair<string, IImmutableList<TKey>>[] ?? sets.ToArray();
+
+            KeySequence<TKey>[] keys = setsArray.AsExpandedSet().ToArray();
 
             KeyValuePair<KeySequence<TKey>, TValue>[] items = new KeyValuePair<KeySequence<TKey>, TValue>[values.Length];
             for (int i = 0; i < items.Length; i++)
@@ -285,7 +287,7 @@ namespace HeaderArrayConverter.Collections
                 items[i] = new KeyValuePair<KeySequence<TKey>, TValue>(keys[i], values[i]);
             }
 
-            return Create(sets, items);
+            return new ImmutableSequenceDictionary<TKey, TValue>(setsArray, items);
         }
 
         /// <summary>

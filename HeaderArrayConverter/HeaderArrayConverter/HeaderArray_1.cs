@@ -212,57 +212,7 @@ namespace HeaderArrayConverter
         /// <param name="sets">
         /// The sets defined on the array.
         /// </param>
-        public static IHeaderArray<TValue> Create([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
-        {
-            if (header is null)
-            {
-                throw new ArgumentNullException(nameof(header));
-            }
-            if (coefficient is null)
-            {
-                throw new ArgumentNullException(nameof(coefficient));
-            }
-            if (dimensions is null)
-            {
-                throw new ArgumentNullException(nameof(dimensions));
-            }
-            if (entries is null)
-            {
-                throw new ArgumentNullException(nameof(entries));
-            }
-            if (sets is null)
-            {
-                throw new ArgumentNullException(nameof(sets));
-            }
-
-            return new HeaderArray<TValue>(header, coefficient, description, type, dimensions, ImmutableSequenceDictionary<string, TValue>.Create(sets, entries));
-        }
-
-        /// <summary>
-        /// Creates an <see cref="IHeaderArray{TValue}"/> from one entry from a Header Array (HAR) file.
-        /// </summary>
-        /// <param name="header">
-        /// The four character identifier for this <see cref="HeaderArray{TValue}"/>.
-        /// </param>
-        /// <param name="coefficient">
-        /// The coefficient related to the <see cref="HeaderArray{TValue}"/>
-        /// </param>
-        /// <param name="description">
-        /// The long name description of the <see cref="HeaderArray{TValue}"/>.
-        /// </param>
-        /// <param name="type">
-        /// The type of element stored in the array.
-        /// </param>
-        /// <param name="dimensions">
-        /// The dimensions of the array.
-        /// </param>
-        /// <param name="entries">
-        /// The data in the array.
-        /// </param>
-        /// <param name="sets">
-        /// The sets defined on the array.
-        /// </param>
-        public static IHeaderArray<TValue> Create([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<TValue> entries, [NotNull] IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets)
+        public static IHeaderArray<TValue> Create([NotNull] string header, [NotNull] string coefficient, [CanBeNull] string description, HeaderArrayType type, [NotNull] IEnumerable<int> dimensions, [NotNull] IEnumerable<TValue> entries, [NotNull] IEnumerable<KeyValuePair<string, IImmutableList<string>>> sets)
         {
             if (header is null)
             {
@@ -361,7 +311,7 @@ namespace HeaderArrayConverter
         [Pure]
         public IHeaderArray<TValue> With(string header)
         {
-            return Create(header, Coefficient, Description, Type, Dimensions, _entries, Sets);
+            return new HeaderArray<TValue>(header, Coefficient, Description, Type, Dimensions, _entries);
         }
 
         /// <summary>

@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using AD.IO;
-using HeaderArrayConverter.Collections;
-using HeaderArrayConverter.Extensions;
 using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 
@@ -147,15 +145,6 @@ namespace HeaderArrayConverter.IO
 
                 Shocks(values);
 
-                IImmutableList<KeyValuePair<string, IImmutableList<string>>> set =
-                    array.Sets
-                         .Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements))
-                         .ToImmutableArray();
-
-                IEnumerable<KeyValuePair<KeySequence<string>, float>> entries =
-                    set.AsExpandedSet()
-                       .Select((x, i) => new KeyValuePair<KeySequence<string>, float>(x, values[i]));
-
                 return
                     HeaderArray<float>.Create(
                         array.Name,
@@ -163,8 +152,8 @@ namespace HeaderArrayConverter.IO
                         array.Description,
                         HeaderArrayType.RE,
                         array.Sets.Select(x => x.Count).Concat(Enumerable.Repeat(1, 7)).Take(7),
-                        entries,
-                        set);
+                        values,
+                        array.Sets.Select(x => new KeyValuePair<string, IImmutableList<string>>(x.Name, x.Elements)));
 
                 // Shifts existing entries to their appropriate positions to create gaps for exogenous values.
                 void ShiftExogenous(float[] inputArray)
@@ -235,8 +224,8 @@ namespace HeaderArrayConverter.IO
             IReadOnlyList<string> names = arrayFile["VCNM"].As<string>().Values.ToArray();
             IReadOnlyList<string> descriptions = arrayFile["VCL0"].As<string>().Values.ToArray();
             IReadOnlyList<string> unitTypes = arrayFile["VCLE"].As<string>().Values.ToArray();
-            IReadOnlyList<string> changeTypes = arrayFile["VCT0"].As<string>().Values.ToArray();
-            IReadOnlyList<string> variableTypes = arrayFile["VCS0"].As<string>().Values.ToArray();
+            IReadOnlyList<char> changeTypes = arrayFile["VCT0"].As<char>().Values.ToArray();
+            IReadOnlyList<char> variableTypes = arrayFile["VCS0"].As<char>().Values.ToArray();
 
             IImmutableList<SetInformation>[] sets = VariableIndexedCollectionsOfSets(arrayFile).ToArray();
 
@@ -249,8 +238,8 @@ namespace HeaderArrayConverter.IO
                         names[i],
                         descriptions[i],
                         unitTypes[i],
-                        ModelChange.Parse(changeTypes[i]),
-                        ModelVariable.Parse(variableTypes[i]),
+                        (ModelChangeType)changeTypes[i],
+                        (ModelVariableType)variableTypes[i],
                         sets[i]);
             }
         }
@@ -313,7 +302,7 @@ namespace HeaderArrayConverter.IO
         private static IEnumerable<SetInformation> BuildAllSets(HeaderArrayFile arrayFile)
         {
             IReadOnlyList<int> sizes = arrayFile["SSZ "].As<int>().Values.ToArray();
-            IReadOnlyList<bool> intertemporal = arrayFile["STTP"].As<string>().Values.Select(x => x == "i").ToArray();
+            IReadOnlyList<char> intertemporal = arrayFile["STTP"].As<char>().Values.ToArray();
             IReadOnlyList<string> names = arrayFile["STNM"].As<string>().Values.ToArray();
             IReadOnlyList<string> descriptions = arrayFile["STLB"].As<string>().Values.ToArray();
             IReadOnlyList<string> elements = arrayFile["STEL"].As<string>().Values.ToArray();
@@ -325,7 +314,7 @@ namespace HeaderArrayConverter.IO
                     new SetInformation(
                         names[i],
                         descriptions[i],
-                        intertemporal[i],
+                        intertemporal[i] == 'i',
                         sizes[i],
                         new ArraySegment<string>((string[])elements, counter, sizes[i]));
 

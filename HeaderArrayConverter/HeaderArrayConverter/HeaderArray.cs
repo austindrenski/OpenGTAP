@@ -318,20 +318,24 @@ namespace HeaderArrayConverter
             [NotNull]
             private static IHeaderArray Create<TValue>(JObject jObject, HeaderArrayType type) where TValue : IEquatable<TValue>
             {
+                IEnumerable<KeyValuePair<string, IImmutableList<string>>> sets = ParseSets(jObject["Sets"]);
+                IEnumerable<KeyValuePair<KeySequence<string>, TValue>> entries = ParseEntries(jObject["Entries"]);
+
+                IImmutableSequenceDictionary<string, TValue> sequenceDictionary = new ImmutableSequenceDictionary<string, TValue>(sets, entries);
+
                 return
-                    HeaderArray<TValue>.Create(
+                    new HeaderArray<TValue>(
                         jObject["Header"].Value<string>(),
                         jObject["Coefficient"].Value<string>(),
                         jObject["Description"].Value<string>(),
                         type,
                         jObject["Dimensions"].Values<int>().ToImmutableArray(),
-                        ParseEntries(jObject["Entries"]),
-                        ParseSets(jObject["Sets"]));
+                        sequenceDictionary);
 
-                IEnumerable<KeyValuePair<KeySequence<string>, TValue>> ParseEntries(JToken entries)
+                IEnumerable<KeyValuePair<KeySequence<string>, TValue>> ParseEntries(JToken jsonEntries)
                 {
                     return
-                        JsonConvert.DeserializeObject<IDictionary<string, TValue>>(entries.ToString())
+                        JsonConvert.DeserializeObject<IDictionary<string, TValue>>(jsonEntries.ToString())
                                    .Select(
                                        x =>
                                            new KeyValuePair<KeySequence<string>, TValue>(
@@ -339,18 +343,17 @@ namespace HeaderArrayConverter
                                                x.Value));
                 }
 
-                IImmutableList<KeyValuePair<string, IImmutableList<string>>> ParseSets(JToken sets)
+                IEnumerable<KeyValuePair<string, IImmutableList<string>>> ParseSets(JToken jsonSets)
                 {
                     return
-                        sets.Values<JToken>()
-                            .Select(
-                                x =>
-                                    new KeyValuePair<string, IImmutableList<string>>(
-                                        x.Value<string>("Key"),
-                                        x.Value<JArray>("Value")
-                                         .Values<string>()
-                                         .ToImmutableArray()))
-                            .ToImmutableArray();
+                        jsonSets.Values<JToken>()
+                                .Select(
+                                    x =>
+                                        new KeyValuePair<string, IImmutableList<string>>(
+                                            x.Value<string>("Key"),
+                                            x.Value<JArray>("Value")
+                                             .Values<string>()
+                                             .ToImmutableArray()));
                 }
             }
         }

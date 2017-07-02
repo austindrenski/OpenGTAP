@@ -131,9 +131,19 @@ namespace HeaderArrayConverter.IO
             {
                 case HeaderArrayType.C1:
                 {
-                    string[] values = GetOneDimensionalArray(reader, storage, count, (data, index, length) => Encoding.ASCII.GetString(data, index, length).Trim('\u0000', '\u0002', '\u0020'));
+                    // Corner case wherein the string array is really an array of single characters. 
+                    if (dimensions[1] == 1)
+                    {
+                        char[] values = GetOneDimensionalArray(reader, storage, count, (data, index, length) => (char) data[index]);
 
-                    return HeaderArray<string>.Create(header, header, description, type, dimensions, values);
+                        return HeaderArray<char>.Create(header, header, description, type, dimensions, values);
+                    }
+                    else
+                    {
+                        string[] values = GetOneDimensionalArray(reader, storage, count, (data, index, length) => Encoding.ASCII.GetString(data, index, length).Trim('\u0000', '\u0002', '\u0020'));
+
+                        return HeaderArray<string>.Create(header, header, description, type, dimensions, values);
+                    }
                 }
                 case HeaderArrayType.I2:
                 {
