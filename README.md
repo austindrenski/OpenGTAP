@@ -1,5 +1,5 @@
 # OpenGTAP
-OpenGTAP provides open-source tooling for the GTAP (Global Trade Analysis Project) Model on the .NET Framework.
+OpenGTAP provides open-source tooling for the Global Trade Analysis Project (GTAP) Model on the .NET Framework.
 
 ![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/austindrenski/OpenGTAP?svg=true)[![Travis Build Status](https://travis-ci.org/austindrenski/OpenGTAP.svg?branch=master)](https://travis-ci.org/austindrenski/OpenGTAP)
 
