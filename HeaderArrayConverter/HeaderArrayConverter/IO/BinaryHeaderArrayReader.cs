@@ -56,7 +56,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(file));
             }
 
-            return new HeaderArrayFile(await Task.Run(() => ReadArraysAsync(file).AsParallel().Select(x => x.Result)));
+            return new HeaderArrayFile(await Task.WhenAll(ReadArraysAsync(file)));
         }
 
         /// <summary>
@@ -100,15 +100,8 @@ namespace HeaderArrayConverter.IO
             {
                 throw new ArgumentNullException(nameof(file));
             }
-            
-            using (BinaryReader reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read)))
-            {
-                long length = reader.BaseStream.Length;
-                while (reader.BaseStream.Position < length)
-                {
-                    yield return Task.FromResult(ReadNext(reader));
-                }
-            }
+
+            return ReadArrays(file).Select(Task.FromResult);
         }
 
         /// <summary>

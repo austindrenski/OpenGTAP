@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using AD.IO;
 using HeaderArrayConverter.IO;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
@@ -66,7 +68,7 @@ namespace HeaderArrayConverter
         /// The <see cref="IHeaderArray"/> with the given header.
         /// </returns>
         [NotNull]
-        public IHeaderArray this[string header] => _arrays[header];
+        public IHeaderArray this[[NotNull] string header] => _arrays[header];
 
         /// <summary>
         /// Constructs a <see cref="HeaderArrayFile"/> from an <see cref="IHeaderArray"/> collection.
@@ -82,6 +84,84 @@ namespace HeaderArrayConverter
             }
 
             _arrays = arrays.ToDictionary(x => x.Header, x => x);
+        }
+
+        /// <summary>
+        /// Reads files with default readers for the following extensions:
+        ///     .har  => <see cref="BinaryReader"/>;
+        ///     .sl4  => <see cref="BinarySolutionReader"/>;
+        ///     .harx => <see cref="JsonReader"/>.
+        /// </summary>
+        /// <param name="filePath">
+        /// A path to the file.
+        /// </param>
+        /// <returns>
+        /// A <see cref="HeaderArrayFile"/>.
+        /// </returns>
+        /// <remarks>
+        /// This method provides default handling. However, certain file formats can be read by multiple readers. 
+        /// The static readers exposed by this class can be used to read any file extension.
+        /// For example, SL4 files are HAR files with alternate value semantics. 
+        /// The binary structures are documented throughout the <see cref="HeaderArrayConverter"/> repository.
+        /// </remarks>
+        [Pure]
+        [NotNull]
+        public static HeaderArrayFile Read([NotNull] FilePath filePath)
+        {
+            if (filePath is null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+            
+            return ReadAsync(filePath).Result;
+        }
+
+        /// <summary>
+        /// Reads files with default readers for the following extensions:
+        ///     .har  => <see cref="BinaryReader"/>;
+        ///     .sl4  => <see cref="BinarySolutionReader"/>;
+        ///     .harx => <see cref="JsonReader"/>.
+        /// </summary>
+        /// <param name="filePath">
+        /// A path to the file.
+        /// </param>
+        /// <returns>
+        /// A <see cref="HeaderArrayFile"/>.
+        /// </returns>
+        /// <remarks>
+        /// This method provides default handling. However, certain file formats can be read by multiple readers. 
+        /// The static readers exposed by this class can be used to read any file extension.
+        /// For example, SL4 files are HAR files with alternate value semantics. 
+        /// The binary structures are documented throughout the <see cref="HeaderArrayConverter"/> repository.
+        /// </remarks>
+        [Pure]
+        [NotNull]
+        public static async Task<HeaderArrayFile> ReadAsync([NotNull] FilePath filePath)
+        {
+            if (filePath is null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
+            switch (Path.GetExtension(filePath).ToLower())
+            {
+                case ".har":
+                {
+                    return await BinaryReader.ReadAsync(filePath);
+                }
+                case ".sl4":
+                {
+                    return await BinarySolutionReader.ReadAsync(filePath);
+                }
+                case ".harx":
+                {
+                    return await JsonReader.ReadAsync(filePath);
+                }
+                default:
+                {
+                    throw new NotSupportedException($"Extension not supported by default method {nameof(Read)}. Use a specific reader such as {nameof(BinaryReader)} instead.");
+                }
+            }
         }
 
         /// <summary>
