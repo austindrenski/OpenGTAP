@@ -45,7 +45,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(source));
             }
 
-            using (BinaryWriter writer = new BinaryWriter(File.Open(file, FileMode.Create, FileAccess.Write, FileShare.Read)))
+            using (BinaryWriter writer = new BinaryWriter(new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.Asynchronous)))
             {
                 foreach (IHeaderArray array in ValidateHeaders(source))
                 {

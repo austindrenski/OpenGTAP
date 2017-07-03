@@ -112,8 +112,26 @@ namespace HeaderArrayConverter
             {
                 throw new ArgumentNullException(nameof(filePath));
             }
-            
-            return ReadAsync(filePath).Result;
+
+            switch (Path.GetExtension(filePath).ToLower())
+            {
+                case ".har":
+                {
+                    return BinaryReader.Read(filePath);
+                }
+                case ".sl4":
+                {
+                    return BinarySolutionReader.Read(filePath);
+                }
+                case ".harx":
+                {
+                    return JsonReader.Read(filePath);
+                }
+                default:
+                {
+                    throw new NotSupportedException($"Extension not supported by default method {nameof(Read)}. Use a specific reader such as {nameof(BinaryReader)} instead.");
+                }
+            }
         }
 
         /// <summary>
