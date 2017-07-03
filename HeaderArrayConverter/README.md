@@ -4,7 +4,9 @@ HeaderArrayConverter is a C# library for manipulating header array (HAR) and sol
 
 ## Installation
 
-To install the HeaderArrayConverter library, run the following command in the Package Manager Console:
+The HeaderArrayConverter library is available via [NuGet](https://www.nuget.org/packages/HeaderArrayConverter).
+
+To install from Visual Studio, run the following command in the Package Manager Console:
 
 `PM> Install-Package HeaderArrayConverter`
 

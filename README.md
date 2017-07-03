@@ -1,5 +1,5 @@
 # OpenGTAP
-OpenGTAP provides open-source tooling for the GTAP (Global Trade Analysis Project) Model on the .NET Framework.
+OpenGTAP provides open-source tooling for the Global Trade Analysis Project (GTAP) Model on the .NET Framework.
 
 ![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/austindrenski/OpenGTAP?svg=true)[![Travis Build Status](https://travis-ci.org/austindrenski/OpenGTAP.svg?branch=master)](https://travis-ci.org/austindrenski/OpenGTAP)
 
@@ -22,9 +22,8 @@ The GTAP model provides a popular framework for conducting global economic analy
 OpenGTAP does not replace the standard GTAP model. Rather, it aims provide a modern, object-oriented tooling to encourage new developments from the open-source community.
 
 ## Potential areas for modernization
-Working with C# 7 and targeting the .NET Standard Framework version 2.0, OpenGTAP seeks to simplify and build upon the standard model. 
+Working with C# 7 and targeting the .NET Standard Framework version 2.0, OpenGTAP seeks to simplify and build upon the standard model in the following areas:
 
-The OpenGTAP team suspects that the following areas may see a performance benefit from modern abstractions: 
 * HAR (Header Array) files could be replaced with a modern and accessible data format.
 * Class systems could simplify the aggregation/disaggregation workflow that currently exists, making model customization simpler at the source code level.
 * Data parallelism via the PLINQ (Parallel LINQ) library may simplify the data pipeline between model instantiation and computation. 
