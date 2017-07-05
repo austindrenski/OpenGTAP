@@ -23,6 +23,12 @@ namespace HeaderArrayConverter.Collections
     public class ImmutableSequenceDictionary<TKey, TValue> : IImmutableSequenceDictionary<TKey, TValue> where TKey : IEquatable<TKey> where TValue : IEquatable<TValue>
     {
         /// <summary>
+        /// Magic string marking an index set.
+        /// </summary>
+        [NotNull]
+        private static readonly string Index = "INDEX";
+
+        /// <summary>
         /// Compares dictionary entries based on the keys.
         /// </summary>
         [NotNull]
@@ -161,6 +167,14 @@ namespace HeaderArrayConverter.Collections
                     return _dictionary.Values;
                 }
 
+                if (Sets.Count == 1 && Sets.Single().Key.Equals(Index, StringComparison.OrdinalIgnoreCase))
+                {
+                    return 
+                        _dictionary.AsParallel()
+                                   .OrderBy(x => int.Parse((string) x.Key))
+                                   .Select(x => x.Value);
+                }
+
                 return
                     Sets.AsExpandedSet()
                         .DefaultIfEmpty()
@@ -198,12 +212,18 @@ namespace HeaderArrayConverter.Collections
 
             Sets = sets as IImmutableList<KeyValuePair<string, IImmutableList<TKey>>> ?? sets.ToImmutableArray();
 
-            _dictionary =
-                source is IDictionary<KeySequence<TKey>, TValue> dictionary
-                    ? new Dictionary<KeySequence<TKey>, TValue>(dictionary)
-                    : source.AsParallel()
-                            .Where(x => !x.Value.Equals(default(TValue)))
-                            .ToDictionary(x => x.Key, x => x.Value);
+            if (source is IDictionary<KeySequence<TKey>, TValue> dictionary)
+            {
+                _dictionary = new Dictionary<KeySequence<TKey>, TValue>(dictionary);
+            }
+            else if (Sets.Count == 1 && Sets.First().Key.Equals(Index, StringComparison.OrdinalIgnoreCase))
+            {
+                _dictionary = source.AsParallel().ToDictionary(x => x.Key, x => x.Value);
+            }
+            else
+            {
+                _dictionary = source.AsParallel().Where(x => !x.Value.Equals(default(TValue))).ToDictionary(x => x.Key, x => x.Value);
+            }
         }
 
         /// <summary>
@@ -293,9 +313,6 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Creates an <see cref="ImmutableSequenceDictionary{TKey, TValue}"/> from the collection.
         /// </summary>
-        /// <param name="name">
-        /// 
-        /// </param>
         /// <param name="source">
         /// The source collection.
         /// </param>
@@ -304,15 +321,11 @@ namespace HeaderArrayConverter.Collections
         /// </returns>
         [Pure]
         [NotNull]
-        public static ImmutableSequenceDictionary<string, TValue> Create([NotNull] string name, [NotNull] IEnumerable<TValue> source)
+        public static ImmutableSequenceDictionary<string, TValue> Create([NotNull] IEnumerable<TValue> source)
         {
             if (source is null)
             {
                 throw new ArgumentNullException(nameof(source));
-            }
-            if (name is null)
-            {
-                throw new ArgumentNullException(nameof(name));
             }
 
             TValue[] values = source as TValue[] ?? source.ToArray();
@@ -320,7 +333,7 @@ namespace HeaderArrayConverter.Collections
             IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets = 
                 ImmutableArray.Create(
                     new KeyValuePair<string, IImmutableList<string>>(
-                        name, 
+                        Index, 
                         Enumerable.Range(0, values.Length).Select(x => x.ToString()).ToImmutableArray()));
 
             KeyValuePair<KeySequence<string>, TValue>[] items = new KeyValuePair<KeySequence<string>, TValue>[values.Length];
@@ -357,6 +370,11 @@ namespace HeaderArrayConverter.Collections
                 return _dictionary.GetEnumerator();
             }
 
+            if (Sets.Count == 1 && Sets.Single().Key.Equals(Index, StringComparison.OrdinalIgnoreCase))
+            {
+                return _dictionary.AsParallel().OrderBy(x => int.Parse((string) x.Key)).GetEnumerator();
+            }
+            
             return
                 Sets.AsExpandedSet()
                     .AsParallel()

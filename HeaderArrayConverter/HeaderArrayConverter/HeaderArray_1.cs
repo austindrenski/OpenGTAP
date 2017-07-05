@@ -278,7 +278,7 @@ namespace HeaderArrayConverter
                 throw new ArgumentNullException(nameof(entries));
             }
 
-            return new HeaderArray<TValue>(header, coefficient, description, type, dimensions, ImmutableSequenceDictionary<string, TValue>.Create("INDEX", entries));
+            return new HeaderArray<TValue>(header, coefficient, description, type, dimensions, ImmutableSequenceDictionary<string, TValue>.Create(entries));
         }
 
         /// <summary>
