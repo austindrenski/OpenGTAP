@@ -27,6 +27,6 @@ namespace HeaderArrayConverter
         /// Represents an array that is sparse.
         /// </summary>
         [EnumMember(Value = "SPSE")]
-        Sparse = 0x53_45_50_45
+        Sparse = 0x45_53_50_53
     }
 }

@@ -12,7 +12,7 @@ namespace HeaderArrayConsole
         /// </summary>
         public static void Main()
         {
-            Test(Input[6], Output[0], Output[1], TestOptions.All);
+            Test(Input[1], Output[0], Output[1], TestOptions.All);
 
             Console.WriteLine(HeaderArray<float>.JsonSchema);
 

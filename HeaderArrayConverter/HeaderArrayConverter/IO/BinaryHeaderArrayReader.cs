@@ -118,6 +118,11 @@ namespace HeaderArrayConverter.IO
         {
             string header = GetHeader(reader);
 
+            if (header == "ADRV")
+            {
+
+            }
+
             (string description, HeaderArrayStorage storage, HeaderArrayType type, int[] dimensions, int count) = GetMetadata(reader);
 
             switch (type)
