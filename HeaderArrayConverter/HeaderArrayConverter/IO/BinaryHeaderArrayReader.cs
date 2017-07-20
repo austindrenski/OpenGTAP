@@ -22,6 +22,11 @@ namespace HeaderArrayConverter.IO
         private static readonly int Padding = 0x20_20_20_20;
 
         /// <summary>
+        /// The length of coefficients and set names in binary HAR file.s
+        /// </summary>
+        private static readonly int CoefficientAndSetNameLength = 12;
+
+        /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
         /// <param name="file">
@@ -699,9 +704,9 @@ namespace HeaderArrayConverter.IO
         ///     [0 * sizeof(int)] = the number of distinct sets stored.
         ///     [1 * sizeof(int)] = true if the dimensions are known.
         ///     [2 * sizeof(int)] = the number of sets that define the coefficient.
-        ///     [3 * sizeof(int)] = the 12-character coefficient.
-        ///     [3 * sizeof(int) + 12] = true if the sets are known.
-        ///     [4 * sizeof(int) + 12 + i * 12] = the i-th 12-character set name.
+        ///     [3 * sizeof(int)] = the coefficient.
+        ///     [3 * sizeof(int) + CoefficientAndSetNameLength] = true if the sets are known.
+        ///     [4 * sizeof(int) + CoefficientAndSetNameLength + i * CoefficientAndSetNameLength] = the i-th set name.
         /// 
         /// </remarks>
         private static (int DistinctSetCount, string Coefficient, string[] SetNames) GetCoefficientAndSetNames([NotNull] BinaryReader reader)
@@ -719,9 +724,9 @@ namespace HeaderArrayConverter.IO
 
             int sets = BitConverter.ToInt32(setsArray, 2 * sizeof(int));
 
-            string coefficient = Encoding.ASCII.GetString(setsArray, 3 * sizeof(int), 12).Trim();
+            string coefficient = Encoding.ASCII.GetString(setsArray, 3 * sizeof(int), CoefficientAndSetNameLength).Trim();
 
-            bool setsKnown = BitConverter.ToBoolean(setsArray, 3 * sizeof(int) + 12);
+            bool setsKnown = BitConverter.ToBoolean(setsArray, 3 * sizeof(int) + CoefficientAndSetNameLength);
 
             if (!setsKnown && distinctSets != 0)
             {
@@ -732,7 +737,7 @@ namespace HeaderArrayConverter.IO
             string[] setNames = new string[sets];
             for (int i = 0; i < setNames.Length; i++)
             {
-                setNames[i] = Encoding.ASCII.GetString(setsArray, 4 * sizeof(int) + 12 + i * 12, 12).Trim();
+                setNames[i] = Encoding.ASCII.GetString(setsArray, 4 * sizeof(int) + CoefficientAndSetNameLength + i * CoefficientAndSetNameLength, CoefficientAndSetNameLength).Trim();
             }
 
             return (distinctSets, coefficient, setNames);

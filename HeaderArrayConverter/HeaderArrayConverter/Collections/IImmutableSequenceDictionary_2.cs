@@ -32,7 +32,6 @@ namespace HeaderArrayConverter.Collections
         [NotNull]
         new IImmutableSequenceDictionary<TKey, TValue> this[params TKey[] keys] { get; }
         
-
         /// <summary>
         /// Gets an enumerable collection that contains the keys in the read-only dictionary.
         /// </summary>

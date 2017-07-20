@@ -47,10 +47,10 @@ namespace HeaderArrayConsole
             new Dictionary<int, string>
             {
                 // Binary output
-                [0] = $"{Directory.GetCurrentDirectory()}\\test6.har",
+                [0] = $"{Directory.GetCurrentDirectory()}\\test7.har",
 
                 // Json output
-                [1] = $"{Directory.GetCurrentDirectory()}\\test6.harx"
+                [1] = $"{Directory.GetCurrentDirectory()}\\test7.harx"
             };
 
         /// <summary>

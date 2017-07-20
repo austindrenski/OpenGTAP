@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JetBrains.Annotations;
@@ -68,6 +69,7 @@ namespace HeaderArrayConverter.Types
         /// <remarks>
         /// This value is derived from the index order on header 'VCLE'.
         /// </remarks>
+        [NotNull]
         public string UnitType { get; }
 
         /// <summary>
@@ -81,12 +83,13 @@ namespace HeaderArrayConverter.Types
         /// <summary>
         /// The defining sets for this endogenous array.
         /// </summary>
-        public IImmutableList<SetInformation> Sets { get; }
+        [NotNull]
+        public KeyValuePair<string, IImmutableList<string>>[] Sets { get; }
 
         /// <summary>
         /// Returns the logical count of elements in this array.
         /// </summary>
-        public int Count => Sets.Aggregate(1, (current, next) => current * next.Count);
+        public int Count { get; }
 
         /// <summary>
         /// Constructs a <see cref="SolutionArray"/> containing the base properties of a variable in a solution file.
@@ -113,7 +116,7 @@ namespace HeaderArrayConverter.Types
         /// The <see cref="ModelVariableType"/> for this object. [VCS0, VCSTAT(NUMVC)].
         /// </param>
         /// <param name="sets"></param>
-        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType, IImmutableList<SetInformation> sets)
+        public SolutionArray(int variableIndex, int numberOfSets, string name, string description, string unitType, ModelChangeType changeType, ModelVariableType variableType, [NotNull] KeyValuePair<string, IImmutableList<string>>[] sets)
         {
             if (name is null)
             {
@@ -140,6 +143,7 @@ namespace HeaderArrayConverter.Types
             UnitType = unitType;
             NumberOfSets = numberOfSets;
             Sets = sets;
+            Count = sets.Aggregate(1, (current, next) => current * next.Value.Count);
         }
 
         /// <summary>

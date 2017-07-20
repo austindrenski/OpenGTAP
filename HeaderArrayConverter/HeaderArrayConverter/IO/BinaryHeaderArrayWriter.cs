@@ -45,18 +45,7 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(source));
             }
 
-            using (BinaryWriter writer = new BinaryWriter(new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.Asynchronous)))
-            {
-                foreach (IHeaderArray array in ValidateHeaders(source))
-                {
-                    foreach (byte[] bytes in ComposeArray(array))
-                    {
-                        writer.Write(bytes.Length);
-                        writer.Write(bytes);
-                        writer.Write(bytes.Length);
-                    }
-                }
-            }
+            WriteAsync(file, source).Wait();
         }
 
         /// <summary>
@@ -79,7 +68,18 @@ namespace HeaderArrayConverter.IO
                 throw new ArgumentNullException(nameof(source));
             }
 
-            await Task.Run(() => Write(file, source));
+            using (FileStream writer = new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.Asynchronous))
+            {
+                foreach (IHeaderArray array in ValidateHeaders(source))
+                {
+                    foreach (byte[] bytes in ComposeArray(array))
+                    {
+                        await writer.WriteAsync(BitConverter.GetBytes(bytes.Length), default(int), sizeof(int));
+                        await writer.WriteAsync(bytes, default(int), bytes.Length);
+                        await writer.WriteAsync(BitConverter.GetBytes(bytes.Length), default(int), sizeof(int));
+                    }
+                }
+            }
         }
 
         /// <summary>
