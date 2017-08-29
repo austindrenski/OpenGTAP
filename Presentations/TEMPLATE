@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PAGE TITLE HERE</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Roboto);
+      @import url(https://fonts.googleapis.com/css?family=Roboto:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Roboto:400,700,400italic);
+      body { 
+        font-family: 'Roboto'; 
+      }
+      h1, h2, h3 {
+        font-family: 'Roboto';
+        font-weight: normal;
+      }
+      .remark-code,
+      .remark-inline-code { 
+        font-family: 'Roboto'; 
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+      var slideshow = remark.create({sourceUrl: 'SOURCE MARKDOWN URL HERE'});
+    </script>
+  </body>
+</html>
