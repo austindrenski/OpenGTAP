@@ -35,9 +35,7 @@ namespace HeaderArrayConverter
         /// <summary>
         /// An immutable dictionary whose entries are stored by a sequence of the defining sets.
         /// </summary>
-        [NotNull]
-        [JsonProperty("Entries", Order = int.MaxValue)]
-        private readonly IImmutableSequenceDictionary<string, TValue> _entries;
+        [NotNull] [JsonProperty("Entries", Order = int.MaxValue)] private readonly IImmutableSequenceDictionary<string, TValue> _entries;
 
         /// <summary>
         /// The four character identifier for this <see cref="HeaderArray{T}"/>.
@@ -116,7 +114,7 @@ namespace HeaderArrayConverter
         /// <returns>
         /// The value stored by the given key.
         /// </returns>
-        IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => this[(KeySequence<string>)keys];
+        IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => this[(KeySequence<string>) keys];
 
         /// <summary>
         /// Gets an <see cref="IEnumerable{T}"/> for the given keys.

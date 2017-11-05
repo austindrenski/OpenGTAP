@@ -77,7 +77,7 @@ namespace HeaderArrayConverter
         /// The value stored by the given key.
         /// </returns>
         IImmutableSequenceDictionary<string> IHeaderArray.this[params string[] keys] => throw new NotSupportedException();
-       
+
         /// <summary>
         /// Gets an <see cref="IEnumerable"/> for the given keys.
         /// </summary>
@@ -115,7 +115,7 @@ namespace HeaderArrayConverter
         /// </returns>
         public virtual IHeaderArray<TResult> As<TResult>() where TResult : IEquatable<TResult>
         {
-            return (IHeaderArray<TResult>)this;
+            return (IHeaderArray<TResult>) this;
         }
 
         /// <summary>

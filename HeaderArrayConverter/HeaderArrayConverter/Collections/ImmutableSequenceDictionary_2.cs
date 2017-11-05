@@ -25,8 +25,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// Magic string marking an index set.
         /// </summary>
-        [NotNull]
-        private static readonly string Index = "INDEX";
+        [NotNull] private static readonly string Index = "INDEX";
 
         /// <summary>
         /// Compares dictionary entries based on the keys.
@@ -37,9 +36,7 @@ namespace HeaderArrayConverter.Collections
         /// <summary>
         /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
         /// </summary>
-        [NotNull]
-        [JsonProperty]
-        private readonly IReadOnlyDictionary<KeySequence<TKey>, TValue> _dictionary;
+        [NotNull] [JsonProperty] private readonly IReadOnlyDictionary<KeySequence<TKey>, TValue> _dictionary;
 
         /// <summary>
         /// Gets the number of logical entries in the dictionary.
@@ -162,30 +159,34 @@ namespace HeaderArrayConverter.Collections
         {
             get
             {
-                if (Sets.Count == 0)
+                switch (Sets.Count)
                 {
-                    return _dictionary.Values;
+                    case 0:
+                    {
+                        return _dictionary.Values;
+                    }
+                    case 1 when Sets.Single().Key.Equals(Index, StringComparison.OrdinalIgnoreCase):
+                    {
+                        return
+                            _dictionary.AsParallel()
+                                       .OrderBy(x => int.Parse((string) x.Key))
+                                       .Select(x => x.Value);
+                    }
+                    default:
+                    {
+                        return
+                            Sets.AsExpandedSet()
+                                .DefaultIfEmpty()
+                                .AsParallel()
+                                .AsOrdered()
+                                .Select(
+                                    x =>
+                                    {
+                                        _dictionary.TryGetValue(x, out TValue value);
+                                        return value;
+                                    });
+                    }
                 }
-
-                if (Sets.Count == 1 && Sets.Single().Key.Equals(Index, StringComparison.OrdinalIgnoreCase))
-                {
-                    return 
-                        _dictionary.AsParallel()
-                                   .OrderBy(x => int.Parse((string) x.Key))
-                                   .Select(x => x.Value);
-                }
-
-                return
-                    Sets.AsExpandedSet()
-                        .DefaultIfEmpty()
-                        .AsParallel()
-                        .AsOrdered()
-                        .Select(
-                            x =>
-                            {
-                                _dictionary.TryGetValue(x, out TValue value);
-                                return value;
-                            });
             }
         }
 
@@ -216,7 +217,7 @@ namespace HeaderArrayConverter.Collections
             {
                 _dictionary = new Dictionary<KeySequence<TKey>, TValue>(dictionary);
             }
-            else if (Sets.Count == 1 && Sets.First().Key.Equals(Index, StringComparison.OrdinalIgnoreCase))
+            else if (Sets.Count.Equals(1) && Sets.First().Key.Equals(Index, StringComparison.OrdinalIgnoreCase))
             {
                 _dictionary = source.AsParallel().ToDictionary(x => x.Key, x => x.Value);
             }
@@ -330,10 +331,10 @@ namespace HeaderArrayConverter.Collections
 
             TValue[] values = source as TValue[] ?? source.ToArray();
 
-            IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets = 
+            IImmutableList<KeyValuePair<string, IImmutableList<string>>> sets =
                 ImmutableArray.Create(
                     new KeyValuePair<string, IImmutableList<string>>(
-                        Index, 
+                        Index,
                         Enumerable.Range(0, values.Length).Select(x => x.ToString()).ToImmutableArray()));
 
             KeyValuePair<KeySequence<string>, TValue>[] items = new KeyValuePair<KeySequence<string>, TValue>[values.Length];
@@ -341,7 +342,7 @@ namespace HeaderArrayConverter.Collections
             {
                 items[i] = new KeyValuePair<KeySequence<string>, TValue>(i.ToString(), values[i]);
             }
-            
+
             return new ImmutableSequenceDictionary<string, TValue>(sets, items);
         }
 
@@ -374,7 +375,7 @@ namespace HeaderArrayConverter.Collections
             {
                 return _dictionary.AsParallel().OrderBy(x => int.Parse((string) x.Key)).GetEnumerator();
             }
-            
+
             return
                 Sets.AsExpandedSet()
                     .AsParallel()
