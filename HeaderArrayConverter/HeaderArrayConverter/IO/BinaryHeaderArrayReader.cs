@@ -162,8 +162,11 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayType.RE:
                 {
-                    (string coefficient, KeyValuePair<string, IImmutableList<string>>[] sets) = ReadSets(reader, dimensions);
+                    (string coefficient, KeyValuePair<string, IImmutableList<string>>[] sets) temp = ReadSets(reader, dimensions);
 
+                    string coefficient = temp.coefficient;
+                    KeyValuePair<string, IImmutableList<string>>[] sets = temp.sets;
+                    
                     float[] results = GetArrayWithSets(reader, storage, count, BitConverter.ToSingle);
 
                     return HeaderArray<float>.Create(header, coefficient, description, type, dimensions, results, sets.ToImmutableArray());
