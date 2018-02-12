@@ -6,13 +6,14 @@ OpenGTAP provides open-source tooling for the Global Trade Analysis Project (GTA
 ## Libraries
 
 - [HeaderArrayConverter](https://github.com/austindrenski/OpenGTAP/blob/master/HeaderArrayConverter/README.md)
+  - `dotnet add [<PROJECT>] package HeaderArrayConverter`
 
 ## Current status
 - The HeaderArrayConverter project is working on a data interchange format for the binary HAR and SL4 files.
-    - Binary HAR and SL4 files can be read into memory.
-    - In-memory representation can be serialized into a series of JSON files that are zipped into a HARX file.
-    - HARX (zipped JSON) files can be read into memory.
-    - In-memory representations of HAR, SL4, and HARX files can be written back to binary HAR files.
+  - Binary HAR and SL4 files can be read into memory.
+  - In-memory representation can be serialized into a series of JSON files that are zipped into a HARX file.
+  - HARX (zipped JSON) files can be read into memory.
+  - In-memory representations of HAR, SL4, and HARX files can be written back to binary HAR files.
     
 - Planning is underway for a lightweight cross-platform viewer application (ViewHARX?) capable of reading and writing HAR, SL4, and HARX files.
 
