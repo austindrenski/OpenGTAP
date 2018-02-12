@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConverter", "HeaderArrayConverter\HeaderArrayConverter.csproj", "{AAB75B7C-ECA9-4103-8426-C0E51B956613}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConverter", "src\HeaderArrayConverter\HeaderArrayConverter.csproj", "{AAB75B7C-ECA9-4103-8426-C0E51B956613}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConsole", "HeaderArrayConsole\HeaderArrayConsole.csproj", "{09E3EC44-CEBA-4CC3-9E83-AA9C5B84387A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConsole", "src\HeaderArrayConsole\HeaderArrayConsole.csproj", "{09E3EC44-CEBA-4CC3-9E83-AA9C5B84387A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution items", "{E245EE93-4CEA-43EF-B088-28EAFCA12BBC}"
 ProjectSection(SolutionItems) = preProject
