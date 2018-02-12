@@ -6,21 +6,29 @@ using HeaderArrayConverter;
 namespace HeaderArrayConsole
 {
     public static class Program
-    {       
+    {
         /// <summary>
         /// Program entry point.
         /// </summary>
         public static void Main()
         {
-            Test(Input[1], Output[0], Output[1], TestOptions.All);
+            Console.WriteLine($"Reading at {DateTime.Now}.");
 
-            Console.WriteLine(HeaderArray<float>.JsonSchema);
+            HeaderArrayFile arrays = HeaderArrayFile.Read($"{Directory.GetCurrentDirectory()}\\basedata.har");
 
-            Console.ReadLine();
+            Console.WriteLine($"Writing {nameof(arrays)} with {nameof(HeaderArrayFile.JsonWriter)} at {DateTime.Now}.");
+
+            HeaderArrayFile.JsonWriter.Write($"{Directory.GetCurrentDirectory()}\\basedata.harx", arrays);
+
+//            Test(Input[1], Output[0], Output[1], TestOptions.All);
+//
+//            Console.WriteLine(HeaderArray<float>.JsonSchema);
+//
+//            Console.ReadLine();
         }
 
         /// <summary>
-        /// Input test files. 
+        /// Input test files.
         /// </summary>
         private static readonly IReadOnlyDictionary<int, string> Input =
             new Dictionary<int, string>
@@ -86,7 +94,7 @@ namespace HeaderArrayConsole
             Console.WriteLine($"Reading {nameof(input)} with {nameof(HeaderArrayFile.Read)} at {DateTime.Now}.");
 
             HeaderArrayFile arrays = HeaderArrayFile.Read(input);
-  
+
             if (option.HasFlag(TestOptions.WriteBinary))
             {
                 Console.WriteLine($"Writing {nameof(arrays)} to {nameof(binaryOutput)} with {nameof(HeaderArrayFile.BinaryWriter)} at {DateTime.Now}.");

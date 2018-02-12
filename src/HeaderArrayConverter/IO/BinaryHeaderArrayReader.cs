@@ -10,6 +10,7 @@ using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
 {
+    /// <inheritdoc />
     /// <summary>
     /// Implements a <see cref="HeaderArrayReader"/> for reading Header Array (HAR) files in binary format.
     /// </summary>
@@ -26,6 +27,7 @@ namespace HeaderArrayConverter.IO
         /// </summary>
         private static readonly int CoefficientAndSetNameLength = 12;
 
+        /// <inheritdoc />
         /// <summary>
         /// Reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
@@ -45,6 +47,7 @@ namespace HeaderArrayConverter.IO
             return new HeaderArrayFile(ReadArrays(file));
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Asynchronously reads <see cref="IHeaderArray"/> collections from file..
         /// </summary>
@@ -64,6 +67,7 @@ namespace HeaderArrayConverter.IO
             return new HeaderArrayFile(await Task.WhenAll(ReadArraysAsync(file)));
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Enumerates the <see cref="IHeaderArray"/> collection from file.
         /// </summary>
@@ -90,6 +94,7 @@ namespace HeaderArrayConverter.IO
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Asynchronously enumerates the arrays from file.
         /// </summary>
@@ -134,7 +139,7 @@ namespace HeaderArrayConverter.IO
             {
                 case HeaderArrayType.C1:
                 {
-                    // Corner case wherein the string array is really an array of single characters. 
+                    // Corner case wherein the string array is really an array of single characters.
                     if (dimensions[1] == 1)
                     {
                         char[] values = GetOneDimensionalArray(reader, storage, count, (data, index, length) => (char) data[index]);
@@ -166,7 +171,7 @@ namespace HeaderArrayConverter.IO
 
                     string coefficient = temp.coefficient;
                     KeyValuePair<string, IImmutableList<string>>[] sets = temp.sets;
-                    
+
                     float[] results = GetArrayWithSets(reader, storage, count, BitConverter.ToSingle);
 
                     return HeaderArray<float>.Create(header, coefficient, description, type, dimensions, results, sets.ToImmutableArray());
@@ -198,9 +203,9 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// The array is composed of one or more:
-        /// 
+        ///
         ///     [segment] = <see cref="GetNextOneDimensionalSegment{TValue}(BinaryReader, Func{byte[], int, int, TValue}, out TValue[])"/>.
-        /// 
+        ///
         /// </remarks>
         [NotNull]
         private static TValue[] GetOneDimensionalArray<TValue>([NotNull] BinaryReader reader, HeaderArrayStorage storage, int count, [NotNull] Func<byte[], int, int, TValue> converter)
@@ -255,9 +260,9 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// The array is composed of one or more:
-        /// 
+        ///
         ///     [segment] = <see cref="GetNextTwoDimensionalSegment{TValue}(BinaryReader, Func{byte[], int, TValue}, out TValue[])"/>.
-        /// 
+        ///
         /// </remarks>
         [NotNull]
         private static TValue[] GetTwoDimensionalArray<TValue>([NotNull] BinaryReader reader, HeaderArrayStorage storage, int count, [NotNull] Func<byte[], int, TValue> converter)
@@ -312,22 +317,22 @@ namespace HeaderArrayConverter.IO
         ///  </returns>
         ///  <remarks>
         ///  If the array is non-sparse, then it is composed of:
-        ///  
+        ///
         ///          [dimensions] = <see cref="ReadDimensions(BinaryReader)"/>.
-        /// 
+        ///
         ///      Followed by one or more:
-        ///  
+        ///
         ///          [extents] = <see cref="ReadExtents(BinaryReader)"/>.
         ///          [segment] = <see cref="GetNextFullSegment{T}(BinaryReader, Func{byte[], int, T}, out T[])"/>.
-        ///  
+        ///
         ///  If the array is sparse, then it is composed of:
-        ///  
+        ///
         ///          [metadata] = <see cref="GetExtraMetadata(BinaryReader)"/>.
-        ///  
+        ///
         ///      Followed by one or more:
-        ///  
+        ///
         ///          [segment] = <see cref="GetNextSparseSegment{TValue}(BinaryReader, Func{byte[], int, TValue}, out TValue[], out int[])"/>.
-        ///  
+        ///
         ///   </remarks>
         [NotNull]
         private static TValue[] GetArrayWithSets<TValue>([NotNull] BinaryReader reader, HeaderArrayStorage storage, int count, [NotNull] Func<byte[], int, TValue> converter)
@@ -398,12 +403,12 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// For a 1-dimensional arrays, the next segment is composed of:
-        /// 
+        ///
         ///     [0 * sizeof(int)] = vector index.
         ///     [1 * sizeof(int)] = the number of elements in total.
         ///     [2 * sizeof(int)] = the number of elements in the segment.
         ///     [3 * sizeof(int) + i * count] = the i-th data value in the segment where count is the byte-length of a given item.
-        /// 
+        ///
         /// </remarks>
         private static int GetNextOneDimensionalSegment<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, int, TValue> converter, [NotNull] out TValue[] results)
         {
@@ -444,7 +449,7 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// For a 2-dimensional arrays, the next segment is composed of:
-        /// 
+        ///
         ///     [0 * sizeof(int)] = vector index.
         ///     [1 * sizeof(int)] = the number of elements in the first dimension.
         ///     [2 * sizeof(int)] = the number of elements in the second dimension.
@@ -452,8 +457,8 @@ namespace HeaderArrayConverter.IO
         ///     [4 * sizeof(int)] = the 1-based ending index of the first dimension in the segment on the logical array.
         ///     [5 * sizeof(int)] = the 1-based starting index of the second dimension in the segment on the logical array.
         ///     [6 * sizeof(int)] = the 1-based ending index of the second dimension in the segment on the logical array.
-        ///     [(7 + i) * sizeof(int)] = the i-th data value in the segment. 
-        /// 
+        ///     [(7 + i) * sizeof(int)] = the i-th data value in the segment.
+        ///
         /// </remarks>
         private static int GetNextTwoDimensionalSegment<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, [NotNull] out TValue[] results)
         {
@@ -491,10 +496,10 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// For 7-dimensional arrays, the next segment is composed of:
-        /// 
+        ///
         ///     [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.
-        ///     [(1 + i) * sizeof(int)] = the i-th value of the segment. 
-        /// 
+        ///     [(1 + i) * sizeof(int)] = the i-th value of the segment.
+        ///
         /// </remarks>
         private static int GetNextFullSegment<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, [NotNull] out TValue[] results)
         {
@@ -535,13 +540,13 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// For sparse 7-dimensional arrays, the next segment is composed of:
-        /// 
+        ///
         ///     [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.
         ///     [1 * sizeof(int)] = the total number of non-zero values stored in the sparse header array.
         ///     [2 * sizeof(int)] = the number of positions and values stored in this segment.
         ///     [(3 + i) * sizeof(int)] = the i-th pointer in this segment.
-        ///     [2 * (3 + i) * sizeof(int)] = the i-th value in this segment.  
-        /// 
+        ///     [2 * (3 + i) * sizeof(int)] = the i-th value in this segment.
+        ///
         /// </remarks>
         private static int GetNextSparseSegment<TValue>([NotNull] BinaryReader reader, [NotNull] Func<byte[], int, TValue> converter, [NotNull] out TValue[] results, [NotNull] out int[] pointers)
         {
@@ -658,7 +663,7 @@ namespace HeaderArrayConverter.IO
                 // So just take the first dimension.
                 count = dimensions[0];
             }
-            
+
             return (description, storage, type, dimensions, count);
         }
 
@@ -673,10 +678,10 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// For 7-dimensional real arrays, the extra metadata is composed of:
-        /// 
+        ///
         ///     [0 * sizeof(int)] = the count of non-zero values.
         ///     [1 * sizeof(int)] = the byte-size of integer values.
-        ///     [2 * sizeof(int)] = the byte-size of real values. 
+        ///     [2 * sizeof(int)] = the byte-size of real values.
         ///     [3 * sizeof(int)] = an 80-character description.
         ///
         ///  </remarks>
@@ -703,14 +708,14 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// The sets segment is composed of:
-        /// 
+        ///
         ///     [0 * sizeof(int)] = the number of distinct sets stored.
         ///     [1 * sizeof(int)] = true if the dimensions are known.
         ///     [2 * sizeof(int)] = the number of sets that define the coefficient.
         ///     [3 * sizeof(int)] = the coefficient.
         ///     [3 * sizeof(int) + CoefficientAndSetNameLength] = true if the sets are known.
         ///     [4 * sizeof(int) + CoefficientAndSetNameLength + i * CoefficientAndSetNameLength] = the i-th set name.
-        /// 
+        ///
         /// </remarks>
         private static (int DistinctSetCount, string Coefficient, string[] SetNames) GetCoefficientAndSetNames([NotNull] BinaryReader reader)
         {
@@ -760,13 +765,13 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// The sets segment is composed of:
-        /// 
+        ///
         ///     [set metadata] = <see cref="GetCoefficientAndSetNames(BinaryReader)"/>.
-        /// 
+        ///
         /// Followed by one or more:
-        ///     
-        ///     [set] = <see cref="GetOneDimensionalArray{TValue}(BinaryReader, HeaderArrayStorage, int, Func{byte[], int, int, TValue})"/>.     
-        /// 
+        ///
+        ///     [set] = <see cref="GetOneDimensionalArray{TValue}(BinaryReader, HeaderArrayStorage, int, Func{byte[], int, int, TValue})"/>.
+        ///
         /// </remarks>
         private static (string Coefficient, KeyValuePair<string, IImmutableList<string>>[] Sets) ReadSets([NotNull] BinaryReader reader, [NotNull] int[] dimensions)
         {
@@ -775,11 +780,11 @@ namespace HeaderArrayConverter.IO
             string[][] setItems = new string[setNames.Length][];
             for (int i = 0; i < distinctSetCount; i++)
             {
-                setItems[i] = 
+                setItems[i] =
                     GetOneDimensionalArray(
-                        reader, 
-                        HeaderArrayStorage.Full, 
-                        dimensions[i], 
+                        reader,
+                        HeaderArrayStorage.Full,
+                        dimensions[i],
                         (data, index, length) => Encoding.ASCII.GetString(data, index, length).Trim('\u0000', '\u0002', '\u0020'));
             }
 
@@ -815,11 +820,11 @@ namespace HeaderArrayConverter.IO
         /// </returns>
         /// <remarks>
         /// The dimension array contains the following:
-        /// 
+        ///
         ///     [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.
         ///     [1 * sizeof(int)] = the count of dimensions for the record.
         ///     [(2 + i) * sizeof(int)] = the count of elements in the 0-based i-th dimension of the record.
-        /// 
+        ///
         /// </remarks>
         private static (int Index, int Count, int[] Dimensions) ReadDimensions([NotNull] BinaryReader reader)
         {
@@ -854,12 +859,12 @@ namespace HeaderArrayConverter.IO
         ///     [0 * sizeof(int)] = 1-based index of the current vector from the end of the record.
         ///     [(1 + i) * sizeof(int)] = the 0-based index indicating the first entry in the i-th set represented in this vector.
         ///     [(2 + i) * sizeof(int)] = the 0-based index indicating the last entry in the i-th set represented in this vector.
-        /// 
+        ///
         /// The count of dimensions can be determined in-line as the length of the extents array divided by the byte-size of
         /// an integer. The array length is actually the count of the dimensions + 1, but integer division rounds down.
-        /// 
-        /// Note that the extents must be deincremented by one to move from a 1-based index to a 0-based index. 
-        /// 
+        ///
+        /// Note that the extents must be deincremented by one to move from a 1-based index to a 0-based index.
+        ///
         /// </remarks>
         private static (int Index, int Offset, int[] Extents) ReadExtents([NotNull] BinaryReader reader)
         {

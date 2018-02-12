@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 
 namespace HeaderArrayConverter
 {
+    /// <inheritdoc />
     /// <summary>
     /// Represents the contents of a HAR file.
     /// </summary>
@@ -99,9 +100,9 @@ namespace HeaderArrayConverter
         /// A <see cref="HeaderArrayFile"/>.
         /// </returns>
         /// <remarks>
-        /// This method provides default handling. However, certain file formats can be read by multiple readers. 
+        /// This method provides default handling. However, certain file formats can be read by multiple readers.
         /// The static readers exposed by this class can be used to read any file extension.
-        /// For example, SL4 files are HAR files with alternate value semantics. 
+        /// For example, SL4 files are HAR files with alternate value semantics.
         /// The binary structures are documented throughout the <see cref="HeaderArrayConverter"/> repository.
         /// </remarks>
         [Pure]
@@ -147,9 +148,9 @@ namespace HeaderArrayConverter
         /// A <see cref="HeaderArrayFile"/>.
         /// </returns>
         /// <remarks>
-        /// This method provides default handling. However, certain file formats can be read by multiple readers. 
+        /// This method provides default handling. However, certain file formats can be read by multiple readers.
         /// The static readers exposed by this class can be used to read any file extension.
-        /// For example, SL4 files are HAR files with alternate value semantics. 
+        /// For example, SL4 files are HAR files with alternate value semantics.
         /// The binary structures are documented throughout the <see cref="HeaderArrayConverter"/> repository.
         /// </remarks>
         [Pure]
@@ -192,7 +193,7 @@ namespace HeaderArrayConverter
         {
             return HeaderArray.ValidateSets(this, output);
         }
-       
+
         /// <summary>
         /// Returns a string representation of the contents of the <see cref="HeaderArrayFile"/>.
         /// </summary>
@@ -203,6 +204,7 @@ namespace HeaderArrayConverter
             return JsonConvert.SerializeObject(_arrays, Formatting.Indented);
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
@@ -216,6 +218,7 @@ namespace HeaderArrayConverter
             return _arrays.OrderBy(x => x.Key).Select(x => x.Value).GetEnumerator();
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
