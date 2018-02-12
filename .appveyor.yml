@@ -1,32 +1,29 @@
-before_build:
-  - cmd: nuget restore HeaderArrayConverter\HeaderArrayConverter.sln
-
-environment:
-  GH_TOKEN:
-    secure: DJ9VYB+6NUozifW0LbUTMa2qjQ6I0oo0C8BPh/99a/GbJCFDess9D79+xz5K6Eu0
-    
-image: 
+image:
   - Visual Studio 2017
 
 platform:
   - Any CPU
 
-configuration: 
-  - Release
+branches:
+  only:
+    - master
+    - production
 
-build:
-  project: HeaderArrayConverter\HeaderArrayConverter
-  parallel: true                  # enable MSBuild parallel builds
-  publish_wap: true               # package Web Application Projects (WAP) for Web Deploy
-  publish_wap_xcopy: true         # package Web Application Projects (WAP) for XCopy deployment
-  publish_azure: true             # package Azure Cloud Service projects and push to artifacts
-  publish_nuget: true             # package projects with .nuspec files and push to artifacts
-  publish_nuget_symbols: true     # generate and publish NuGet symbol packages
-  include_nuget_references: true  # add -IncludeReferencedProjects option while packaging NuGet artifacts
+environment:
+  nuget:
+    secure: lAOgXBlidUDKDMFlDJInIUO7K9vZc4FHLP715QyBp1gP9KFNQjntN70Jo6gi4+bA
 
-after_build:
-  - cd .\HeaderArrayConverter\ViewHARX
-  - ps: Install-Product node ''
-  - npm install -g npm
-  - npm install
-  - npm run dist-win
+version: 1.0.{build}
+
+dotnet_csproj:
+  patch: true
+  file: '**\*.csproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: '{version}'
+
+build_script:
+  - pwsh: dotnet build --configuration Release
+
+on_success:
+  - pwsh: dotnet nuget push src/HeaderArrayConverter/bin/release/HeaderArrayConverter.${env:appveyor_build_version}.nupkg --source https://www.nuget.org/api/v2/package --api-key ${env:nuget}

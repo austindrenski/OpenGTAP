@@ -7,6 +7,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConverter", "Hea
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeaderArrayConsole", "HeaderArrayConsole\HeaderArrayConsole.csproj", "{09E3EC44-CEBA-4CC3-9E83-AA9C5B84387A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution items", "{E245EE93-4CEA-43EF-B088-28EAFCA12BBC}"
+ProjectSection(SolutionItems) = preProject
+	..\.appveyor.yml = ..\.appveyor.yml
+	..\.gitattributes = ..\.gitattributes
+	..\README.md = ..\README.md
+	..\LICENSE = ..\LICENSE
+	..\CONTRIBUTING.md = ..\CONTRIBUTING.md
+	..\CODE_OF_CONDUCT.md = ..\CODE_OF_CONDUCT.md
+	..\.travis.yml = ..\.travis.yml
+	..\.gitignore = ..\.gitignore
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		
