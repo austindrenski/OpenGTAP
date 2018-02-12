@@ -34,7 +34,7 @@ namespace HeaderArrayConverter.Collections
         private static KeyComparer DistinctKeyComparer { get; } = new KeyComparer();
 
         /// <summary>
-        /// The collection stored as an <see cref="ImmutableDictionary{TKey, TValue}"/>.
+        /// The collection stored as an <see cref="ImmutableDictionary"/>.
         /// </summary>
         [NotNull] [JsonProperty] private readonly IReadOnlyDictionary<KeySequence<TKey>, TValue> _dictionary;
 

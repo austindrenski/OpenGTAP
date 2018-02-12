@@ -31,6 +31,7 @@ namespace HeaderArrayConverter
         /// Represents a multi-dimensional array of <see cref="float"/> values and item labels.
         /// </summary>
         [EnumMember(Value = "RE")]
+        // ReSharper disable once InconsistentNaming
         RE = 0x45_52,
 
         /// <summary>

@@ -1,28 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <langVersion>latest</langVersion>
-        <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-        <Description>C# library for manipulating header array (HAR) and solution (SL4) files.</Description>
-        <Copyright>Copyright (c) 2017 Austin Drenski</Copyright>
-        <PackageLicenseUrl>https://github.com/austindrenski/OpenGTAP/raw/master/LICENSE</PackageLicenseUrl>
-        <PackageProjectUrl>https://github.com/austindrenski/OpenGTAP</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/austindrenski/OpenGTAP</RepositoryUrl>
-        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-        <Authors>Austin Drenski</Authors>
-        <Company>OpenGTAP</Company>
-        <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
-        <PackageIconUrl>https://github.com/austindrenski/OpenGTAP/raw/master/Logos/assets/logo_256x256.png</PackageIconUrl>
-        <AssemblyVersion>1.0</AssemblyVersion>
-        <FileVersion>1.0</FileVersion>
-        <Version>1.0</Version>
-        <PackageTags>c# c-sharp csharp gempack gtap header-array har sl4</PackageTags>
-        <DocumentationFile>bin\Release\netstandard2.0\HeaderArrayConverter.xml</DocumentationFile>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="AD.IO" Version="1.3.0"/>
-        <PackageReference Include="JetBrains.Annotations" Version="11.1.0"/>
-        <PackageReference Include="Newtonsoft.Json" Version="10.0.3"/>
-        <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.4"/>
-    </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <langVersion>latest</langVersion>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <Description>C# library for manipulating header array (HAR) and solution (SL4) files.</Description>
+    <Copyright>Copyright (c) 2017 Austin Drenski</Copyright>
+    <PackageLicenseUrl>https://github.com/austindrenski/OpenGTAP/raw/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/austindrenski/OpenGTAP</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/austindrenski/OpenGTAP</RepositoryUrl>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>Austin Drenski</Authors>
+    <Company>OpenGTAP</Company>
+    <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
+    <PackageIconUrl>https://github.com/austindrenski/OpenGTAP/raw/master/Logos/assets/logo_256x256.png</PackageIconUrl>
+    <AssemblyVersion>1.0</AssemblyVersion>
+    <FileVersion>1.0</FileVersion>
+    <Version>1.0</Version>
+    <PackageTags>c# c-sharp csharp gempack gtap header-array har sl4</PackageTags>
+    <DocumentationFile>bin\Release\netstandard2.0\HeaderArrayConverter.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AD.IO" Version="1.4.19" />
+    <PackageReference Include="JetBrains.Annotations" Version="11.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.5" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
+  </ItemGroup>
 </Project>

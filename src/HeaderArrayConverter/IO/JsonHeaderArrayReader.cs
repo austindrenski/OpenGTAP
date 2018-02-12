@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
-using AD.IO;
+using AD.IO.Paths;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO

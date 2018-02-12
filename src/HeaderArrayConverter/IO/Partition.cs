@@ -133,7 +133,8 @@ namespace HeaderArrayConverter.IO
 
                 for (int j = 0; j < dimensions; j++)
                 {
-                    ranges[j] = (indexes.Select(x => x[j]).Min(), indexes.Select(x => x[j]).Max());
+                    int jClosure = j;
+                    ranges[j] = (indexes.Select(x => x[jClosure]).Min(), indexes.Select(x => x[jClosure]).Max());
                 }
                 
                 if (temp.Any() || Size == 0)

@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AD.IO;
+using AD.IO.Paths;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
@@ -353,7 +353,7 @@ namespace HeaderArrayConverter.IO
                 }
                 case HeaderArrayStorage.Sparse:
                 {
-                    (int _, int _, int _, string _) = GetExtraMetadata(reader);
+                    (int NonZeroCount, int SizeOfInteger, int SizeOfReal, string Description) _ = GetExtraMetadata(reader);
 
                     int index = int.MaxValue;
 

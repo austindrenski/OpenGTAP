@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
-using AD.IO;
+using AD.IO.Paths;
 using HeaderArrayConverter.Types;
 using JetBrains.Annotations;
 

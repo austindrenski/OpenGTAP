@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using AD.IO;
+using AD.IO.Paths;
 using JetBrains.Annotations;
 
 namespace HeaderArrayConverter.IO
